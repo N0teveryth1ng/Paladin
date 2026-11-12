@@ -14,7 +14,39 @@ from app.llm.system_prompt import (
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EVAL_SET_PATH = REPO_ROOT / "eval" / "eval_set.json"
+DATA_MODEL_DOC = REPO_ROOT / "docs" / "step-1-data-model.md"
 SHINGLE_SIZE = 8
+
+
+def _section_12_1_definitions() -> list[str]:
+    """The two connection-type bullets from §12.1, whitespace-normalized.
+
+    The expected text is read from the source document rather than hardcoded, so
+    "verbatim" cannot silently drift into a paraphrase.
+    """
+
+    doc = DATA_MODEL_DOC.read_text(encoding="utf-8")
+    start = doc.index("### 12.1")
+    end = doc.index("Rationale:", start)
+    section = doc[start:end]
+
+    bullets: list[str] = []
+    current: str | None = None
+    for raw in section.splitlines():
+        line = raw.rstrip()
+        if line.startswith("- `"):
+            if current is not None:
+                bullets.append(current)
+            current = line[2:].strip()
+        elif current is not None and line.startswith("  ") and line.strip():
+            current = f"{current} {line.strip()}"
+        elif current is not None and not line.strip():
+            bullets.append(current)
+            current = None
+    if current is not None:
+        bullets.append(current)
+    return [" ".join(bullet.split()) for bullet in bullets]
+
 
 
 def _words(text: str) -> list[str]:
@@ -62,14 +94,10 @@ def test_loads_and_is_versioned() -> None:
 
 def test_connection_definitions_are_verbatim() -> None:
     text = " ".join(load_system_prompt().split())
-    assert (
-        "`sync` - the caller waits for the receiver to respond before continuing."
-        in text
-    )
-    assert (
-        "`async` - the caller does not wait for the receiver to process the work; "
-        "handing work to a queue or event stream is `async`."
-    ) in text
+    definitions = _section_12_1_definitions()
+    assert len(definitions) == 2
+    for definition in definitions:
+        assert definition in text, definition
 
 
 def test_narrow_severity_rules_are_present() -> None:

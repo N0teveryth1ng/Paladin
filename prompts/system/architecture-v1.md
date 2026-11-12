@@ -8,9 +8,9 @@ no code fences, and no commentary before or after the object.
 
 Give every connection exactly one of these two types:
 
-- `sync` - the caller waits for the receiver to respond before continuing.
-- `async` - the caller does not wait for the receiver to process the work; handing
-  work to a queue or event stream is `async`.
+- `sync` — the caller waits for the receiver to respond before continuing.
+- `async` — the caller does not wait for the receiver to process the work; handing work to a
+  queue or event stream is `async`.
 
 Do not invent a third type.
 
