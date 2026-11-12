@@ -1,0 +1,1311 @@
+{
+  "eval_set_version": "1.0",
+  "prompts": [
+    {
+      "id": "ev_01",
+      "title": "Static marketing site with a contact form",
+      "category": "simple",
+      "adversarial_kind": null,
+      "prompt": "Design the backend for a small marketing website. Visitors read a few pages and submit a contact form. Each submission must be stored durably, and a confirmation email must be sent after it is stored. Keep the design as small as possible: do not add infrastructure that the stated requirements do not justify. Assume modest traffic.",
+      "expected_requirements": [
+        "Visitors can load the marketing pages.",
+        "A contact form submission is accepted and stored durably.",
+        "A confirmation email is sent after the submission is stored.",
+        "The design stays minimal and does not add unrequested infrastructure."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A user-facing client exists for visitors to load pages and submit the form.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=client)"
+        },
+        {
+          "id": "r02",
+          "statement": "A backend service accepts and handles form submissions.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r03",
+          "statement": "Submissions are persisted in a durable database.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=database)"
+        },
+        {
+          "id": "r04",
+          "statement": "The client submits the form to the backend synchronously.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=service, type=sync)"
+        },
+        {
+          "id": "r05",
+          "statement": "The backend writes the submission to the database synchronously.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=database, type=sync)"
+        },
+        {
+          "id": "r06",
+          "statement": "The graph has no dangling references or invalid group membership.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r07",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The client must not bypass the backend and write to the database directly.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=database, type=sync)"
+        },
+        {
+          "id": "x02",
+          "statement": "A CDN is invented although the prompt states modest traffic and no static-asset requirement.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x03",
+          "statement": "A load balancer is invented although no availability or traffic requirement justifies it.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=load_balancer)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "Minimal correct graph. Tests that the model does not invent edge delivery or traffic distribution for a small site, and does not let the browser write to the durable store directly."
+    },
+    {
+      "id": "ev_02",
+      "title": "URL shortener, single region",
+      "category": "simple",
+      "adversarial_kind": null,
+      "prompt": "Design a URL shortener for a single region. A user submits a long URL and receives a short code. Anyone with the code must be redirected to the original URL. Redirects vastly outnumber creations and must be fast. A code must keep resolving permanently. Keep the design small and avoid infrastructure that the requirements do not justify.",
+      "expected_requirements": [
+        "A user can create a short code for a long URL.",
+        "Following a short code redirects to the original URL.",
+        "Redirects are fast and far more frequent than creations.",
+        "Codes resolve permanently.",
+        "The design stays small."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A user-facing client creates codes and follows redirects.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=client)"
+        },
+        {
+          "id": "r02",
+          "statement": "A backend service creates codes and resolves redirects.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r03",
+          "statement": "A fast lookup layer serves redirects without hitting the durable store every time.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cache)"
+        },
+        {
+          "id": "r04",
+          "statement": "Code-to-URL mappings are persisted durably.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=database)"
+        },
+        {
+          "id": "r05",
+          "statement": "Redirect resolution consults the fast lookup layer synchronously.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=cache, type=sync)"
+        },
+        {
+          "id": "r06",
+          "statement": "Creations write to the durable store synchronously.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=database, type=sync)"
+        },
+        {
+          "id": "r07",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The client must not read or write the durable store directly.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=database, type=sync)"
+        },
+        {
+          "id": "x02",
+          "statement": "A full-text index is invented although the prompt has no search requirement.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=search_index)"
+        },
+        {
+          "id": "x03",
+          "statement": "A message queue is invented although creation and redirect are synchronous request paths.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=message_queue)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "Read path and write path are separate. Tests that the model does not invent search or background processing for a URL shortener."
+    },
+    {
+      "id": "ev_03",
+      "title": "Background email sender",
+      "category": "simple",
+      "adversarial_kind": null,
+      "prompt": "Design the email-sending path for an existing application. When the application needs to send a transactional email, it must hand the work off and continue immediately. The application must not wait for the email provider. A failed send must be retried a bounded number of times, and a send that keeps failing must be visible to operators. Assume low volume.",
+      "expected_requirements": [
+        "The application hands off email work without waiting.",
+        "A background processor performs the send.",
+        "Failed sends are retried a bounded number of times.",
+        "Permanently failing sends are visible to operators.",
+        "The email provider is an external dependency."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A durable buffer holds email work between the application and the sender.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=message_queue)"
+        },
+        {
+          "id": "r02",
+          "statement": "A background processor performs the actual send.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=worker)"
+        },
+        {
+          "id": "r03",
+          "statement": "The email provider is represented as an external boundary.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=external_service)"
+        },
+        {
+          "id": "r04",
+          "statement": "The application hands work off asynchronously.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=message_queue, type=async)"
+        },
+        {
+          "id": "r05",
+          "statement": "The background processor consumes work from the buffer.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=message_queue, to_type=worker, type=async)"
+        },
+        {
+          "id": "r06",
+          "statement": "The background processor calls the email provider.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=worker, to_type=external_service, type=sync)"
+        },
+        {
+          "id": "r07",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r08",
+          "statement": "A permanently failing send is surfaced to operators rather than silently dropped.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The request path must not call the email provider synchronously.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=external_service, type=sync)"
+        },
+        {
+          "id": "x02",
+          "statement": "A periodic timer is invented although the prompt asks for event-driven hand-off.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=scheduler)"
+        },
+        {
+          "id": "x03",
+          "statement": "The application must not call the background processor synchronously and wait.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=worker, type=sync)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "Event-driven hand-off. Tests that the request path does not call the provider synchronously, and that retries are bounded and visible."
+    },
+    {
+      "id": "ev_04",
+      "title": "Sign-in for an internal admin tool",
+      "category": "simple",
+      "adversarial_kind": null,
+      "prompt": "Design sign-in for an internal admin tool used by about 40 employees. Employees authenticate with the company's existing identity system and receive a session that the tool trusts. Employees without an active company account must not get in. Do not build a new password store or a parallel identity system.",
+      "expected_requirements": [
+        "Employees sign in with the existing company identity system.",
+        "The tool trusts a session issued after successful authentication.",
+        "Employees without an active company account are refused.",
+        "No new password store or parallel identity system is built."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "The existing identity system is represented as an identity boundary.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=auth_provider)"
+        },
+        {
+          "id": "r02",
+          "statement": "The admin tool's backend validates sessions.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r03",
+          "statement": "The browser authenticates against the identity system.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=auth_provider, type=sync)"
+        },
+        {
+          "id": "r04",
+          "statement": "The backend verifies the session with the identity system.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=auth_provider, type=sync)"
+        },
+        {
+          "id": "r05",
+          "statement": "The browser calls the admin tool after sign-in.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=service, type=sync)"
+        },
+        {
+          "id": "r06",
+          "statement": "The graph has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r07",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r08",
+          "statement": "The design does not introduce a second password store or a parallel identity system.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "A CDN is invented although the prompt is about sign-in for a small internal tool.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x02",
+          "statement": "A message queue is invented although sign-in is a synchronous request path.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=message_queue)"
+        },
+        {
+          "id": "x03",
+          "statement": "The browser must not reach a durable store directly.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=database, type=sync)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "Existing identity boundary. Tests that the model reuses the company identity system and does not invent infrastructure."
+    },
+    {
+      "id": "ev_05",
+      "title": "Microservices e-commerce checkout",
+      "category": "medium",
+      "adversarial_kind": null,
+      "prompt": "Design checkout for an online store. A shopper reviews a cart, pays, and receives an order confirmation. Payment must be authorised before the order is confirmed. If payment fails, the order must not be confirmed. The store already runs separate catalog and inventory systems; checkout must not read their internal data stores directly. Design for a few thousand checkouts per hour.",
+      "expected_requirements": [
+        "A shopper can review a cart and start checkout.",
+        "Payment is authorised before the order is confirmed.",
+        "A failed payment prevents order confirmation.",
+        "Checkout does not read catalog or inventory data stores directly.",
+        "The design handles a few thousand checkouts per hour."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "Checkout is a backend capability with its own boundary.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r02",
+          "statement": "The payment provider is represented as an external boundary.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=external_service)"
+        },
+        {
+          "id": "r03",
+          "statement": "Checkout calls the payment provider synchronously to authorise payment.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=external_service, type=sync)"
+        },
+        {
+          "id": "r04",
+          "statement": "The shopper's browser reaches checkout synchronously.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=service, type=sync)"
+        },
+        {
+          "id": "r05",
+          "statement": "Checkout persists order state in its own durable store.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=database)"
+        },
+        {
+          "id": "r06",
+          "statement": "The graph has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r07",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r08",
+          "statement": "The order is never confirmed before payment authorisation succeeds.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The browser must not call the payment provider directly.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=external_service, type=sync)"
+        },
+        {
+          "id": "x02",
+          "statement": "The browser must not write orders directly to a durable store.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=database, type=sync)"
+        },
+        {
+          "id": "x03",
+          "statement": "Payment authorisation must not be fired asynchronously and then assumed successful.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=external_service, type=async)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "Service boundaries and synchronous payment authorisation. Tests that the model does not let the browser touch the payment provider or the durable store directly, and does not treat fire-and-forget payment as authorisation."
+    },
+    {
+      "id": "ev_06",
+      "title": "Event-driven order pipeline with retries",
+      "category": "medium",
+      "adversarial_kind": null,
+      "prompt": "Design an order-processing pipeline. New orders arrive continuously, and several independent steps must run for each order: fraud screening, inventory reservation, and notification. A step may fail transiently and must be retried without duplicating its effect. One slow step must not block the others. Operators need a way to inspect orders that keep failing. Assume thousands of orders per hour.",
+      "expected_requirements": [
+        "New orders enter the pipeline continuously.",
+        "Fraud screening, inventory reservation, and notification each run for an order.",
+        "Transient failures are retried without duplicating effects.",
+        "A slow step does not block the others.",
+        "Operators can inspect orders that keep failing.",
+        "The design handles thousands of orders per hour."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "Orders and step work are handed off through a durable buffer.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=message_queue)"
+        },
+        {
+          "id": "r02",
+          "statement": "At least one background processor runs pipeline steps.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=worker)"
+        },
+        {
+          "id": "r03",
+          "statement": "The intake path publishes asynchronously.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=message_queue, type=async)"
+        },
+        {
+          "id": "r04",
+          "statement": "Background processors consume work from the buffer.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=message_queue, to_type=worker, type=async)"
+        },
+        {
+          "id": "r05",
+          "statement": "Order and step state are persisted for retries and inspection.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=database)"
+        },
+        {
+          "id": "r06",
+          "statement": "The graph has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r07",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r08",
+          "statement": "Independent steps do not share a single serialized path that lets one slow step block the others.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The intake path must not call a background processor synchronously and wait for all steps.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=worker, type=sync)"
+        },
+        {
+          "id": "x02",
+          "statement": "A periodic timer is invented although the prompt describes continuous event arrival.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=scheduler)"
+        },
+        {
+          "id": "x03",
+          "statement": "The intake path must not block on a synchronous hand-off before acknowledging the order.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=message_queue, type=sync)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [
+        "Pipeline steps are idempotent, so at-least-once delivery does not duplicate effects."
+      ],
+      "notes": "Async fan-out and retry semantics. Tests that the model does not serialize the pipeline behind one synchronous call and does not replace event arrival with polling."
+    },
+    {
+      "id": "ev_07",
+      "title": "Search with index synchronisation",
+      "category": "medium",
+      "adversarial_kind": null,
+      "prompt": "Design product search for an online catalog. Shoppers search by title and description and expect results within a second. Catalog edits must become searchable quickly, but saving an edit must not wait for search to catch up. If search is briefly stale, that is acceptable; losing an edit permanently is not. Assume the catalog changes a few times per minute.",
+      "expected_requirements": [
+        "Shoppers can search by title and description.",
+        "Results return within about a second.",
+        "Catalog edits become searchable quickly.",
+        "Saving an edit does not wait for search indexing.",
+        "Brief staleness is acceptable; permanent loss of an edit is not."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A dedicated full-text index serves search queries.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=search_index)"
+        },
+        {
+          "id": "r02",
+          "statement": "A backend service accepts catalog edits and serves search requests.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r03",
+          "statement": "The catalog's source of truth is persisted durably.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=database)"
+        },
+        {
+          "id": "r04",
+          "statement": "Search queries are served synchronously from the index.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=search_index, type=sync)"
+        },
+        {
+          "id": "r05",
+          "statement": "Catalog edits are saved durably before they are indexed.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=database, type=sync)"
+        },
+        {
+          "id": "r06",
+          "statement": "The graph has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r07",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r08",
+          "statement": "Saving a catalog edit does not block on updating the search index.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r09",
+          "statement": "The design states that brief search staleness is acceptable and that edits are not lost.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "Shoppers must not query the index directly, bypassing the backend's access control.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=search_index, type=sync)"
+        },
+        {
+          "id": "x02",
+          "statement": "The browser must not read the catalog's durable store directly.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=database, type=sync)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "Eventual consistency without blocking the save path. Tests that the model does not put the index on the write path or let the browser bypass the backend."
+    },
+    {
+      "id": "ev_08",
+      "title": "Multi-tenant SaaS with per-tenant isolation",
+      "category": "medium",
+      "adversarial_kind": null,
+      "prompt": "Design a multi-tenant SaaS application for small businesses. Each business's data must be isolated from every other business's data. Shared infrastructure is preferred to keep costs low, but a single business with unusually strict requirements may need its own dedicated storage. Requests must carry the tenant identity end to end, and no query may run without a tenant scope. Assume thousands of tenants and modest per-tenant volume.",
+      "expected_requirements": [
+        "Each tenant's data is isolated from other tenants.",
+        "Shared infrastructure is the default to keep costs low.",
+        "A tenant with strict requirements can have dedicated storage.",
+        "Tenant identity is carried through every request.",
+        "No query runs without a tenant scope.",
+        "The design supports thousands of tenants with modest per-tenant volume."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A backend service handles tenant-scoped requests.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r02",
+          "statement": "Tenant data is persisted in a durable store.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=database)"
+        },
+        {
+          "id": "r03",
+          "statement": "The backend reads and writes tenant data synchronously.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=database, type=sync)"
+        },
+        {
+          "id": "r04",
+          "statement": "Tenant users reach the backend synchronously.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=service, type=sync)"
+        },
+        {
+          "id": "r05",
+          "statement": "The graph has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r06",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r07",
+          "statement": "Every request path carries a tenant identifier and no query can run without a tenant scope.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r08",
+          "statement": "The default design shares infrastructure across tenants, with a clear path to dedicated storage for a tenant that needs it.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The browser must not query tenant data directly, bypassing tenant scoping.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=database, type=sync)"
+        },
+        {
+          "id": "x02",
+          "statement": "A search index is invented although the prompt has no search requirement.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=search_index)"
+        },
+        {
+          "id": "x03",
+          "statement": "A message queue is invented although the prompt describes only synchronous tenant-scoped requests.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=message_queue)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "Tenant isolation and cost trade-off. Tests that the model keeps tenant scoping on the request path and does not add search or background processing that the prompt does not require."
+    },
+    {
+      "id": "ev_09",
+      "title": "Video upload, transcode, adaptive playback",
+      "category": "complex",
+      "adversarial_kind": null,
+      "prompt": "Design a video platform. Creators upload large video files. Each upload must be transcoded into multiple renditions for adaptive playback, and viewers worldwide must start playback quickly. Uploads must not wait for transcoding to finish. Originals and renditions must be stored durably. The platform must handle a large, spiky upload volume without losing work. Assume a global audience.",
+      "expected_requirements": [
+        "Creators can upload large video files.",
+        "Each upload is transcoded into multiple renditions.",
+        "Viewers can start playback quickly, including worldwide.",
+        "Uploads do not wait for transcoding.",
+        "Originals and renditions are stored durably.",
+        "Spiky upload volume does not lose work."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A creator and viewer client exists.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=client)"
+        },
+        {
+          "id": "r02",
+          "statement": "A backend service accepts uploads and serves playback metadata.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r03",
+          "statement": "Originals and renditions are stored in durable object storage.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=object_storage)"
+        },
+        {
+          "id": "r04",
+          "statement": "A background processor performs transcoding.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=worker)"
+        },
+        {
+          "id": "r05",
+          "statement": "Transcode work is buffered durably.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=message_queue)"
+        },
+        {
+          "id": "r06",
+          "statement": "A global edge delivery layer serves video segments.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "r07",
+          "statement": "Uploads hand off transcode work asynchronously.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=message_queue, type=async)"
+        },
+        {
+          "id": "r08",
+          "statement": "Transcode processors consume buffered work.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=message_queue, to_type=worker, type=async)"
+        },
+        {
+          "id": "r09",
+          "statement": "Transcode processors write renditions to durable storage.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=worker, to_type=object_storage, type=sync)"
+        },
+        {
+          "id": "r10",
+          "statement": "The graph has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r11",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r12",
+          "statement": "Uploads are acknowledged without waiting for transcoding to finish.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r13",
+          "statement": "The design explains how spiky upload volume is absorbed without losing work.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "Uploads must not block on a synchronous transcode call.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=worker, type=sync)"
+        },
+        {
+          "id": "x02",
+          "statement": "A search index is invented although the prompt has no search requirement.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=search_index)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "Durable media, asynchronous transcoding, global delivery. Tests that the model does not block uploads on transcoding and does not add search that the prompt does not require."
+    },
+    {
+      "id": "ev_10",
+      "title": "Ride-hailing dispatch",
+      "category": "complex",
+      "adversarial_kind": null,
+      "prompt": "Design ride-hailing dispatch for a city. Riders request a trip from their current location; drivers continuously report their location. The system must match a rider to a nearby available driver within a few seconds, and must not offer the same driver to two riders at once. Location updates arrive continuously and may be delayed. Trip state must survive process restarts. Assume a large city with tens of thousands of active drivers.",
+      "expected_requirements": [
+        "Riders request a trip from their current location.",
+        "Drivers continuously report their location.",
+        "A rider is matched to a nearby available driver within a few seconds.",
+        "The same driver is never offered to two riders at once.",
+        "Delayed location updates are tolerated.",
+        "Trip state survives process restarts.",
+        "The design handles tens of thousands of active drivers."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A rider and driver client exists.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=client)"
+        },
+        {
+          "id": "r02",
+          "statement": "A backend service handles trip requests and matching.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r03",
+          "statement": "Trip state is persisted durably.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=database)"
+        },
+        {
+          "id": "r04",
+          "statement": "Riders reach dispatch synchronously.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=service, type=sync)"
+        },
+        {
+          "id": "r05",
+          "statement": "Trip state is written durably.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=database, type=sync)"
+        },
+        {
+          "id": "r06",
+          "statement": "The graph has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r07",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r08",
+          "statement": "The design uses a spatial or geo-indexed lookup rather than scanning every driver.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r09",
+          "statement": "The design prevents the same driver from being offered to two riders at once.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "Riders must not read or write trip state directly in the durable store.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=database, type=sync)"
+        },
+        {
+          "id": "x02",
+          "statement": "A full-text index is invented although the prompt has no text search requirement.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=search_index)"
+        },
+        {
+          "id": "x03",
+          "statement": "A CDN is invented although the prompt is about dispatch, not media delivery.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "Spatial matching, continuous location ingestion, single-offer semantics. Tests that the model does not let riders touch durable trip state directly and does not add text search or media delivery."
+    },
+    {
+      "id": "ev_11",
+      "title": "Payment ledger with exactly-once effects",
+      "category": "complex",
+      "adversarial_kind": null,
+      "prompt": "Design a payment ledger for an online business. Every charge, refund, and adjustment must be recorded exactly once, even when callers retry or a processing step is repeated. The ledger must be append-only: corrections are new entries, never edits to past entries. Reads of an account balance must reflect all committed entries. A charge must not be reported as successful until it is durably recorded. Do not claim exactly-once effects from the delivery mechanism alone; duplicates must be handled by the ledger. Assume the payment provider may time out after actually charging.",
+      "expected_requirements": [
+        "Every charge, refund, and adjustment is recorded exactly once.",
+        "Caller retries and repeated processing steps do not duplicate entries.",
+        "The ledger is append-only; corrections are new entries.",
+        "Balance reads reflect all committed entries.",
+        "A charge is not reported successful until durably recorded.",
+        "Payment provider timeouts are handled without assuming the charge failed."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A backend service handles charge, refund, and adjustment requests.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r02",
+          "statement": "The ledger is persisted in a durable store.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=database)"
+        },
+        {
+          "id": "r03",
+          "statement": "Ledger entries are written durably before success is reported.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=database, type=sync)"
+        },
+        {
+          "id": "r04",
+          "statement": "The payment provider is represented as an external boundary.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=external_service)"
+        },
+        {
+          "id": "r05",
+          "statement": "The service calls the payment provider synchronously to charge.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=external_service, type=sync)"
+        },
+        {
+          "id": "r06",
+          "statement": "The graph has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r07",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r08",
+          "statement": "The design makes each effect exactly-once under retries, keeps the ledger append-only, and handles a provider timeout without assuming failure.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The design does not claim that exactly-once delivery is guaranteed by the queue alone.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "x02",
+          "statement": "A charge must not be fired asynchronously and reported successful without confirming the provider's result.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=external_service, type=async)"
+        },
+        {
+          "id": "x03",
+          "statement": "The client must not write ledger entries directly to the durable store.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=database, type=sync)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [
+        "A provider timeout is ambiguous; the charge may have succeeded and must be reconciled."
+      ],
+      "notes": "Exactly-once ledger effects, append-only corrections, ambiguous provider timeouts. Tests that the model does not derive exactly-once from the delivery mechanism alone and does not fire charges asynchronously."
+    },
+    {
+      "id": "ev_12",
+      "title": "Real-time chat at 50k concurrent connections",
+      "category": "complex",
+      "adversarial_kind": null,
+      "prompt": "Design real-time chat for 50,000 concurrent users. Users join rooms, send messages, and see new messages within a second. A user who reconnects must receive messages sent while they were offline. Message history must be durable and ordered per room. Presence (who is online) may be approximate and must not block message delivery. Assume users are spread across regions and connections are long-lived.",
+      "expected_requirements": [
+        "50,000 concurrent users can join rooms and exchange messages.",
+        "New messages appear within a second.",
+        "A reconnecting user receives messages sent while offline.",
+        "Message history is durable and ordered per room.",
+        "Presence is approximate and does not block delivery.",
+        "Users are spread across regions with long-lived connections."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A chat client exists for users.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=client)"
+        },
+        {
+          "id": "r02",
+          "statement": "A backend service handles room membership and message flow.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r03",
+          "statement": "Message history is persisted durably.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=database)"
+        },
+        {
+          "id": "r04",
+          "statement": "Messages are written to durable history.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=database, type=sync)"
+        },
+        {
+          "id": "r05",
+          "statement": "The graph has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r06",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r07",
+          "statement": "The design uses long-lived connections and replays messages sent while a user was offline.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r08",
+          "statement": "Presence is approximate and does not block message delivery.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "Users must not read message history directly from the durable store, bypassing room authorization.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=database, type=sync)"
+        },
+        {
+          "id": "x02",
+          "statement": "A full-text index is invented although the prompt has no search requirement.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=search_index)"
+        },
+        {
+          "id": "x03",
+          "statement": "A CDN is invented although the prompt is about chat, not media delivery.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "Long-lived connections, durable ordered history, offline catch-up. Tests that the model does not let users read durable history directly and does not add search or media delivery."
+    },
+    {
+      "id": "ev_13",
+      "title": "Contradiction: single region and region-loss survival",
+      "category": "adversarial",
+      "adversarial_kind": "contradiction",
+      "prompt": "Design a system that must run entirely in one region to satisfy a data-residency requirement, and must also survive the loss of any single region without downtime. The application stores customer records and serves reads and writes continuously. Deliver a design and make the conflict explicit; do not silently drop either requirement.",
+      "expected_requirements": [
+        "The system runs entirely in one region.",
+        "The system survives the loss of any single region without downtime.",
+        "Customer records are stored and served continuously.",
+        "The conflict between the two constraints is made explicit.",
+        "Neither requirement is silently dropped."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A backend service serves reads and writes.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r02",
+          "statement": "Customer records are persisted durably.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=database)"
+        },
+        {
+          "id": "r03",
+          "statement": "The service reads and writes customer records.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=database, type=sync)"
+        },
+        {
+          "id": "r04",
+          "statement": "A blocking contradiction flag names the conflict.",
+          "check": "deterministic",
+          "predicate": "flag_present(kind=contradiction, severity=blocking)"
+        },
+        {
+          "id": "r05",
+          "statement": "The graph has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r06",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r07",
+          "statement": "The delivered design does not silently drop either the single-region constraint or the region-loss requirement.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "A search index is invented although the prompt has no search requirement.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=search_index)"
+        },
+        {
+          "id": "x02",
+          "statement": "A CDN is invented although the prompt is about customer records, not media delivery.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x03",
+          "statement": "The client must not read or write customer records directly.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=database, type=sync)"
+        }
+      ],
+      "blocking_flag_expected": "required",
+      "expected_assumptions": [],
+      "notes": "Contradiction between single-region residency and region-loss survival. Tests that the model flags the conflict as blocking and still delivers a design rather than silently dropping a requirement."
+    },
+    {
+      "id": "ev_14",
+      "title": "Vague: scale, cheap, and AI",
+      "category": "adversarial",
+      "adversarial_kind": "vague",
+      "prompt": "Design a system for our new product. It should scale to lots of users, stay cheap to run, and use AI somewhere useful. We have not decided what the product does yet. Make reasonable assumptions, state them visibly, and produce a design that we can discuss. Do not present invented product requirements as if we stated them.",
+      "expected_requirements": [
+        "The design scales to a stated number of users.",
+        "The design stays within a stated cost target.",
+        "An AI capability is included and its role is stated.",
+        "Assumptions are visible and invented product requirements are not presented as facts."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "The design stays small enough to discuss.",
+          "check": "deterministic",
+          "predicate": "component_count(lte=12)"
+        },
+        {
+          "id": "r02",
+          "statement": "The graph has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r03",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r04",
+          "statement": "The design states visible assumptions about scale, cost, and the AI feature.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r05",
+          "statement": "The design does not present invented product requirements as facts.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The client must not read or write the durable store directly.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=database, type=sync)"
+        },
+        {
+          "id": "x02",
+          "statement": "The client must not invoke a background processor directly.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=worker, type=sync)"
+        },
+        {
+          "id": "x03",
+          "statement": "The client must not publish directly to the durable buffer.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=message_queue, type=sync)"
+        }
+      ],
+      "blocking_flag_expected": "optional",
+      "expected_assumptions": [
+        "An assumption quantifying 'lots of users', for example a concrete concurrent-user or request-rate figure.",
+        "An assumption defining 'cheap', for example a monthly infrastructure budget.",
+        "An assumption naming a concrete AI capability and where it fits."
+      ],
+      "notes": "Vague requirements. Tests that the model states visible assumptions about scale, cost, and the AI feature instead of inventing product requirements."
+    },
+    {
+      "id": "ev_15",
+      "title": "Impossible: global strong consistency under 10 ms at zero cost",
+      "category": "adversarial",
+      "adversarial_kind": "impossible",
+      "prompt": "Design a system with globally strong consistency for all reads and writes, write latency under 10 milliseconds for users on every continent, and zero infrastructure cost. The system must never lose an acknowledged write. Deliver a design and make the impossibility explicit; do not pretend the constraints can all be met.",
+      "expected_requirements": [
+        "All reads and writes are globally strongly consistent.",
+        "Write latency is under 10 ms on every continent.",
+        "Infrastructure cost is zero.",
+        "An acknowledged write is never lost.",
+        "The impossibility of satisfying all constraints is made explicit.",
+        "The design does not pretend the constraints can all be met."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A backend service handles reads and writes.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r02",
+          "statement": "State is persisted durably.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=database)"
+        },
+        {
+          "id": "r03",
+          "statement": "The service reads and writes state.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=service, to_type=database, type=sync)"
+        },
+        {
+          "id": "r04",
+          "statement": "A blocking contradiction flag names the impossible combination.",
+          "check": "deterministic",
+          "predicate": "flag_present(kind=contradiction, severity=blocking)"
+        },
+        {
+          "id": "r05",
+          "statement": "The graph has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r06",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r07",
+          "statement": "The design does not pretend the constraints can all be met.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The client must not read or write the durable store directly.",
+          "check": "deterministic",
+          "predicate": "connection_exists(from_type=client, to_type=database, type=sync)"
+        },
+        {
+          "id": "x02",
+          "statement": "A search index is invented although the prompt has no search requirement.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=search_index)"
+        },
+        {
+          "id": "x03",
+          "statement": "A message queue is invented although the prompt has no asynchronous requirement.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=message_queue)"
+        }
+      ],
+      "blocking_flag_expected": "required",
+      "expected_assumptions": [],
+      "notes": "Impossible combination of global strong consistency, sub-10 ms writes, and zero cost. Tests that the model flags the impossibility as blocking and does not pretend it is solved."
+    }
+  ]
+}

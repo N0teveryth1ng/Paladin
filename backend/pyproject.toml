@@ -22,4 +22,4 @@ pythonpath = ["."]
 testpaths = ["tests"]
 
 [tool.setuptools]
-packages = ["app", "app.model"]
+packages = ["app", "app.eval", "app.model"]
