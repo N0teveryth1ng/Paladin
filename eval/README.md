@@ -102,11 +102,16 @@ adjusted after seeing results. A model that fails is reported as failed.
 
 ## Frozen hash and step 3 handoff
 
-On approval, the SHA-256 of `eval/eval_set.json` is recorded here:
+**Status: frozen** on 12 November 2026, on step 2 approval.
 
 ```
-SHA-256: pending approval
+SHA-256: 280E2E4145A2034BC73C213D59374BF94779666D3A25E407F5F60BB1F9C024DC
+File:    eval/eval_set.json
+Bytes:   55854
 ```
+
+This is the SHA-256 of `eval/eval_set.json` as approved. The file must not change.
+Any change requires a `eval/CHANGELOG.md` entry, a new version, and a new hash.
 
 Step 3 must:
 

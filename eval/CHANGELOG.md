@@ -3,7 +3,11 @@
 The set is frozen when step 2 is approved. Every later change is recorded here
 with its reason and the evidence that forced it.
 
-## 1.0 — 12 November 2026 — initial set, frozen on approval
+## 1.0 — 12 November 2026 — initial set, **frozen** 12 November 2026
+
+Status: **frozen**. SHA-256 `280E2E4145A2034BC73C213D59374BF94779666D3A25E407F5F60BB1F9C024DC`
+(55,854 bytes), recorded in `eval/README.md`. No change is permitted without an
+entry here, a version bump and a new hash.
 
 - 15 prompts: 4 simple, 4 medium, 4 complex, 3 adversarial
   (1 contradiction, 1 vague, 1 impossible).
