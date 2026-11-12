@@ -1,0 +1,18 @@
+[project]
+name = "paladin-backend"
+version = "0.1.0"
+description = "AI-native system design whiteboard - architecture graph model"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.11,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "jsonschema>=4.22",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

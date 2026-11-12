@@ -1,0 +1,618 @@
+{
+  "$defs": {
+    "Assumption": {
+      "additionalProperties": false,
+      "properties": {
+        "element_refs": {
+          "description": "Component, connection or group IDs this assumption applies to. Empty for global assumptions.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Element Refs",
+          "type": "array"
+        },
+        "id": {
+          "pattern": "^asm_[a-z0-9_]{1,40}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "rationale": {
+          "description": "Why the assumption is needed, i.e. what the prompt left open.",
+          "maxLength": 600,
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/AssumptionScope",
+          "description": "'global' when it applies to the whole design, 'element' when it is attached to specific elements."
+        },
+        "text": {
+          "description": "The assumption, stated plainly so the user can accept or reject it.",
+          "maxLength": 600,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "scope",
+        "rationale"
+      ],
+      "title": "Assumption",
+      "type": "object"
+    },
+    "AssumptionScope": {
+      "enum": [
+        "global",
+        "element"
+      ],
+      "title": "AssumptionScope",
+      "type": "string"
+    },
+    "Component": {
+      "additionalProperties": false,
+      "properties": {
+        "assumed": {
+          "description": "True when this element is not derived from a stated requirement but from an assumption or a recommendation. Required on every element.",
+          "title": "Assumed",
+          "type": "boolean"
+        },
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Free-form string map, at most 12 entries. Reserved keys are validated: 'replicas' must be a non-negative integer string; 'protocol' must be one of http, https, grpc, websocket, tcp, sql, amqp, other; 'consistency' must be one of strong, eventual, causal, not_applicable. All other keys are free-form, lowercase snake_case.",
+          "maxProperties": 12,
+          "title": "Attributes",
+          "type": "object"
+        },
+        "description": {
+          "description": "What this component is responsible for, in one or two sentences.",
+          "maxLength": 400,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^cmp_[a-z0-9_]{1,40}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "rationale": {
+          "anyOf": [
+            {
+              "maxLength": 600,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Why this element exists or why it is assumed. Required when assumed is true.",
+          "title": "Rationale"
+        },
+        "requirement_refs": {
+          "description": "IDs of the requirements this element serves. Must be non-empty when assumed is false.",
+          "items": {
+            "pattern": "^req_[a-z0-9_]{1,40}$",
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Requirement Refs",
+          "type": "array"
+        },
+        "technology": {
+          "anyOf": [
+            {
+              "maxLength": 60,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional concrete technology label, e.g. 'Kafka' for a message_queue. v1 abstraction level: generic type plus optional technology.",
+          "title": "Technology"
+        },
+        "type": {
+          "$ref": "#/$defs/ComponentType"
+        }
+      },
+      "required": [
+        "assumed",
+        "id",
+        "type",
+        "name",
+        "description"
+      ],
+      "title": "Component",
+      "type": "object"
+    },
+    "ComponentType": {
+      "enum": [
+        "client",
+        "api_gateway",
+        "load_balancer",
+        "service",
+        "worker",
+        "database",
+        "cache",
+        "message_queue",
+        "object_storage",
+        "cdn",
+        "auth_provider",
+        "search_index",
+        "scheduler",
+        "external_service"
+      ],
+      "title": "ComponentType",
+      "type": "string"
+    },
+    "Connection": {
+      "additionalProperties": false,
+      "properties": {
+        "assumed": {
+          "description": "True when this element is not derived from a stated requirement but from an assumption or a recommendation. Required on every element.",
+          "title": "Assumed",
+          "type": "boolean"
+        },
+        "from": {
+          "description": "ID of the component the connection starts at.",
+          "pattern": "^cmp_[a-z0-9_]{1,40}$",
+          "title": "From",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^cnx_[a-z0-9_]{1,40}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "description": "What flows or what the call does, e.g. 'publishes transcode jobs'.",
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "rationale": {
+          "anyOf": [
+            {
+              "maxLength": 600,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Why this element exists or why it is assumed. Required when assumed is true.",
+          "title": "Rationale"
+        },
+        "requirement_refs": {
+          "description": "IDs of the requirements this element serves. Must be non-empty when assumed is false.",
+          "items": {
+            "pattern": "^req_[a-z0-9_]{1,40}$",
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Requirement Refs",
+          "type": "array"
+        },
+        "technology": {
+          "anyOf": [
+            {
+              "maxLength": 60,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional concrete technology label, e.g. 'gRPC' or 'Kafka'.",
+          "title": "Technology"
+        },
+        "to": {
+          "description": "ID of the component the connection ends at.",
+          "pattern": "^cmp_[a-z0-9_]{1,40}$",
+          "title": "To",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/ConnectionType",
+          "description": "'sync' for request/response, 'async' for fire-and-forget or streaming."
+        }
+      },
+      "required": [
+        "assumed",
+        "id",
+        "from",
+        "to",
+        "type",
+        "label"
+      ],
+      "title": "Connection",
+      "type": "object"
+    },
+    "ConnectionType": {
+      "enum": [
+        "sync",
+        "async"
+      ],
+      "title": "ConnectionType",
+      "type": "string"
+    },
+    "Domain": {
+      "description": "v1 supports exactly one domain. Widening becomes an explicit change.",
+      "enum": [
+        "web_backend"
+      ],
+      "title": "Domain",
+      "type": "string"
+    },
+    "Flag": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "description": "The problem, naming the conflicting or missing requirement text.",
+          "maxLength": 600,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^flg_[a-z0-9_]{1,40}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/FlagKind"
+        },
+        "requirement_refs": {
+          "description": "Requirements involved in the problem.",
+          "items": {
+            "pattern": "^req_[a-z0-9_]{1,40}$",
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Requirement Refs",
+          "type": "array"
+        },
+        "resolved_by": {
+          "anyOf": [
+            {
+              "pattern": "^asm_[a-z0-9_]{1,40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The assumption that resolves the flag. Must be null for blocking flags.",
+          "title": "Resolved By"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity",
+          "description": "'blocking' when the conflict cannot be resolved without the user; the design is still delivered."
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "description",
+        "severity"
+      ],
+      "title": "Flag",
+      "type": "object"
+    },
+    "FlagKind": {
+      "enum": [
+        "contradiction",
+        "underspecified",
+        "unverifiable"
+      ],
+      "title": "FlagKind",
+      "type": "string"
+    },
+    "Group": {
+      "additionalProperties": false,
+      "properties": {
+        "assumed": {
+          "description": "True when this element is not derived from a stated requirement but from an assumption or a recommendation. Required on every element.",
+          "title": "Assumed",
+          "type": "boolean"
+        },
+        "description": {
+          "description": "What this boundary represents, e.g. a tier, a domain, or a deployment unit.",
+          "maxLength": 400,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^grp_[a-z0-9_]{1,40}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "members": {
+          "description": "Component IDs contained in this group.",
+          "items": {
+            "pattern": "^cmp_[a-z0-9_]{1,40}$",
+            "type": "string"
+          },
+          "maxItems": 40,
+          "minItems": 1,
+          "title": "Members",
+          "type": "array"
+        },
+        "name": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "parent_id": {
+          "anyOf": [
+            {
+              "pattern": "^grp_[a-z0-9_]{1,40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Parent group ID. At most one level of nesting in v1.",
+          "title": "Parent Id"
+        },
+        "rationale": {
+          "anyOf": [
+            {
+              "maxLength": 600,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Why this element exists or why it is assumed. Required when assumed is true.",
+          "title": "Rationale"
+        },
+        "requirement_refs": {
+          "description": "IDs of the requirements this element serves. Must be non-empty when assumed is false.",
+          "items": {
+            "pattern": "^req_[a-z0-9_]{1,40}$",
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Requirement Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "assumed",
+        "id",
+        "name",
+        "description",
+        "members"
+      ],
+      "title": "Group",
+      "type": "object"
+    },
+    "Requirement": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^req_[a-z0-9_]{1,40}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/RequirementKind"
+        },
+        "source": {
+          "$ref": "#/$defs/RequirementSource",
+          "description": "'prompt' when stated by the user, 'inferred' when derived from the prompt."
+        },
+        "text": {
+          "description": "The requirement as stated in the prompt, or a near-verbatim restatement.",
+          "maxLength": 600,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "kind",
+        "source"
+      ],
+      "title": "Requirement",
+      "type": "object"
+    },
+    "RequirementKind": {
+      "enum": [
+        "functional",
+        "non_functional",
+        "constraint"
+      ],
+      "title": "RequirementKind",
+      "type": "string"
+    },
+    "RequirementSource": {
+      "enum": [
+        "prompt",
+        "inferred"
+      ],
+      "title": "RequirementSource",
+      "type": "string"
+    },
+    "RunMeta": {
+      "additionalProperties": false,
+      "properties": {
+        "base_url": {
+          "description": "OpenAI-compatible base URL used for the run.",
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Base Url",
+          "type": "string"
+        },
+        "generated_at": {
+          "description": "UTC timestamp of generation.",
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "model": {
+          "description": "Model identifier as sent to the endpoint.",
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "provider": {
+          "description": "e.g. 'zhipu' or 'openrouter'.",
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider",
+        "model",
+        "base_url",
+        "generated_at"
+      ],
+      "title": "RunMeta",
+      "type": "object"
+    },
+    "Severity": {
+      "enum": [
+        "blocking",
+        "warning"
+      ],
+      "title": "Severity",
+      "type": "string"
+    }
+  },
+  "$id": "https://paladin.local/schema/architecture.stored.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The stored architecture record: the draft plus the run envelope injected by the harness.",
+  "properties": {
+    "assumptions": {
+      "items": {
+        "$ref": "#/$defs/Assumption"
+      },
+      "maxItems": 40,
+      "title": "Assumptions",
+      "type": "array"
+    },
+    "components": {
+      "items": {
+        "$ref": "#/$defs/Component"
+      },
+      "maxItems": 120,
+      "minItems": 1,
+      "title": "Components",
+      "type": "array"
+    },
+    "connections": {
+      "items": {
+        "$ref": "#/$defs/Connection"
+      },
+      "maxItems": 300,
+      "title": "Connections",
+      "type": "array"
+    },
+    "domain": {
+      "$ref": "#/$defs/Domain",
+      "description": "Injected by the harness. v1 supports only 'web_backend'."
+    },
+    "flags": {
+      "items": {
+        "$ref": "#/$defs/Flag"
+      },
+      "maxItems": 20,
+      "title": "Flags",
+      "type": "array"
+    },
+    "groups": {
+      "items": {
+        "$ref": "#/$defs/Group"
+      },
+      "maxItems": 20,
+      "title": "Groups",
+      "type": "array"
+    },
+    "meta": {
+      "$ref": "#/$defs/RunMeta",
+      "description": "Injected by the harness: provider, model, base URL, timestamp."
+    },
+    "prompt": {
+      "description": "The user prompt, verbatim, for traceability and evaluation.",
+      "maxLength": 8000,
+      "minLength": 1,
+      "title": "Prompt",
+      "type": "string"
+    },
+    "requirements": {
+      "items": {
+        "$ref": "#/$defs/Requirement"
+      },
+      "maxItems": 40,
+      "minItems": 1,
+      "title": "Requirements",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "description": "Injected by the harness. Current version is '1.0'.",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "summary": {
+      "description": "A short prose description of the design and its main trade-offs.",
+      "maxLength": 800,
+      "minLength": 1,
+      "title": "Summary",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "summary",
+    "requirements",
+    "components",
+    "schema_version",
+    "prompt",
+    "domain",
+    "meta"
+  ],
+  "title": "Architecture",
+  "type": "object"
+}

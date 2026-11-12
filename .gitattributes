@@ -1,0 +1,11 @@
+# Normalise line endings so the repo is byte-identical across platforms.
+* text=auto eol=lf
+
+# Binary assets
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
