@@ -258,6 +258,19 @@ repeatedly emits `blocking` + `resolved_by`, that is evidence about how well it 
 count. The rule is never relaxed to reduce retries; if a model cannot satisfy it, that model
 fails evaluation and another is tried.
 
+### 12.1 Connection-type definitions the generation system prompt must use
+
+Step 3's generation system prompt must define the two connection types exactly as the step 2
+rubrics use them, and must not paraphrase them:
+
+- `sync` — the caller waits for the receiver to respond before continuing.
+- `async` — the caller does not wait for the receiver to process the work; handing work to a
+  queue or event stream is `async`.
+
+Rationale: the deterministic rubrics match `type=sync` and `type=async` literally. A model
+that labels a queue hand-off `sync` fails those items for a vocabulary reason, not a design
+reason, and the result would be uninterpretable.
+
 ---
 
 ## 13. Stop condition

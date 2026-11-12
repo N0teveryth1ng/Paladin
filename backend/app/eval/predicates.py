@@ -83,6 +83,7 @@ _ALLOWED: dict[str, dict[str, str]] = {
         "type": "connection_type",
         "label": "string",
     },
+    "path_exists": {"from_type": "component_type", "to_type": "component_type"},
     "no_connection": {"from_type": "component_type", "to_type": "component_type"},
     "no_component": {"type": "component_type"},
     "group_exists": {"member_type": "component_type"},
@@ -96,6 +97,7 @@ _ALLOWED: dict[str, dict[str, str]] = {
 _REQUIRED: dict[str, tuple[str, ...]] = {
     "component_exists": ("type",),
     "connection_exists": ("from_type", "to_type"),
+    "path_exists": ("from_type", "to_type"),
     "no_connection": ("from_type", "to_type"),
     "no_component": ("type",),
     "group_exists": ("member_type",),

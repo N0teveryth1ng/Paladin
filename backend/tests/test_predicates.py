@@ -44,6 +44,14 @@ from app.eval.predicates import Argument, Predicate, PredicateError, parse
             ),
         ),
         (
+            "path_exists(from_type=client, to_type=service)",
+            "path_exists",
+            (
+                Argument("from_type", "=", "client"),
+                Argument("to_type", "=", "service"),
+            ),
+        ),
+        (
             "no_connection(from_type=client, to_type=database)",
             "no_connection",
             (
@@ -110,6 +118,8 @@ def test_unknown_function_is_rejected() -> None:
         "group_exists(member_type=queues)",
         "connection_exists(from_type=service, to_type=nope, type=sync)",
         "connection_exists(from_type=service, to_type=service, type=synchronous)",
+        "path_exists(from_type=queue, to_type=service)",
+        "path_exists(from_type=client, to_type=services)",
         "flag_present(kind=problem, severity=blocking)",
         "flag_present(kind=contradiction, severity=fatal)",
         "no_flag(severity=error)",
@@ -130,6 +140,10 @@ def test_unknown_enum_value_is_rejected(text: str) -> None:
         "flag_present(severity=blocking)",
         "connection_exists(from_type=service)",
         "connection_exists(from_type=service, to_type=message_queue)",
+        "path_exists(from_type=client)",
+        "path_exists()",
+        "path_exists(from_type=client, to_type=service, type=sync)",
+        "path_exists(from_type=client, from_type=service, to_type=service)",
         "no_connection(from_type=client)",
         "group_exists()",
         "component_count()",

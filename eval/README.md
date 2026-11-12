@@ -25,6 +25,7 @@ component_exists(type=<ComponentType>)
 component_exists(type=<ComponentType>, technology~="<substring>")
 connection_exists(from_type=<T>, to_type=<T>, type=sync|async)
 connection_exists(from_type=<T>, to_type=<T>, label~="<substring>")
+path_exists(from_type=<T>, to_type=<T>)
 no_connection(from_type=<T>, to_type=<T>)
 no_component(type=<ComponentType>)
 group_exists(member_type=<ComponentType>)
@@ -38,6 +39,12 @@ component_count(lte=<int>)
 `app.eval.predicates.parse` validates the function, arguments, operators and
 enum values. It deliberately does **not** evaluate a predicate against an
 architecture. Evaluation is step 3.
+
+`path_exists(from_type=<T>, to_type=<T>)` means: the graph contains a directed
+chain of connections, of either type, from some component of the first type to
+some component of the second type, through any number of intermediate
+components. Direct-edge `connection_exists` items stay direct: they never match
+a chain.
 
 Anything the grammar cannot express is a `human` item. Human items are scored
 by the product owner only. There is no LLM judge.
@@ -79,6 +86,8 @@ adjusted after seeing results. A model that fails is reported as failed.
   label names a real product that fits its component type."**
 - `expected_requirements` is reference material for the human scorer. It is not
   machine-scored.
+- `expected_assumptions` is likewise reference material for the human scorer. It
+  is enforced only where a rubric item says so, which today is only `ev_14 r04`.
 - A human `must_not_include` item is a violation the product owner can report;
   it is never inferred by an LLM.
 

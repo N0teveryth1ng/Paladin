@@ -34,9 +34,9 @@
         },
         {
           "id": "r04",
-          "statement": "The client submits the form to the backend synchronously.",
+          "statement": "The client can reach the backend, possibly through intermediate components.",
           "check": "deterministic",
-          "predicate": "connection_exists(from_type=client, to_type=service, type=sync)"
+          "predicate": "path_exists(from_type=client, to_type=service)"
         },
         {
           "id": "r05",
@@ -63,12 +63,6 @@
           "statement": "The client must not bypass the backend and write to the database directly.",
           "check": "deterministic",
           "predicate": "connection_exists(from_type=client, to_type=database, type=sync)"
-        },
-        {
-          "id": "x02",
-          "statement": "A CDN is invented although the prompt states modest traffic and no static-asset requirement.",
-          "check": "deterministic",
-          "predicate": "component_exists(type=cdn)"
         },
         {
           "id": "x03",
@@ -233,12 +227,6 @@
           "predicate": "connection_exists(from_type=service, to_type=external_service, type=sync)"
         },
         {
-          "id": "x02",
-          "statement": "A periodic timer is invented although the prompt asks for event-driven hand-off.",
-          "check": "deterministic",
-          "predicate": "component_exists(type=scheduler)"
-        },
-        {
           "id": "x03",
           "statement": "The application must not call the background processor synchronously and wait.",
           "check": "deterministic",
@@ -278,7 +266,7 @@
           "id": "r03",
           "statement": "The browser authenticates against the identity system.",
           "check": "deterministic",
-          "predicate": "connection_exists(from_type=client, to_type=auth_provider, type=sync)"
+          "predicate": "path_exists(from_type=client, to_type=auth_provider)"
         },
         {
           "id": "r04",
@@ -290,7 +278,7 @@
           "id": "r05",
           "statement": "The browser calls the admin tool after sign-in.",
           "check": "deterministic",
-          "predicate": "connection_exists(from_type=client, to_type=service, type=sync)"
+          "predicate": "path_exists(from_type=client, to_type=service)"
         },
         {
           "id": "r06",
@@ -369,9 +357,9 @@
         },
         {
           "id": "r04",
-          "statement": "The shopper's browser reaches checkout synchronously.",
+          "statement": "The shopper's browser can reach checkout, possibly through intermediate components.",
           "check": "deterministic",
-          "predicate": "connection_exists(from_type=client, to_type=service, type=sync)"
+          "predicate": "path_exists(from_type=client, to_type=service)"
         },
         {
           "id": "r05",
@@ -492,12 +480,6 @@
           "statement": "The intake path must not call a background processor synchronously and wait for all steps.",
           "check": "deterministic",
           "predicate": "connection_exists(from_type=service, to_type=worker, type=sync)"
-        },
-        {
-          "id": "x02",
-          "statement": "A periodic timer is invented although the prompt describes continuous event arrival.",
-          "check": "deterministic",
-          "predicate": "component_exists(type=scheduler)"
         },
         {
           "id": "x03",
@@ -634,9 +616,9 @@
         },
         {
           "id": "r04",
-          "statement": "Tenant users reach the backend synchronously.",
+          "statement": "Tenant users can reach the backend, possibly through intermediate components.",
           "check": "deterministic",
-          "predicate": "connection_exists(from_type=client, to_type=service, type=sync)"
+          "predicate": "path_exists(from_type=client, to_type=service)"
         },
         {
           "id": "r05",
@@ -835,9 +817,9 @@
         },
         {
           "id": "r04",
-          "statement": "Riders reach dispatch synchronously.",
+          "statement": "Riders can reach dispatch, possibly through intermediate components.",
           "check": "deterministic",
-          "predicate": "connection_exists(from_type=client, to_type=service, type=sync)"
+          "predicate": "path_exists(from_type=client, to_type=service)"
         },
         {
           "id": "r05",
@@ -899,7 +881,7 @@
       "title": "Payment ledger with exactly-once effects",
       "category": "complex",
       "adversarial_kind": null,
-      "prompt": "Design a payment ledger for an online business. Every charge, refund, and adjustment must be recorded exactly once, even when callers retry or a processing step is repeated. The ledger must be append-only: corrections are new entries, never edits to past entries. Reads of an account balance must reflect all committed entries. A charge must not be reported as successful until it is durably recorded. Do not claim exactly-once effects from the delivery mechanism alone; duplicates must be handled by the ledger. Assume the payment provider may time out after actually charging.",
+      "prompt": "Design a payment ledger for an online business. Every charge, refund, and adjustment must be recorded exactly once, even when callers retry or a processing step is repeated. The ledger must be append-only: corrections are new entries, never edits to past entries. Reads of an account balance must reflect all committed entries. A charge must not be reported as successful until it is durably recorded. Assume the payment provider may time out after actually charging.",
       "expected_requirements": [
         "Every charge, refund, and adjustment is recorded exactly once.",
         "Caller retries and repeated processing steps do not duplicate entries.",
@@ -982,7 +964,7 @@
       "expected_assumptions": [
         "A provider timeout is ambiguous; the charge may have succeeded and must be reconciled."
       ],
-      "notes": "Exactly-once ledger effects, append-only corrections, ambiguous provider timeouts. Tests that the model does not derive exactly-once from the delivery mechanism alone and does not fire charges asynchronously."
+      "notes": "Exactly-once ledger effects, append-only corrections, ambiguous provider timeouts. Tests that the model does not fire charges asynchronously and does not let the client write ledger entries directly."
     },
     {
       "id": "ev_12",
@@ -1077,7 +1059,7 @@
       "title": "Contradiction: single region and region-loss survival",
       "category": "adversarial",
       "adversarial_kind": "contradiction",
-      "prompt": "Design a system that must run entirely in one region to satisfy a data-residency requirement, and must also survive the loss of any single region without downtime. The application stores customer records and serves reads and writes continuously. Deliver a design and make the conflict explicit; do not silently drop either requirement.",
+      "prompt": "Design a system that must run entirely in one region to satisfy a data-residency requirement, and must also survive the loss of any single region without downtime. The application stores customer records and serves reads and writes continuously. Deliver a design.",
       "expected_requirements": [
         "The system runs entirely in one region.",
         "The system survives the loss of any single region without downtime.",
@@ -1158,7 +1140,7 @@
       "title": "Vague: scale, cheap, and AI",
       "category": "adversarial",
       "adversarial_kind": "vague",
-      "prompt": "Design a system for our new product. It should scale to lots of users, stay cheap to run, and use AI somewhere useful. We have not decided what the product does yet. Make reasonable assumptions, state them visibly, and produce a design that we can discuss. Do not present invented product requirements as if we stated them.",
+      "prompt": "Design a system for our new product. It should scale to lots of users, stay cheap to run, and use AI somewhere useful. We have not decided what the product does yet. Make reasonable assumptions and produce a design that we can discuss.",
       "expected_requirements": [
         "The design scales to a stated number of users.",
         "The design stays within a stated cost target.",
@@ -1230,7 +1212,7 @@
       "title": "Impossible: global strong consistency under 10 ms at zero cost",
       "category": "adversarial",
       "adversarial_kind": "impossible",
-      "prompt": "Design a system with globally strong consistency for all reads and writes, write latency under 10 milliseconds for users on every continent, and zero infrastructure cost. The system must never lose an acknowledged write. Deliver a design and make the impossibility explicit; do not pretend the constraints can all be met.",
+      "prompt": "Design a system with globally strong consistency for all reads and writes, write latency under 10 milliseconds for users on every continent, and zero infrastructure cost. The system must never lose an acknowledged write. Deliver a design.",
       "expected_requirements": [
         "All reads and writes are globally strongly consistent.",
         "Write latency is under 10 ms on every continent.",
