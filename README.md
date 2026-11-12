@@ -45,15 +45,27 @@ schema/                generated JSON Schema artifacts (committed)
 docs/                  step plans and decisions
 ```
 
+## Setup
+
+Project-local virtual environment, no global installs:
+
+```powershell
+cd backend
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
+```
+
 ## Usage
 
 ```powershell
 cd backend
-python -m app.model.export_schema   # regenerate schema/*.json
-python -m pytest -v                 # run the test suite
+.\.venv\Scripts\python.exe -m pytest -v                 # run the test suite
+.\.venv\Scripts\python.exe -m app.model.export_schema   # regenerate schema/*.json
 ```
 
-Requires Python 3.11+, `pydantic>=2.11`, and for development `pytest` + `jsonschema`.
+Requires Python 3.11+. All dependencies are declared in `backend/pyproject.toml`;
+`.venv/` is git-ignored.
 
 ## The model in one paragraph
 

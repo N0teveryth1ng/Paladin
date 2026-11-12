@@ -243,7 +243,24 @@ This is a scoring rule for step 2. Nothing in step 1 implements or pre-empts it.
 
 ---
 
-## 12. Stop condition
+## 12. Step 3 handoff — retry telemetry for the blocking-flag rule
+
+The harness must record how often the model's output is rejected **only** because of the
+`severity: blocking` requires `resolved_by: null` rule (project decision 5). Track, per model:
+
+- total generation attempts and schema-invalid attempts;
+- attempts whose only violation was `blocking flag cannot be resolved by an assumption`;
+- whether a retry after that specific violation succeeded, and on which attempt.
+
+Rationale: this rule is a deliberate quality gate, not a formatting nicety. If a free model
+repeatedly emits `blocking` + `resolved_by`, that is evidence about how well it models
+"unresolved", and it must be visible in the step 3 report rather than absorbed into a retry
+count. The rule is never relaxed to reduce retries; if a model cannot satisfy it, that model
+fails evaluation and another is tried.
+
+---
+
+## 13. Stop condition
 
 On approval of this plan I implement only the deliverables in Section 5, run the tests, and report each acceptance criterion with real output. I do not start step 2, do not write the evaluation set, do not build the harness, and do not touch `docs/prompts/`.
 

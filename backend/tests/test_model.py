@@ -265,6 +265,30 @@ def test_clean_fixtures_have_no_reference_issues() -> None:
     assert ArchitectureDraft.model_validate(load("full_coverage_architecture.json")).check_references() == []
 
 
+def test_check_references_reports_unknown_group_parent() -> None:
+    """A parent_id that names no group must be reported, not raised."""
+    raw = small()
+    raw["groups"][0]["parent_id"] = "grp_missing_parent"
+
+    draft = ArchitectureDraft.model_validate(raw)
+    issues = draft.check_references()
+
+    assert [issue.kind for issue in issues] == [IssueKind.UNKNOWN_GROUP_PARENT]
+    assert issues[0].element_id == "grp_backend"
+    assert "grp_missing_parent" in issues[0].message
+
+
+def test_check_references_reports_self_parent_group() -> None:
+    raw = small()
+    raw["groups"][0]["parent_id"] = "grp_backend"
+
+    draft = ArchitectureDraft.model_validate(raw)
+    issues = draft.check_references()
+
+    assert [issue.kind for issue in issues] == [IssueKind.SELF_PARENT_GROUP]
+    assert issues[0].element_id == "grp_backend"
+
+
 # 12 --------------------------------------------------------------------
 def test_blocking_flag_parses_and_is_delivered() -> None:
     draft = ArchitectureDraft.model_validate(load("small_architecture.json"))
