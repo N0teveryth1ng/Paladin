@@ -19,3 +19,8 @@ Thumbs.db
 
 # Local scratch
 *.local.*
+
+# Secrets and run artefacts (never commit keys or results)
+.env
+runs/
+scratch/runs/

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "sc_01",
+    "title": "File sharing with expiring links",
+    "kind": "clean",
+    "prompt": "Design a service for sharing large files between coworkers. A sender uploads a file and gets a link that expires after seven days. Recipients must be able to resume an interrupted download. Files must not be readable by anyone who does not have the link. Assume files up to 5 GB and modest usage."
+  },
+  {
+    "id": "sc_02",
+    "title": "Sensor telemetry intake",
+    "kind": "clean",
+    "prompt": "Design the intake path for sensor telemetry. Thousands of devices report readings every few seconds. Readings arrive out of order and occasionally duplicated. Operators need a live view of the last known value per device, and a durable history for later analysis. Assume devices reconnect often."
+  },
+  {
+    "id": "sc_03",
+    "title": "Meeting-room booking",
+    "kind": "clean",
+    "prompt": "Design a meeting-room booking system for one office. Employees see which rooms are free and reserve a slot. Two people must never end up holding the same room at the same time. Bookings can be cancelled, and a room's calendar must survive a restart. Assume about 200 employees."
+  },
+  {
+    "id": "sc_04",
+    "title": "Offline field inspection",
+    "kind": "contradictory",
+    "prompt": "Design a field-inspection app for technicians working in areas with no network. Technicians must be able to complete an inspection entirely offline for several days, and every edit they make must be visible immediately to every other technician and to the back office."
+  },
+  {
+    "id": "sc_05",
+    "title": "Internal operations tool",
+    "kind": "vague",
+    "prompt": "Design an internal tool for our operations team. It should be quick and dependable. We have not settled what it needs to do yet. Use your judgement and produce something we can review."
+  }
+]

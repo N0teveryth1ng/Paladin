@@ -1,0 +1,203 @@
+{
+  "title": "URL Shortener",
+  "summary": "A single-region URL shortener. Writes go through an API gateway to a shortener service backed by PostgreSQL; redirects are served from a Redis cache in front of the database. The prompt contains a genuine conflict between the single-region constraint and the region-failover constraint, so the design is delivered with a blocking flag.",
+  "requirements": [
+    {
+      "id": "req_create",
+      "text": "Users can create a short link from a long URL.",
+      "kind": "functional",
+      "source": "prompt"
+    },
+    {
+      "id": "req_latency",
+      "text": "Redirects must complete in under 50 ms at p95.",
+      "kind": "non_functional",
+      "source": "prompt"
+    },
+    {
+      "id": "req_single_region",
+      "text": "The system must run in a single region.",
+      "kind": "constraint",
+      "source": "prompt"
+    },
+    {
+      "id": "req_region_failover",
+      "text": "The system must survive the loss of any single region.",
+      "kind": "constraint",
+      "source": "prompt"
+    }
+  ],
+  "components": [
+    {
+      "id": "cmp_web",
+      "type": "client",
+      "name": "Web Client",
+      "technology": "React",
+      "description": "Browser application where users create short links and follow redirects.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_create"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_gateway",
+      "type": "api_gateway",
+      "name": "API Gateway",
+      "technology": "Kong",
+      "description": "Single entry point for create and redirect traffic.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_create",
+        "req_latency"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_shortener",
+      "type": "service",
+      "name": "Shortener Service",
+      "technology": "FastAPI",
+      "description": "Creates short codes and resolves them to target URLs.",
+      "attributes": {
+        "replicas": "2"
+      },
+      "requirement_refs": [
+        "req_create",
+        "req_latency"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_db",
+      "type": "database",
+      "name": "Link Database",
+      "technology": "PostgreSQL",
+      "description": "Durable store of short code to target URL mappings.",
+      "attributes": {
+        "consistency": "strong",
+        "replicas": "3"
+      },
+      "requirement_refs": [
+        "req_create"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_cache",
+      "type": "cache",
+      "name": "Redirect Cache",
+      "technology": "Redis",
+      "description": "Hot redirect mappings, keeping p95 redirect latency under budget.",
+      "attributes": {
+        "consistency": "not_applicable",
+        "protocol": "tcp"
+      },
+      "requirement_refs": [
+        "req_latency"
+      ],
+      "assumed": false,
+      "rationale": null
+    }
+  ],
+  "connections": [
+    {
+      "id": "cnx_client_gateway",
+      "from": "cmp_web",
+      "to": "cmp_gateway",
+      "type": "sync",
+      "label": "HTTPS requests",
+      "technology": "https",
+      "requirement_refs": [
+        "req_create"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_gateway_service",
+      "from": "cmp_gateway",
+      "to": "cmp_shortener",
+      "type": "sync",
+      "label": "forwarded request",
+      "technology": "http",
+      "requirement_refs": [
+        "req_create",
+        "req_latency"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_service_db",
+      "from": "cmp_shortener",
+      "to": "cmp_db",
+      "type": "sync",
+      "label": "read/write link mappings",
+      "technology": "sql",
+      "requirement_refs": [
+        "req_create"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_service_cache",
+      "from": "cmp_shortener",
+      "to": "cmp_cache",
+      "type": "sync",
+      "label": "cache lookup",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_latency"
+      ],
+      "assumed": false,
+      "rationale": null
+    }
+  ],
+  "groups": [
+    {
+      "id": "grp_backend",
+      "name": "Backend Tier",
+      "description": "Everything that runs behind the public edge.",
+      "members": [
+        "cmp_gateway",
+        "cmp_shortener",
+        "cmp_db",
+        "cmp_cache"
+      ],
+      "parent_id": null,
+      "requirement_refs": [
+        "req_create"
+      ],
+      "assumed": false,
+      "rationale": null
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "asm_no_expiry",
+      "text": "Short links never expire and there is no deletion workflow in v1.",
+      "scope": "global",
+      "element_refs": [],
+      "rationale": "The prompt does not state a retention or expiry policy."
+    }
+  ],
+  "flags": [
+    {
+      "id": "flg_region_conflict",
+      "kind": "contradiction",
+      "description": "req_single_region requires a single region while req_region_failover requires surviving the loss of any single region. Both cannot hold.",
+      "requirement_refs": [
+        "req_single_region",
+        "req_region_failover"
+      ],
+      "severity": "blocking",
+      "resolved_by": null
+    }
+  ]
+}

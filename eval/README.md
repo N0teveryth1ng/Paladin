@@ -11,8 +11,15 @@ their rubrics. It is versioned (`eval_set_version: "1.0"`) and validated by
 | `eval/eval_set.json` | The 15 prompts, rubrics, blocking-flag expectations and expected assumptions. |
 | `eval/README.md` | This protocol: gate, pass rules, set bar, human scoring, change control, frozen hash. |
 | `eval/CHANGELOG.md` | Every change after the set is frozen. |
+| `eval/freeze.json` | The frozen harness: eval-set hash, system-prompt hash, thresholds, shared settings, measurements and approval flag. |
 | `backend/app/eval/models.py` | Pydantic contract for the set. |
 | `backend/app/eval/predicates.py` | Parser and vocabulary validator for deterministic predicates. It does not evaluate predicates. |
+| `backend/app/eval/constants.py` | The one place thresholds and fixed settings live. |
+| `backend/app/eval/evaluate.py` | Predicate evaluation and the deterministic gate. |
+| `backend/app/eval/runner.py` | The frozen scored runner. Refuses on drift, missing approval, unmeasured tokens or an unknown model. |
+| `backend/app/eval/report.py` | Mechanical report, human-score ingestion and the human sheet. |
+| `prompts/system/architecture-v1.md` | The versioned generation system prompt. |
+| `scratch/scratch_prompts.json` | 5 non-eval prompts used only to choose transport settings and prompt wording. |
 | `backend/tests/test_eval_set.py` | Set-level validation and the prompt leak guard. |
 | `backend/tests/test_predicates.py` | Grammar acceptance and rejection tests. |
 
@@ -55,6 +62,9 @@ by the product owner only. There is no LLM judge.
 - Temperature, `max_tokens`, system prompt and schema are **identical across
   models and across runs**. Step 3 chooses those values and records them
   **before the first scored run**. They are never changed per model.
+- `response_mode` (`json_schema` or `schema_in_prompt`) is a transport
+  capability, so it **may differ per model**. It is recorded per model in
+  `eval/freeze.json` and reported per model. No other setting may differ.
 - A **run** passes the deterministic gate when:
   - every deterministic `must_include` item holds;
   - no deterministic `must_not_include` item is violated;
@@ -79,6 +89,35 @@ Report raw counts beside every percentage, per model, never averaged across
 models. The bar is fixed here, before generation code exists, and is never
 adjusted after seeing results. A model that fails is reported as failed.
 
+## Fixed settings and thresholds
+
+`backend/app/eval/constants.py` is the only place these values live.
+`eval/freeze.json` copies them, and `backend/tests/test_report.py` asserts the
+block below matches the module. No report may invent or recompute a bar.
+
+<!-- constants:begin -->
+```json
+{
+  "RUNS_PER_PROMPT": 3,
+  "GATE_RUNS_REQUIRED": 2,
+  "TOTAL_PROMPTS": 15,
+  "TOTAL_RUNS": 45,
+  "MIN_PROMPTS_PASSED": 13,
+  "TOTAL_COMPLEX": 4,
+  "MIN_COMPLEX_PASSED": 4,
+  "TOTAL_ADVERSARIAL": 3,
+  "MIN_ADVERSARIAL_PASSED": 3,
+  "MIN_FIRST_ATTEMPT_SCHEMA_VALID": 41,
+  "TEMPERATURE": 0.3,
+  "TIMEOUT_S": 120,
+  "MAX_ATTEMPTS": 3,
+  "TIMEOUT_RETRIES": 1,
+  "MAX_RATE_LIMIT_WAITS": 5,
+  "BACKOFF_SECONDS": [1, 2, 4, 8, 16]
+}
+```
+<!-- constants:end -->
+
 ## Human scoring
 
 - At most **3 human items per prompt**, scored by the product owner only.
@@ -91,6 +130,46 @@ adjusted after seeing results. A model that fails is reported as failed.
 - A human `must_not_include` item is a violation the product owner can report;
   it is never inferred by an LLM.
 
+### Human score file (step 3)
+
+Human scores live at `runs/<model>/human_scores.json`:
+
+```json
+{"model": "<name>", "scores": {"ev_01": {"r07": "pass"}}}
+```
+
+- One entry per human rubric item of the **first gate-passing run** of each
+  prompt.
+- Values are `pass` or `fail`. The agent never writes this file.
+- The report computes the verdict mechanically from it. If any required entry is
+  missing or not `pass`/`fail`, the report prints **`HUMAN SCORING INCOMPLETE`**
+  and no verdict.
+- A prompt passes only when at least **2 of 3** runs pass the deterministic gate
+  **and** every human item of the first gate-passing run is `pass`.
+
+### Infrastructure failures
+
+- `rate_limited` and `transport_error` are **infrastructure failures**, not
+  model failures.
+- They are excluded from every count, retried on the next invocation, and any
+  model with such runs remaining is reported as **`INCOMPLETE`** with no
+  verdict.
+- A timeout is retried once per run. A second timeout ends the run as
+  `timeout_failed`, which counts as a failed run and is not schema-valid on the
+  first attempt.
+- A model with fewer than 45 counted runs is also `INCOMPLETE`.
+
+### Human sheet
+
+`python -m app.eval.report` writes `runs/human_sheet.md` and
+`runs/human_sheet_key.json`.
+
+- The sheet shows, for each prompt's first gate-passing run: components (id,
+  type, technology), connections (from, to, type, label), groups, flags and
+  assumptions.
+- The sheet never shows a model name. Labels are `Model A`, `Model B`, …
+- The key file maps each label to its model name.
+
 ## Change control
 
 - The set is frozen when step 2 is approved.
@@ -99,6 +178,19 @@ adjusted after seeing results. A model that fails is reported as failed.
 - A prompt or rubric may be changed only because it was ambiguous, unfair, or
   mis-specified — never because a model scored badly on it.
 - No prompt text may be edited after seeing model output.
+
+### After a scored run
+
+- Any change to the system prompt, the harness settings, or the evaluator after
+  a scored run creates a **new version** in `eval/CHANGELOG.md`.
+- A new version requires a **full rerun of every model**. Earlier results stay
+  in the history; they are never overwritten or relabelled.
+- A harness bug found after scoring is handled the same way: fix, bump the
+  version, rerun all models.
+- No change may reference a specific evaluation prompt. Tuning is allowed only
+  on the scratch set, before the first scored run.
+- `scored_run_approved` in `eval/freeze.json` is `false` until the product owner
+  sets it to `true`. The agent must never set it.
 
 ## Frozen hash and step 3 handoff
 
