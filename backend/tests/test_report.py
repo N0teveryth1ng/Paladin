@@ -204,9 +204,16 @@ def test_blocking_flag_counts(tmp_path: Path) -> None:
     assert "Blocking flag optional: skipped (1 prompt(s))" in text
 
 
-def test_infrastructure_runs_are_excluded_and_make_the_model_incomplete(
+def test_orphan_infrastructure_record_does_not_change_the_45_slots(
     tmp_path: Path,
 ) -> None:
+    """A record for a prompt id outside the eval set is not one of the 45.
+
+    This is the dry-run case: ``ev_99`` never occupied a slot, so 45/45 stays
+    correct and the leftover record must be named explicitly, not counted as an
+    excluded slot.
+    """
+
     build_model(tmp_path, "model-a")
     infra_dir = tmp_path / "model-a" / "ev_99"
     infra_dir.mkdir(parents=True)
@@ -226,7 +233,58 @@ def test_infrastructure_runs_are_excluded_and_make_the_model_incomplete(
 
     text = report_for(tmp_path)
 
-    assert "Counted runs: 45/45 (infrastructure failures excluded: 1)" in text
+    assert "Counted runs: 45/45" in text
+    assert "Infrastructure records on eval-set slots" not in text
+    assert (
+        "Records outside the eval-set slots (ignored, not part of the 45): 1 "
+        "(prompt id(s): ev_99)"
+    ) in text
+    assert "Status: INCOMPLETE" not in text
+    assert "Verdict: PASS" in text
+
+
+def test_infrastructure_on_a_real_slot_makes_the_model_incomplete(
+    tmp_path: Path,
+) -> None:
+    build_model(tmp_path, "model-a")
+    # Replace a real counted run with an infrastructure record.
+    replaced = tmp_path / "model-a" / "ev_01" / "run-3.json"
+    record = json.loads(replaced.read_text(encoding="utf-8"))
+    record["final_status"] = "rate_limited"
+    record["attempts"] = []
+    replaced.write_text(json.dumps(record, indent=2), encoding="utf-8")
+
+    text = report_for(tmp_path)
+
+    assert "Counted runs: 44/45" in text
+    assert "Infrastructure records on eval-set slots (excluded from every count, retry): rate_limited=1" in text
+    assert "Status: INCOMPLETE" in text
+    assert "Reasons: counted 44/45; 1 eval-set slot(s) left as infrastructure" in text
+    assert "Verdict: none" in text
+
+
+def test_missing_slot_is_named_as_having_no_record(tmp_path: Path) -> None:
+    build_model(tmp_path, "model-a")
+    (tmp_path / "model-a" / "ev_02" / "run-1.json").unlink()
+
+    text = report_for(tmp_path)
+
+    assert "Counted runs: 44/45" in text
+    assert "Reasons: counted 44/45; 1 slot(s) have no record" in text
+    assert "Status: INCOMPLETE" in text
+
+
+def test_unrecognized_status_blocks_the_verdict(tmp_path: Path) -> None:
+    build_model(tmp_path, "model-a")
+    path = tmp_path / "model-a" / "ev_03" / "run-1.json"
+    record = json.loads(path.read_text(encoding="utf-8"))
+    record["final_status"] = "mystery"
+    path.write_text(json.dumps(record, indent=2), encoding="utf-8")
+
+    text = report_for(tmp_path)
+
+    assert "Counted runs: 44/45" in text
+    assert "Records with an unrecognized final_status: 1 (mystery)" in text
     assert "Status: INCOMPLETE" in text
     assert "Verdict: none" in text
 

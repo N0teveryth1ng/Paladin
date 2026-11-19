@@ -76,6 +76,31 @@ by the product owner only. There is no LLM judge.
   - `forbidden` — the prompt fails if a blocking flag is present.
   - `optional` — recorded, not scored.
 
+### Provider credentials
+
+Base URLs and keys are read from environment variables, falling back to the
+git-ignored `.env`. Values are never written to `eval/freeze.json`, a run
+record, a report, or a log.
+
+- The shared defaults are `LLM_BASE_URL`, `LLM_API_KEY` and `LLM_MODEL`.
+- A model entry in `eval/freeze.json` may name its own variables with
+  `base_url_env` and `api_key_env`. **Names only** are stored; values stay in
+  the environment or `.env`.
+- `model_id` overrides `LLM_MODEL` for that model's requests.
+- Each name must match `^[A-Z_][A-Z0-9_]*$`. A malformed name is a settings
+  error and no value is echoed.
+
+```json
+{
+  "model_id": "provider-model-id",
+  "base_url_env": "PROVIDER_BASE_URL",
+  "api_key_env": "PROVIDER_API_KEY",
+  "response_mode": "json_schema"
+}
+```
+
+A model entry without `base_url_env` or `api_key_env` uses the shared defaults.
+
 ## Set-level bar
 
 The set passes for a model only when **all** of these hold:
@@ -189,6 +214,9 @@ Human scores live at `runs/<model>/human_scores.json`:
   version, rerun all models.
 - No change may reference a specific evaluation prompt. Tuning is allowed only
   on the scratch set, before the first scored run.
+- Every calibration-time revision of `prompts/system/architecture-v1.md` is
+  recorded in `prompts/system/CHANGELOG.md` with a version bump, the scratch
+  evidence, and the before/after scratch result. Scratch evidence only.
 - `scored_run_approved` in `eval/freeze.json` is `false` until the product owner
   sets it to `true`. The agent must never set it.
 

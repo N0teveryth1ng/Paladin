@@ -8,9 +8,10 @@ line or a run record.
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Mapping
+from typing import Any, Mapping
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DOTENV_PATH = REPO_ROOT / ".env"
@@ -21,9 +22,18 @@ MODEL_VAR = "LLM_MODEL"
 
 REDACTED = "***"
 
+#: A model entry may name its own variables. Names only; values never appear.
+ENV_NAME_PATTERN = re.compile(r"^[A-Z_][A-Z0-9_]*$")
+
 
 class SettingsError(RuntimeError):
     """Raised when a required setting is absent. Names the variable only."""
+
+
+def _check_env_name(name: str, field_name: str) -> str:
+    if not isinstance(name, str) or not ENV_NAME_PATTERN.fullmatch(name):
+        raise SettingsError(f"invalid {field_name} name: {name!r}")
+    return name
 
 
 @dataclass(frozen=True, repr=False)
@@ -75,8 +85,22 @@ def read_dotenv(path: Path) -> dict[str, str]:
 def load_settings(
     env: Mapping[str, str] | None = None,
     dotenv_path: Path | None = None,
+    *,
+    base_url_var: str = BASE_URL_VAR,
+    api_key_var: str = API_KEY_VAR,
+    model_var: str = MODEL_VAR,
+    model_override: str | None = None,
 ) -> Settings:
-    """Load the three settings. The environment wins over ``.env``."""
+    """Load the settings. The environment wins over ``.env``.
+
+    The variable names are configurable so a model entry can point at its own
+    credentials. Only names are ever stored; values stay in the environment or
+    the git-ignored ``.env``.
+    """
+
+    base_url_var = _check_env_name(base_url_var, "base_url_env")
+    api_key_var = _check_env_name(api_key_var, "api_key_env")
+    model_var = _check_env_name(model_var, "model_env")
 
     environment = os.environ if env is None else env
     dotenv = read_dotenv(DOTENV_PATH if dotenv_path is None else dotenv_path)
@@ -89,8 +113,37 @@ def load_settings(
             raise SettingsError(f"missing required setting: {name}")
         return value
 
+    model = model_override if model_override else get(model_var)
     return Settings(
-        base_url=get(BASE_URL_VAR),
-        api_key=get(API_KEY_VAR),
-        model=get(MODEL_VAR),
+        base_url=get(base_url_var),
+        api_key=get(api_key_var),
+        model=model,
+    )
+
+
+def load_model_settings(
+    model_entry: Mapping[str, Any],
+    env: Mapping[str, str] | None = None,
+    dotenv_path: Path | None = None,
+) -> Settings:
+    """Load settings for one ``freeze.json`` model entry.
+
+    ``base_url_env`` and ``api_key_env`` default to the shared variables. A
+    ``model_id`` overrides ``LLM_MODEL`` for the request payload.
+    """
+
+    base_url_var = model_entry.get("base_url_env")
+    if base_url_var is None:
+        base_url_var = BASE_URL_VAR
+    api_key_var = model_entry.get("api_key_env")
+    if api_key_var is None:
+        api_key_var = API_KEY_VAR
+    model_id = model_entry.get("model_id")
+
+    return load_settings(
+        env=env,
+        dotenv_path=dotenv_path,
+        base_url_var=base_url_var,
+        api_key_var=api_key_var,
+        model_override=model_id,
     )

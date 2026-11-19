@@ -34,6 +34,7 @@ class Attempt:
     latency_ms: float | None = None
     usage: dict[str, Any] = field(default_factory=dict)
     blocking_flag_rule_only: bool = False
+    finish_reason: str | None = None
 
     def to_record(self) -> dict[str, Any]:
         return {
@@ -44,6 +45,7 @@ class Attempt:
             "latency_ms": self.latency_ms,
             "usage": dict(self.usage),
             "blocking_flag_rule_only": self.blocking_flag_rule_only,
+            "finish_reason": self.finish_reason,
         }
 
 
@@ -245,6 +247,7 @@ def generate(
                     outcome="schema_valid",
                     latency_ms=completion.latency_ms,
                     usage=dict(completion.usage),
+                    finish_reason=completion.finish_reason,
                 )
             )
             return GenerationResult("schema_valid", validation.draft, attempts)
@@ -258,6 +261,7 @@ def generate(
                 latency_ms=completion.latency_ms,
                 usage=dict(completion.usage),
                 blocking_flag_rule_only=validation.blocking_flag_rule_only,
+                finish_reason=completion.finish_reason,
             )
         )
 

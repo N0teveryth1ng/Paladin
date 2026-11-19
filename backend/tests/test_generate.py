@@ -175,6 +175,32 @@ def test_usage_and_latency_are_recorded() -> None:
     assert attempt.latency_ms == pytest.approx(12.5)
 
 
+def test_finish_reason_is_recorded_per_attempt() -> None:
+    client = StubClient([INVALID_JSON, VALID])
+    result = generate(client, "Design something.", config())
+
+    assert [attempt.finish_reason for attempt in result.attempts] == ["stop", "stop"]
+    assert [
+        attempt.to_record()["finish_reason"] for attempt in result.attempts
+    ] == ["stop", "stop"]
+
+
+def test_length_finish_reason_is_kept_on_the_attempt() -> None:
+    truncated = Completion(
+        text=INVALID_JSON,
+        usage={"completion_tokens": 10},
+        latency_ms=1.0,
+        finish_reason="length",
+    )
+    client = StubClient([truncated, VALID])
+    result = generate(client, "Design something.", config())
+
+    assert result.status == "schema_valid"
+    assert result.attempts[0].finish_reason == "length"
+    assert result.attempts[0].to_record()["finish_reason"] == "length"
+    assert result.attempts[1].finish_reason == "stop"
+
+
 def test_schema_in_prompt_mode_puts_the_schema_in_the_system_message() -> None:
     client = StubClient([VALID])
     result = generate(client, "Design something.", config("schema_in_prompt"))

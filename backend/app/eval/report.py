@@ -46,12 +46,54 @@ class ModelAnalysis:
     model: str
     counted: list[dict[str, Any]] = field(default_factory=list)
     infrastructure: list[dict[str, Any]] = field(default_factory=list)
+    outside_slots: list[dict[str, Any]] = field(default_factory=list)
+    duplicate_records: list[dict[str, Any]] = field(default_factory=list)
+    unrecognized: list[dict[str, Any]] = field(default_factory=list)
     prompts: dict[str, PromptAnalysis] = field(default_factory=dict)
     human_file_present: bool = False
 
     @property
+    def missing_slots(self) -> int:
+        return max(
+            constants.TOTAL_RUNS
+            - len(self.counted)
+            - len(self.infrastructure)
+            - len(self.unrecognized),
+            0,
+        )
+
+    @property
     def incomplete(self) -> bool:
-        return bool(self.infrastructure) or len(self.counted) < constants.TOTAL_RUNS
+        """A verdict needs all 45 eval-set slots filled by counted runs.
+
+        A record whose prompt id / run index is not an eval-set slot never was
+        part of the 45, so it is reported but does not by itself block a
+        verdict. An infrastructure record on a real slot does block it.
+        """
+
+        return (
+            bool(self.infrastructure)
+            or len(self.counted) < constants.TOTAL_RUNS
+            or bool(self.unrecognized)
+        )
+
+    @property
+    def incomplete_reasons(self) -> list[str]:
+        reasons: list[str] = []
+        if len(self.counted) < constants.TOTAL_RUNS:
+            parts = [f"counted {len(self.counted)}/{constants.TOTAL_RUNS}"]
+            if self.infrastructure:
+                parts.append(
+                    f"{len(self.infrastructure)} eval-set slot(s) left as infrastructure"
+                )
+            if self.missing_slots:
+                parts.append(f"{self.missing_slots} slot(s) have no record")
+            reasons.append("; ".join(parts))
+        if self.unrecognized:
+            reasons.append(
+                f"{len(self.unrecognized)} record(s) with an unrecognized final_status"
+            )
+        return reasons
 
     @property
     def human_incomplete(self) -> bool:
@@ -179,7 +221,17 @@ def _model_dirs(runs_dir: Path) -> list[Path]:
     return sorted(
         path
         for path in runs_dir.iterdir()
-        if path.is_dir() and any(path.glob("ev_*/run-*.json"))
+        if path.is_dir() and _record_paths(path)
+    )
+
+
+def _record_paths(model_dir: Path) -> list[Path]:
+    """Run records only. ``run-N.architecture.json`` is payload, not a record."""
+
+    return sorted(
+        path
+        for path in model_dir.glob("ev_*/run-*.json")
+        if not path.name.endswith(".architecture.json")
     )
 
 
@@ -201,18 +253,53 @@ def analyse_model(
     scores = (human_scores or {}).get("scores") or {}
 
     records: list[dict[str, Any]] = []
-    for path in sorted(model_dir.glob("ev_*/run-*.json")):
+    for path in _record_paths(model_dir):
         try:
             records.append(_load_json(path))
         except (OSError, json.JSONDecodeError):
             continue
 
+    valid_slots = {
+        (prompt.id, run_index)
+        for prompt in eval_set.prompts
+        for run_index in range(1, constants.RUNS_PER_PROMPT + 1)
+    }
+
+    # One record per eval-set slot. Anything else is reported, never counted.
+    by_slot: dict[tuple[Any, Any], list[dict[str, Any]]] = {}
     for record in records:
-        status = record.get("final_status")
-        if status in constants.INFRASTRUCTURE_STATUSES:
-            analysis.infrastructure.append(record)
-        elif status in constants.TERMINAL_STATUSES:
-            analysis.counted.append(record)
+        slot = (record.get("prompt_id"), record.get("run_index"))
+        if slot not in valid_slots:
+            analysis.outside_slots.append(record)
+            continue
+        by_slot.setdefault(slot, []).append(record)
+
+    for slot in sorted(by_slot, key=lambda item: (str(item[0]), str(item[1]))):
+        slot_records = by_slot[slot]
+        terminal = [
+            record
+            for record in slot_records
+            if record.get("final_status") in constants.TERMINAL_STATUSES
+        ]
+        infrastructure = [
+            record
+            for record in slot_records
+            if record.get("final_status") in constants.INFRASTRUCTURE_STATUSES
+        ]
+
+        if terminal:
+            chosen = terminal[-1]
+            analysis.counted.append(chosen)
+        elif infrastructure:
+            chosen = infrastructure[-1]
+            analysis.infrastructure.append(chosen)
+        else:
+            chosen = slot_records[-1]
+            analysis.unrecognized.append(chosen)
+
+        analysis.duplicate_records.extend(
+            record for record in slot_records if record is not chosen
+        )
 
     for prompt in eval_set.prompts:
         prompt_analysis = PromptAnalysis(prompt=prompt)
@@ -250,9 +337,40 @@ def _render_model(analysis: ModelAnalysis) -> str:
 
     lines = [f"## Model: {analysis.model}", ""]
     lines.append(
-        f"- Counted runs: {len(analysis.counted)}/{constants.TOTAL_RUNS} "
-        f"(infrastructure failures excluded: {len(analysis.infrastructure)})"
+        f"- Counted runs: {len(analysis.counted)}/{constants.TOTAL_RUNS}"
     )
+    if analysis.infrastructure:
+        kinds: dict[str, int] = {}
+        for run in analysis.infrastructure:
+            kind = run.get("final_status") or "unknown"
+            kinds[kind] = kinds.get(kind, 0) + 1
+        detail = ", ".join(f"{kind}={count}" for kind, count in sorted(kinds.items()))
+        lines.append(
+            "- Infrastructure records on eval-set slots "
+            f"(excluded from every count, retry): {detail}"
+        )
+    if analysis.outside_slots:
+        prompt_ids = sorted(
+            {str(run.get("prompt_id")) for run in analysis.outside_slots}
+        )
+        lines.append(
+            "- Records outside the eval-set slots (ignored, not part of the "
+            f"{constants.TOTAL_RUNS}): {len(analysis.outside_slots)} "
+            f"(prompt id(s): {', '.join(prompt_ids)})"
+        )
+    if analysis.duplicate_records:
+        lines.append(
+            "- Duplicate records for a filled slot (ignored): "
+            f"{len(analysis.duplicate_records)}"
+        )
+    if analysis.unrecognized:
+        statuses = sorted(
+            {str(run.get("final_status")) for run in analysis.unrecognized}
+        )
+        lines.append(
+            "- Records with an unrecognized final_status: "
+            f"{len(analysis.unrecognized)} ({', '.join(statuses)})"
+        )
     lines.append(
         "- Prompts passing the deterministic gate "
         f"({constants.GATE_RUNS_REQUIRED} of {constants.RUNS_PER_PROMPT}): "
@@ -293,13 +411,6 @@ def _render_model(analysis: ModelAnalysis) -> str:
         f"- Blocking-flag-rule-only retries: {retries} "
         f"(resolved {resolved}, unresolved {unresolved})"
     )
-    if analysis.infrastructure:
-        kinds: dict[str, int] = {}
-        for run in analysis.infrastructure:
-            kind = run.get("final_status") or "unknown"
-            kinds[kind] = kinds.get(kind, 0) + 1
-        detail = ", ".join(f"{kind}={count}" for kind, count in sorted(kinds.items()))
-        lines.append(f"- Infrastructure failures remaining: {detail}")
 
     failing = [
         prompt_id
@@ -312,6 +423,9 @@ def _render_model(analysis: ModelAnalysis) -> str:
     lines.append("")
     if analysis.incomplete:
         lines.append("Status: INCOMPLETE")
+        reasons = analysis.incomplete_reasons
+        if reasons:
+            lines.append(f"Reasons: {'; '.join(reasons)}")
     if analysis.human_incomplete:
         missing = [
             f"{prompt_id} {item}"

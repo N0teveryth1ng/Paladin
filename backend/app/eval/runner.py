@@ -356,12 +356,13 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     from app.llm.client import ChatClient
-    from app.llm.settings import SettingsError, load_settings
+    from app.llm.settings import SettingsError, load_model_settings
 
     try:
         # Refuse on frozen-harness problems before asking for credentials.
-        check_preconditions(_load_json(DEFAULT_FREEZE), DEFAULT_EVAL_SET, args.model)
-        settings = load_settings()
+        freeze = _load_json(DEFAULT_FREEZE)
+        check_preconditions(freeze, DEFAULT_EVAL_SET, args.model)
+        settings = load_model_settings(freeze["models"][args.model])
         client = ChatClient(
             base_url=settings.base_url,
             api_key=settings.api_key,

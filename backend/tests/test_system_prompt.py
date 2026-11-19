@@ -92,6 +92,36 @@ def test_loads_and_is_versioned() -> None:
     assert re.fullmatch(r"[0-9A-F]{64}", SYSTEM_PROMPT_SHA256)
 
 
+def test_prompt_header_matches_the_declared_version() -> None:
+    header = load_system_prompt().splitlines()[0]
+    assert header == f"# Architecture generation — system prompt v{SYSTEM_PROMPT_VERSION}"
+
+
+def test_changelog_records_the_current_version_and_hash() -> None:
+    changelog = (REPO_ROOT / "prompts" / "system" / "CHANGELOG.md").read_text(
+        encoding="utf-8"
+    )
+    headings = list(re.finditer(r"^## (\d+\.\d+)\b.*$", changelog, re.MULTILINE))
+    assert headings, "the calibration log has no version entry"
+
+    entries: list[tuple[str, str]] = []
+    for index, heading in enumerate(headings):
+        end = (
+            headings[index + 1].start()
+            if index + 1 < len(headings)
+            else len(changelog)
+        )
+        entries.append((heading.group(1), changelog[heading.start() : end]))
+
+    version, latest = entries[-1]
+    assert version == SYSTEM_PROMPT_VERSION
+    assert SYSTEM_PROMPT_SHA256 in latest
+
+    for _version, entry in entries:
+        assert "Scratch evidence:" in entry
+        assert "Before/after scratch result:" in entry
+
+
 def test_connection_definitions_are_verbatim() -> None:
     text = " ".join(load_system_prompt().split())
     definitions = _section_12_1_definitions()
