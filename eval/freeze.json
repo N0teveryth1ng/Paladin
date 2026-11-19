@@ -28,9 +28,136 @@
       16
     ]
   },
-  "max_tokens": null,
-  "max_tokens_measurements": [],
+  "max_tokens": 32768,
+  "max_tokens_measurements": [
+    {
+      "model": "nemotron-3.5-super-vl",
+      "model_id": "nvidia/nemotron-3.5-super-vl:free",
+      "mode": "json_schema",
+      "prompt_id": "sc_01",
+      "cap": 8192,
+      "output_tokens": 11763,
+      "max_attempt_output_tokens": 6059,
+      "finish_reason": "stop",
+      "retries": 1,
+      "measurement_usable": true
+    },
+    {
+      "model": "nemotron-3.5-super-vl",
+      "model_id": "nvidia/nemotron-3.5-super-vl:free",
+      "mode": "json_schema",
+      "prompt_id": "sc_02",
+      "cap": 8192,
+      "output_tokens": 10579,
+      "max_attempt_output_tokens": 6481,
+      "finish_reason": "stop",
+      "retries": 1,
+      "measurement_usable": true
+    },
+    {
+      "model": "nemotron-3.5-super-vl",
+      "model_id": "nvidia/nemotron-3.5-super-vl:free",
+      "mode": "json_schema",
+      "prompt_id": "sc_03",
+      "cap": 8192,
+      "output_tokens": 7322,
+      "max_attempt_output_tokens": 7322,
+      "finish_reason": "stop",
+      "retries": 0,
+      "measurement_usable": true
+    },
+    {
+      "model": "nemotron-3.5-super-vl",
+      "model_id": "nvidia/nemotron-3.5-super-vl:free",
+      "mode": "json_schema",
+      "prompt_id": "sc_04",
+      "cap": 16384,
+      "output_tokens": 6301,
+      "max_attempt_output_tokens": 6301,
+      "finish_reason": "stop",
+      "retries": 0,
+      "measurement_usable": true
+    },
+    {
+      "model": "nemotron-3.5-super-vl",
+      "model_id": "nvidia/nemotron-3.5-super-vl:free",
+      "mode": "json_schema",
+      "prompt_id": "sc_05",
+      "cap": 8192,
+      "output_tokens": 7600,
+      "max_attempt_output_tokens": 7600,
+      "finish_reason": "stop",
+      "retries": 0,
+      "measurement_usable": true
+    },
+    {
+      "model": "nemotron-3.5-super-vl",
+      "model_id": "nvidia/nemotron-3.5-super-vl:free",
+      "mode": "schema_in_prompt",
+      "prompt_id": "sc_01",
+      "cap": 16384,
+      "output_tokens": 9925,
+      "max_attempt_output_tokens": 9925,
+      "finish_reason": "stop",
+      "retries": 0,
+      "measurement_usable": true
+    },
+    {
+      "model": "nemotron-3.5-super-vl",
+      "model_id": "nvidia/nemotron-3.5-super-vl:free",
+      "mode": "schema_in_prompt",
+      "prompt_id": "sc_02",
+      "cap": 16384,
+      "output_tokens": 14291,
+      "max_attempt_output_tokens": 9694,
+      "finish_reason": "stop",
+      "retries": 1,
+      "measurement_usable": true
+    },
+    {
+      "model": "nemotron-3.5-super-vl",
+      "model_id": "nvidia/nemotron-3.5-super-vl:free",
+      "mode": "schema_in_prompt",
+      "prompt_id": "sc_03",
+      "cap": 16384,
+      "output_tokens": 9838,
+      "max_attempt_output_tokens": 9838,
+      "finish_reason": "stop",
+      "retries": 0,
+      "measurement_usable": true
+    },
+    {
+      "model": "nemotron-3.5-super-vl",
+      "model_id": "nvidia/nemotron-3.5-super-vl:free",
+      "mode": "schema_in_prompt",
+      "prompt_id": "sc_04",
+      "cap": 16384,
+      "output_tokens": 9005,
+      "max_attempt_output_tokens": 9005,
+      "finish_reason": "stop",
+      "retries": 0,
+      "measurement_usable": true
+    },
+    {
+      "model": "nemotron-3.5-super-vl",
+      "model_id": "nvidia/nemotron-3.5-super-vl:free",
+      "mode": "schema_in_prompt",
+      "prompt_id": "sc_05",
+      "cap": 8192,
+      "output_tokens": 6000,
+      "max_attempt_output_tokens": 6000,
+      "finish_reason": "stop",
+      "retries": 0,
+      "measurement_usable": true
+    }
+  ],
   "reasoning_transform": null,
-  "models": {},
+  "models": {
+    "nemotron-3.5-super-vl": {
+      "model_id": "nvidia/nemotron-3.5-super-vl:free",
+      "response_mode": "schema_in_prompt",
+      "notes": "Measured 2026-11-19 on the free slug. 5/5 schema-valid in both modes. At the cap that succeeded, the first attempt was valid 4/5 in schema_in_prompt and 3/5 in json_schema. schema_in_prompt costs about 3800 extra prompt tokens. The model emits reasoning tokens alongside content; no reasoning transform is needed."
+    }
+  },
   "scored_run_approved": false
 }

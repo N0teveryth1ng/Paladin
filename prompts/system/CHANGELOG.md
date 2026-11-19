@@ -16,6 +16,17 @@ that changes mid-evaluation is detectable. There is one entry per invocation;
 every call in an invocation carries that invocation's date and slug. `calls`
 counts provider requests, including schema retries and truncation reruns.
 
+| Date (UTC) | Model slug | Mode | Calls | Result |
+|---|---|---|---:|---|
+| 2026-11-19 | `inclusionai/ling-3.2-flash:free` | `json_schema` | 8 | All calls truncated at 4096: `content: null`, `finish_reason: length`, 4096 reasoning tokens, ~11 min per call. 4 records + 1 in-flight + 3 diagnostics. |
+| 2026-11-19 | `nvidia/nemotron-3.5-super-vl:free` | `json_schema` | 15 | 5/5 schema-valid; first attempt valid 3/5 at the cap that succeeded. |
+| 2026-11-19 | `nvidia/nemotron-3.5-super-vl:free` | `schema_in_prompt` | 17 | 5/5 schema-valid; first attempt valid 4/5 at the cap that succeeded. |
+| 2026-11-19 | `google/gemma-4-31b-it:free` | `json_schema` | 0 counted | HTTP 429 from the upstream shared pool on every attempt; the provider did not count these against the daily limit. No scratch evidence. |
+
+The provider's `GET /api/v1/key` reported 42 free-model requests used on
+2026-11-19 (limit 50) after these calls. A 429 is stop-and-resume and was not
+retried.
+
 ## 1.0 — 19 November 2026
 
 Baseline, before calibration. No revision yet.
