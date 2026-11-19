@@ -7,7 +7,8 @@ import hashlib
 import json
 from pathlib import Path
 
-from app.api.config import startup_check
+import app.eval.runner as runner
+from app.api.config import DEFAULT_SCHEMA, build_generation_config, startup_check
 from app.llm.system_prompt import load_system_prompt
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -96,3 +97,34 @@ def test_committed_freeze_never_written(tmp_path: Path) -> None:
     assert COMMITTED_FREEZE.read_bytes() == COMMITTED_BYTES
     assert "selected_model" not in original()
     assert original()["scored_run_approved"] is False
+
+
+def test_endpoint_and_harness_build_identical_generation_configs(
+    tmp_path: Path,
+) -> None:
+    """Every GenerationConfig field is equal for the selected model.
+
+    The scored harness imports the endpoint's shared builder; this proves the
+    two paths produce field-for-field identical configs from the same frozen
+    inputs, with no drift in temperature, cap, timeout, attempts, response
+    mode, reasoning, system prompt or schema.
+    """
+
+    payload = json.loads(COMMITTED_BYTES.decode("utf-8"))
+    payload["selected_model"] = MODEL
+    path = tmp_path / "freeze-selected.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    endpoint_config = startup_check(path).config
+
+    model_entry = payload["models"][MODEL]
+    system_prompt = load_system_prompt()
+    schema = json.loads(DEFAULT_SCHEMA.read_text(encoding="utf-8"))
+    assert runner.build_generation_config is build_generation_config
+    harness_config = runner.build_generation_config(
+        payload, model_entry, system_prompt, schema
+    )
+
+    assert endpoint_config == harness_config
+    for field in endpoint_config.__dataclass_fields__:
+        assert getattr(endpoint_config, field) == getattr(harness_config, field), field
