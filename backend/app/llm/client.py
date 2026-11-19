@@ -2,7 +2,9 @@
 
 There is no provider branching: the base URL is configuration. Only
 ``message.content`` is read; ``reasoning_content`` and any other message field
-are ignored. The ``Authorization`` header is never logged.
+are ignored. A request may carry the provider's ``reasoning`` object, but that
+is a per-model setting, never a response transform. The ``Authorization`` header
+is never logged.
 """
 
 from __future__ import annotations
@@ -66,7 +68,7 @@ class Completion:
 
 
 class ChatClient:
-    def __init__(self, base_url: str, api_key: str, model: str, timeout_s: int = 120):
+    def __init__(self, base_url: str, api_key: str, model: str, timeout_s: int = 240):
         self.base_url = base_url.rstrip("/")
         self._api_key = api_key
         self.model = model
@@ -130,6 +132,7 @@ class ChatClient:
         temperature: float,
         max_tokens: int,
         response_format: dict[str, Any] | None = None,
+        reasoning: dict[str, Any] | None = None,
         timeout_s: int | None = None,
     ) -> Completion:
         payload: dict[str, Any] = {
@@ -140,6 +143,8 @@ class ChatClient:
         }
         if response_format is not None:
             payload["response_format"] = response_format
+        if reasoning is not None:
+            payload["reasoning"] = reasoning
 
         data, latency_ms = self._request(
             "/chat/completions",

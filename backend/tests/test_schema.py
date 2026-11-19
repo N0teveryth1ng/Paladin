@@ -127,6 +127,14 @@ def test_component_type_enum_has_exactly_fourteen_values() -> None:
     assert set(node["enum"]) == {member.value for member in ComponentType}
 
 
+def test_replicas_description_states_the_enforced_rule() -> None:
+    schema = build_generation_schema()
+    description = schema["$defs"]["Component"]["properties"]["attributes"]["description"]
+
+    assert "integer string of 1 to 4 digits" in description
+    assert "non-negative" not in description
+
+
 def test_connection_type_enum_has_exactly_two_values() -> None:
     schema = build_generation_schema()
     node = schema["$defs"]["ConnectionType"]

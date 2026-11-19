@@ -7,7 +7,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SYSTEM_PROMPT_PATH = REPO_ROOT / "prompts" / "system" / "architecture-v1.md"
-SYSTEM_PROMPT_VERSION = "1.0"
+SYSTEM_PROMPT_VERSION = "1.1"
 
 
 def load_system_prompt() -> str:

@@ -3,9 +3,11 @@
 Scratch runs choose the response mode, ``max_tokens`` and system-prompt wording.
 They are never scored and never counted.
 
-Every call records ``finish_reason``. A response truncated by the token cap
-(``finish_reason == "length"``) is rerun with a higher cap before its token count
-may be used for the ``max_tokens`` measurement.
+Every call records ``finish_reason``. By default a response truncated by the
+token cap (``finish_reason == "length"``) is rerun with a higher cap before its
+token count may be used for the ``max_tokens`` measurement. With
+``fixed_max_tokens`` there is no ladder: one call per prompt, and a ``length``
+finish at that cap is recorded as a truncation failure.
 
 A 429 stops the whole scratch invocation; it is never retried. Completed
 records are skipped on the next invocation, so a stop-and-resume costs only the
@@ -23,7 +25,13 @@ from typing import Any
 from app.eval import constants
 from app.llm.budget import BudgetExhausted, BudgetedClient
 from app.llm.client import ChatClient
-from app.llm.generate import RESPONSE_MODES, GenerationConfig, GenerationResult, generate
+from app.llm.generate import (
+    RESPONSE_MODES,
+    GenerationConfig,
+    GenerationResult,
+    generate,
+    validate_reasoning,
+)
 from app.llm.settings import (
     API_KEY_VAR,
     BASE_URL_VAR,
@@ -44,6 +52,9 @@ SCRATCH_MAX_CAPS = 4
 
 #: Hard cap per model invocation. 10 base calls + 6 recovery calls.
 SCRATCH_MAX_CALLS_PER_MODEL = 16
+
+#: The approved fixed-cap retest. One call per prompt, no ladder.
+SCRATCH_FIXED_MAX_TOKENS = 32768
 
 
 def load_scratch_prompts(path: Path = SCRATCH_PROMPTS_PATH) -> list[dict[str, Any]]:
@@ -91,13 +102,21 @@ def _settled(record: dict[str, Any]) -> bool:
 
     ``rate_limited`` and ``transport_error`` are the only statuses worth
     resuming. A schema-invalid result, a failed timeout, or truncation at the
-    ceiling is already the answer for that prompt.
+    ceiling is already the answer for that prompt. A fixed-cap record is never
+    rerun at a higher cap: its cap is the experiment.
     """
 
     if record.get("measurement_usable"):
         return True
     if record.get("final_status") in {"schema_invalid", "timeout_failed"}:
         return True
+    if record.get("fixed_max_tokens") is not None:
+        return record.get("final_status") in {
+            "schema_valid",
+            "schema_invalid",
+            "timeout_failed",
+            "truncated",
+        }
     if (
         record.get("truncated")
         and record.get("cap_used") == SCRATCH_MAX_TOKENS_CEILING
@@ -126,9 +145,18 @@ def run_scratch(
     schema_path: Path = SCHEMA_PATH,
     max_calls: int | None = SCRATCH_MAX_CALLS_PER_MODEL,
     force: bool = False,
+    fixed_max_tokens: int | None = None,
+    reasoning: dict[str, Any] | None = None,
 ) -> list[Path]:
     if mode not in RESPONSE_MODES:
         raise ValueError(f"unknown response mode: {mode!r}")
+    if fixed_max_tokens is not None and not (
+        1 <= fixed_max_tokens <= SCRATCH_MAX_TOKENS_CEILING
+    ):
+        raise ValueError(
+            f"fixed_max_tokens must be between 1 and {SCRATCH_MAX_TOKENS_CEILING}"
+        )
+    reasoning = validate_reasoning(reasoning)
 
     prompts = load_scratch_prompts(prompts_path)
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
@@ -148,12 +176,16 @@ def run_scratch(
         runs: list[dict[str, Any]] = []
         stop_after_record = False
         budget_stop = False
-        caps = _caps()
-        if not force and existing is not None and existing.get("truncated"):
-            # Resume the ladder above the cap that already truncated, so a
-            # resumed invocation does not repeat a cap it has already paid for.
-            last_cap = int(existing.get("cap_used") or 0)
-            caps = [cap for cap in caps if cap > last_cap] or [caps[-1]]
+        if fixed_max_tokens is not None:
+            # The approved fixed-cap retest: one call per prompt, no ladder.
+            caps = [fixed_max_tokens]
+        else:
+            caps = _caps()
+            if not force and existing is not None and existing.get("truncated"):
+                # Resume the ladder above the cap that already truncated, so a
+                # resumed invocation does not repeat a cap it has already paid for.
+                last_cap = int(existing.get("cap_used") or 0)
+                caps = [cap for cap in caps if cap > last_cap] or [caps[-1]]
         for cap in caps:
             config = GenerationConfig(
                 temperature=constants.TEMPERATURE,
@@ -163,6 +195,7 @@ def run_scratch(
                 response_mode=mode,
                 system_prompt=system_prompt,
                 schema=schema,
+                reasoning=reasoning,
             )
             try:
                 result = generate(budgeted, prompt["prompt"], config)
@@ -174,6 +207,8 @@ def run_scratch(
             runs.append(_run_payload(cap, result))
             if result.status == "rate_limited":
                 stop_after_record = True
+                break
+            if fixed_max_tokens is not None:
                 break
             if not any(reason == "length" for reason in runs[-1]["finish_reasons"]):
                 break
@@ -194,6 +229,12 @@ def run_scratch(
             and "length" not in final["finish_reasons"]
             and not budget_stop
         )
+        final_status = "budget_exhausted" if budget_stop else final["final_status"]
+        if fixed_max_tokens is not None and truncated and not budget_stop:
+            # At the approved fixed cap, truncation is the result, not a prompt
+            # to try a higher cap. It is a measurement failure.
+            final_status = "truncated"
+            measurement_usable = False
 
         record = {
             "model": model,
@@ -203,9 +244,11 @@ def run_scratch(
             "kind": prompt.get("kind"),
             "cap_used": final["cap"],
             "caps_tried": [run["cap"] for run in runs],
+            "fixed_max_tokens": fixed_max_tokens,
+            "reasoning": reasoning,
             "truncated": truncated,
             "measurement_usable": measurement_usable,
-            "final_status": "budget_exhausted" if budget_stop else final["final_status"],
+            "final_status": final_status,
             "first_attempt_schema_valid": final["first_attempt_schema_valid"],
             "calls": sum(len(run["attempts"]) for run in runs),
             "attempts": final["attempts"],
@@ -259,6 +302,20 @@ def main(argv: list[str] | None = None) -> int:
             f"(default {SCRATCH_MAX_CALLS_PER_MODEL})."
         ),
     )
+    parser.add_argument(
+        "--fixed-max-tokens",
+        type=int,
+        default=None,
+        help=(
+            "Use one fixed cap with no ladder. A length finish at that cap is "
+            "recorded as a truncation failure."
+        ),
+    )
+    parser.add_argument(
+        "--reasoning-disabled",
+        action="store_true",
+        help="Send reasoning: {enabled: false} on every request.",
+    )
     parser.add_argument("--force", action="store_true", help="Rerun settled records.")
     args = parser.parse_args(argv)
 
@@ -267,6 +324,7 @@ def main(argv: list[str] | None = None) -> int:
         "base_url_env": args.base_url_env,
         "api_key_env": args.api_key_env,
     }
+    reasoning = {"enabled": False} if args.reasoning_disabled else None
 
     try:
         settings = load_model_settings(entry)
@@ -283,6 +341,8 @@ def main(argv: list[str] | None = None) -> int:
             model_id=args.model_id,
             max_calls=args.max_calls,
             force=args.force,
+            fixed_max_tokens=args.fixed_max_tokens,
+            reasoning=reasoning,
         )
     except SettingsError as error:
         print(f"settings error: {error}", file=sys.stderr)

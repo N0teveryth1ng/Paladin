@@ -37,6 +37,35 @@ Baseline, before calibration. No revision yet.
 - Change: none
 - Before/after scratch result: not applicable (baseline)
 
+## 1.1 — 19 November 2026
+
+- Prompt: `prompts/system/architecture-v1.md`
+- SHA-256: `21A2D1F12A14EC4FFB3139E997F4F3A9D07F425A4156B1B1003870FFBA12D961`
+- Scratch evidence: `sc_01` and `sc_02` (`json_schema`) were the only
+  `json_schema` first attempts that failed validation, and every error was
+  assumption coupling: 10 elements in total — `sc_01` had 6 (connections
+  `8`/`9` with `assumed=True` and no `rationale`, groups `0`–`2` with
+  `assumed=False` and no `requirement_refs`, group `3` with `assumed=True`
+  and no `rationale`); `sc_02` had 4 (groups `0`–`2` with `assumed=False`
+  and no `requirement_refs`, group `3` with `assumed=True` and no
+  `rationale`). The remaining three prompts were valid on the first
+  attempt. `sc_02` (`schema_in_prompt`) separately emitted
+  `replicas="10000"`; that is a separate contract defect and is not cited
+  as evidence for this wording change.
+- Change: replaced the two-line Assumptions section with an explicit
+  two-form rule. `assumed: false` now requires at least one requirement id
+  in `requirement_refs`; `assumed: true` now requires a non-empty
+  sentence in `rationale`. The text states that an element presented as
+  fact with no requirement, or an assumption with no stated reason, is
+  invalid, and that one form must be chosen for each element.
+- Before/after scratch result: before — 2/5 `json_schema` first attempts
+  invalid, both assumption coupling (10 elements). After — not yet run;
+  the v1.1 retest is pre-registered below and will be recorded here before
+  any scored run.
+- Pre-registered acceptance rule: v1.1 is kept if the assumption-coupling
+  errors drop and no new error kind appears. If it is worse, revert to
+  1.0 and report. No further prompt changes without user approval.
+
 <!--
 Format for a calibration revision:
 

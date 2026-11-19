@@ -11,6 +11,7 @@ import pytest
 from app.llm.budget import BudgetExhausted
 from app.llm.client import Completion, RateLimitedError, TruncatedError
 from app.llm.scratch_runner import (
+    SCRATCH_FIXED_MAX_TOKENS,
     SCRATCH_MAX_TOKENS_CEILING,
     SCRATCH_START_MAX_TOKENS,
     load_scratch_prompts,
@@ -34,10 +35,12 @@ class CapStubClient:
     def __init__(self, decide: Callable[[int], Completion]):
         self.decide = decide
         self.caps: list[int] = []
+        self.kwargs: list[dict[str, Any]] = []
 
     def complete(self, messages: list[dict[str, str]], **kwargs: Any) -> Completion:
         cap = int(kwargs["max_tokens"])
         self.caps.append(cap)
+        self.kwargs.append(kwargs)
         return self.decide(cap)
 
 
@@ -224,6 +227,95 @@ def test_call_cap_stops_and_the_next_run_resumes_settled_prompts(
     assert second.caps == [SCRATCH_START_MAX_TOKENS] * 3
     assert len(written) == 3
     assert len(records(tmp_path, "json_schema")) == len(load_scratch_prompts())
+
+
+def test_fixed_cap_uses_one_call_per_prompt_and_no_ladder(tmp_path: Path) -> None:
+    client = CapStubClient(lambda cap: completion(VALID, "stop"))
+    run_scratch(
+        model="model-a",
+        mode="json_schema",
+        client=client,
+        out_dir=tmp_path,
+        fixed_max_tokens=SCRATCH_FIXED_MAX_TOKENS,
+    )
+
+    for record in records(tmp_path, "json_schema"):
+        assert record["caps_tried"] == [SCRATCH_FIXED_MAX_TOKENS]
+        assert record["cap_used"] == SCRATCH_FIXED_MAX_TOKENS
+        assert record["fixed_max_tokens"] == SCRATCH_FIXED_MAX_TOKENS
+        assert record["truncated"] is False
+        assert record["measurement_usable"] is True
+        assert record["final_status"] == "schema_valid"
+
+    assert client.caps == [SCRATCH_FIXED_MAX_TOKENS] * len(load_scratch_prompts())
+
+
+def test_fixed_cap_length_is_a_truncation_failure(tmp_path: Path) -> None:
+    client = CapStubClient(lambda cap: completion(VALID, "length"))
+    run_scratch(
+        model="model-a",
+        mode="json_schema",
+        client=client,
+        out_dir=tmp_path,
+        fixed_max_tokens=SCRATCH_FIXED_MAX_TOKENS,
+    )
+
+    for record in records(tmp_path, "json_schema"):
+        assert record["caps_tried"] == [SCRATCH_FIXED_MAX_TOKENS]
+        assert record["truncated"] is True
+        assert record["measurement_usable"] is False
+        assert record["final_status"] == "truncated"
+
+    assert client.caps == [SCRATCH_FIXED_MAX_TOKENS] * len(load_scratch_prompts())
+
+
+def test_fixed_truncation_is_settled_and_not_rerun(tmp_path: Path) -> None:
+    run_scratch(
+        model="model-a",
+        mode="json_schema",
+        client=CapStubClient(lambda cap: completion(VALID, "length")),
+        out_dir=tmp_path,
+        fixed_max_tokens=SCRATCH_FIXED_MAX_TOKENS,
+    )
+
+    second = CapStubClient(lambda cap: completion(VALID, "stop"))
+    written = run_scratch(
+        model="model-a",
+        mode="json_schema",
+        client=second,
+        out_dir=tmp_path,
+        fixed_max_tokens=SCRATCH_FIXED_MAX_TOKENS,
+    )
+
+    assert written == []
+    assert second.caps == []
+
+
+def test_fixed_cap_outside_the_ceiling_is_rejected(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="fixed_max_tokens"):
+        run_scratch(
+            model="model-a",
+            mode="json_schema",
+            client=CapStubClient(lambda cap: completion(VALID, "stop")),
+            out_dir=tmp_path,
+            fixed_max_tokens=SCRATCH_MAX_TOKENS_CEILING + 1,
+        )
+
+
+def test_reasoning_object_is_forwarded_to_every_call(tmp_path: Path) -> None:
+    client = CapStubClient(lambda cap: completion(VALID, "stop"))
+    run_scratch(
+        model="model-a",
+        mode="json_schema",
+        client=client,
+        out_dir=tmp_path,
+        fixed_max_tokens=SCRATCH_FIXED_MAX_TOKENS,
+        reasoning={"enabled": False},
+    )
+
+    assert all(kwargs["reasoning"] == {"enabled": False} for kwargs in client.kwargs)
+    for record in records(tmp_path, "json_schema"):
+        assert record["reasoning"] == {"enabled": False}
 
 
 def test_rate_limit_stops_the_scratch_run_and_resumes(tmp_path: Path) -> None:

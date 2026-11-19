@@ -29,6 +29,29 @@ BLOCKING_FLAG_RULE_TEXT = "a blocking flag cannot be resolved by an assumption"
 RESPONSE_MODES = ("json_schema", "schema_in_prompt")
 MAX_ERROR_TEXT = 800
 
+#: The only request-side reasoning field this harness sends. A model entry may
+#: disable reasoning with ``{"enabled": false}``; nothing else is accepted.
+REASONING_FIELDS = frozenset({"enabled"})
+
+
+def validate_reasoning(value: Any) -> dict[str, Any] | None:
+    """Validate a per-model ``reasoning`` request object.
+
+    Returns ``None`` for no object. A supplied object must have exactly the
+    boolean ``enabled`` field. The harness never guesses at provider-specific
+    reasoning controls.
+    """
+
+    if value is None:
+        return None
+    if not isinstance(value, dict) or set(value) != REASONING_FIELDS:
+        raise ValueError(
+            "reasoning must be an object with exactly the 'enabled' field"
+        )
+    if not isinstance(value["enabled"], bool):
+        raise ValueError("reasoning.enabled must be a boolean")
+    return dict(value)
+
 
 @dataclass(frozen=True)
 class Attempt:
@@ -74,10 +97,12 @@ class GenerationConfig:
     response_mode: str
     system_prompt: str
     schema: dict[str, Any]
+    reasoning: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         if self.response_mode not in RESPONSE_MODES:
             raise ValueError(f"unknown response mode: {self.response_mode!r}")
+        validate_reasoning(self.reasoning)
 
 
 @dataclass(frozen=True)
@@ -214,6 +239,7 @@ def generate(
                 temperature=config.temperature,
                 max_tokens=config.max_tokens,
                 response_format=response_format,
+                reasoning=config.reasoning,
                 timeout_s=config.timeout_s,
             )
         except LLMTimeoutError:

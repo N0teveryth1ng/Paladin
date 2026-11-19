@@ -150,7 +150,7 @@ block below matches the module. No report may invent or recompute a bar.
   "MIN_ADVERSARIAL_PASSED": 3,
   "MIN_FIRST_ATTEMPT_SCHEMA_VALID": 41,
   "TEMPERATURE": 0.3,
-  "TIMEOUT_S": 120,
+  "TIMEOUT_S": 240,
   "MAX_ATTEMPTS": 3,
   "TIMEOUT_RETRIES": 1,
   "MAX_RATE_LIMIT_WAITS": 5,

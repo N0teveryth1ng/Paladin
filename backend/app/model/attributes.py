@@ -27,7 +27,7 @@ RESERVED_KEYS: Final = ("replicas", "protocol", "consistency")
 
 ATTRIBUTES_DESCRIPTION: Final = (
     "Free-form string map, at most 12 entries. Reserved keys are validated: "
-    "'replicas' must be a non-negative integer string; "
+    "'replicas' must be an integer string of 1 to 4 digits; "
     "'protocol' must be one of http, https, grpc, websocket, tcp, sql, amqp, other; "
     "'consistency' must be one of strong, eventual, causal, not_applicable. "
     "All other keys are free-form, lowercase snake_case."

@@ -88,7 +88,7 @@ def find_leaks(text: str) -> list[str]:
 def test_loads_and_is_versioned() -> None:
     text = load_system_prompt()
     assert text.strip()
-    assert SYSTEM_PROMPT_VERSION == "1.0"
+    assert SYSTEM_PROMPT_VERSION == "1.1"
     assert re.fullmatch(r"[0-9A-F]{64}", SYSTEM_PROMPT_SHA256)
 
 
@@ -142,6 +142,14 @@ def test_narrow_severity_rules_are_present() -> None:
     assert "a clean prompt must not produce a blocking flag" in text
     for kind in ("contradiction", "underspecified", "unverifiable"):
         assert kind in text
+
+
+def test_assumption_rule_states_both_required_forms() -> None:
+    text = " ".join(load_system_prompt().split())
+    assert "requirement_refs` must list at least one requirement id" in text
+    assert "rationale` must be a non-empty sentence" in text
+    assert "Choose one form for each element" in text
+    assert "An assumption that is not stated is a defect" in text
 
 
 def test_technology_rule_is_present() -> None:

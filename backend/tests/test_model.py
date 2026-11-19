@@ -155,7 +155,7 @@ def test_replicas_accepts_non_negative_integer_strings(value: str) -> None:
     assert draft is not None
 
 
-@pytest.mark.parametrize("value", ["many", "-1", "3.5", "", "1e3"])
+@pytest.mark.parametrize("value", ["many", "-1", "3.5", "", "1e3", "10000"])
 def test_replicas_rejects_non_integer_strings(value: str) -> None:
     raw = small()
     component(raw, "cmp_db")["attributes"]["replicas"] = value

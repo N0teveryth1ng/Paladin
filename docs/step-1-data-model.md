@@ -138,11 +138,15 @@ Invariants:
 
 | Key | Rule |
 |---|---|
-| `replicas` | string that parses as a non-negative integer (`"3"`, not `"three"`, not `3`) |
+| `replicas` | integer string of 1 to 4 digits (`"3"`, not `"three"`, not `3`, not `"10000"`) |
 | `protocol` | one of a short fixed list (see Decisions) |
 | `consistency` | one of a short fixed list (see Decisions) |
 
 Validation is by **value shape only**, not by component type — no per-type typed models in v1.
+
+The enforced `replicas` rule is `^[0-9]{1,4}$`: one to four digits, so `"0"`
+and `"9999"` are accepted and `"10000"` is rejected. The schema description
+states that rule exactly; it is not a generic "non-negative integer" hint.
 
 ### 6.5 IDs
 
@@ -226,7 +230,7 @@ Hard-fail on shape; report on meaning. If the model raised on a dangling edge, s
 3. **Vocabularies — confirmed with `other` and `not_applicable`.** `protocol`: `http, https, grpc, websocket, tcp, sql, amqp, other`; `consistency`: `strong, eventual, causal, not_applicable`. Both validated.
 4. **Reserved keys are global — confirmed.** Not scoped by component type. Type-fit checks belong to step 4 as soft issues.
 5. **Blocking flag — confirmed.** Metadata, not failure; a draft containing one parses cleanly. `severity: blocking` requires `resolved_by: null`. Scoring rules are a step 2 concern (see Section 11).
-6. **Attribute values stay strings — confirmed.** `replicas` is validated as a non-negative integer string.
+6. **Attribute values stay strings — confirmed.** `replicas` is validated as an integer string of 1 to 4 digits (`^[0-9]{1,4}$`).
 7. **Boolean `assumed` + `rationale` — confirmed.** One group per component, one level of nesting, enforced as soft issues.
 
 ---

@@ -56,9 +56,11 @@ class StubClient:
     def __init__(self, responses: list[Any] | None = None):
         self.responses = list(responses or [])
         self.calls = 0
+        self.last_kwargs: dict[str, Any] = {}
 
     def complete(self, messages, **kwargs):
         self.calls += 1
+        self.last_kwargs = kwargs
         if self.responses:
             item = self.responses.pop(0)
             if isinstance(item, Exception):
@@ -187,10 +189,12 @@ def test_three_runs_per_prompt_with_every_field(tmp_path: Path) -> None:
             "max_tokens",
             "timeout_s",
             "response_mode",
+            "reasoning",
             "max_attempts",
         }
         assert record["settings"]["temperature"] == constants.TEMPERATURE
         assert record["settings"]["max_tokens"] == 1000
+        assert record["settings"]["reasoning"] is None
 
 
 def test_settings_are_identical_across_models_except_response_mode(
@@ -319,3 +323,52 @@ def test_scored_runner_never_opens_the_scratch_file(
 def test_preconditions_accept_the_shipped_freeze_shape(tmp_path: Path) -> None:
     payload = freeze()
     check_preconditions(payload, EVAL_SET, "test-model")
+
+
+def test_reasoning_is_forwarded_and_recorded(tmp_path: Path) -> None:
+    models = {
+        "test-model": {
+            "model_id": "test-model",
+            "response_mode": "json_schema",
+            "reasoning": {"enabled": False},
+            "notes": "",
+        }
+    }
+    client = StubClient()
+    run(tmp_path, freeze_payload=freeze(models=models), client=client)
+
+    record = json.loads(
+        (tmp_path / "runs" / "test-model" / "ev_01" / "run-1.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert record["settings"]["reasoning"] == {"enabled": False}
+    assert client.last_kwargs["reasoning"] == {"enabled": False}
+
+
+@pytest.mark.parametrize(
+    "reasoning",
+    [
+        {"enabled": "no"},
+        {"effort": "none"},
+        {"enabled": False, "extra": True},
+        True,
+    ],
+)
+def test_invalid_reasoning_refuses_before_any_call(
+    tmp_path: Path, reasoning: Any
+) -> None:
+    models = {
+        "test-model": {
+            "model_id": "test-model",
+            "response_mode": "json_schema",
+            "reasoning": reasoning,
+            "notes": "",
+        }
+    }
+    client = StubClient()
+
+    with pytest.raises(RefusalError, match="reasoning"):
+        run(tmp_path, freeze_payload=freeze(models=models), client=client)
+
+    assert client.calls == 0

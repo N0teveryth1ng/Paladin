@@ -1,7 +1,7 @@
 {
   "eval_set_sha256": "280E2E4145A2034BC73C213D59374BF94779666D3A25E407F5F60BB1F9C024DC",
-  "system_prompt_version": "1.0",
-  "system_prompt_sha256": "354463764DB1DEB2DDAA09B7E9DC5568337AAD5399126CAA85CB985822947880",
+  "system_prompt_version": "1.1",
+  "system_prompt_sha256": "21A2D1F12A14EC4FFB3139E997F4F3A9D07F425A4156B1B1003870FFBA12D961",
   "thresholds": {
     "RUNS_PER_PROMPT": 3,
     "GATE_RUNS_REQUIRED": 2,
@@ -16,7 +16,7 @@
   },
   "shared_settings": {
     "TEMPERATURE": 0.3,
-    "TIMEOUT_S": 120,
+    "TIMEOUT_S": 240,
     "MAX_ATTEMPTS": 3,
     "TIMEOUT_RETRIES": 1,
     "MAX_RATE_LIMIT_WAITS": 5,
@@ -157,6 +157,14 @@
       "model_id": "nvidia/nemotron-3.5-super-vl:free",
       "response_mode": "schema_in_prompt",
       "notes": "Measured 2026-11-19 on the free slug. 5/5 schema-valid in both modes. At the cap that succeeded, the first attempt was valid 4/5 in schema_in_prompt and 3/5 in json_schema. schema_in_prompt costs about 3800 extra prompt tokens. The model emits reasoning tokens alongside content; no reasoning transform is needed."
+    },
+    "ling-3.2-flash": {
+      "model_id": "inclusionai/ling-3.2-flash:free",
+      "response_mode": "json_schema",
+      "reasoning": {
+        "enabled": false
+      },
+      "notes": "Not yet usable at 4096: every call returned content:null with finish_reason:length after spending the whole cap on reasoning (~11 min per call). The provider reports reasoning as optional and enabled by default. This entry disables reasoning in the request so the retest can measure content output; response_mode is provisional until the first run confirms it."
     }
   },
   "scored_run_approved": false

@@ -25,6 +25,7 @@ from app.llm.generate import (
     GenerationConfig,
     GenerationResult,
     generate,
+    validate_reasoning,
 )
 from app.llm.system_prompt import load_system_prompt, system_prompt_sha256
 
@@ -98,6 +99,13 @@ def check_preconditions(
         raise RefusalError(
             f"model {model!r} has no recorded response mode in freeze.json"
         )
+    for name, entry in models.items():
+        if not isinstance(entry, dict):
+            raise RefusalError(f"model {name!r} entry must be an object")
+        try:
+            validate_reasoning(entry.get("reasoning"))
+        except ValueError as error:
+            raise RefusalError(f"model {name!r}: {error}") from None
 
     if freeze.get("thresholds") != constants.THRESHOLDS:
         raise RefusalError("freeze.json thresholds do not match app.eval.constants")
@@ -183,6 +191,7 @@ def _build_record(
             "max_tokens": freeze["max_tokens"],
             "timeout_s": shared["TIMEOUT_S"],
             "response_mode": model_entry["response_mode"],
+            "reasoning": model_entry.get("reasoning"),
             "max_attempts": shared["MAX_ATTEMPTS"],
         },
         "run_index": run_index,
@@ -264,6 +273,7 @@ def run_scored(
         response_mode=model_entry["response_mode"],
         system_prompt=system_prompt,
         schema=schema,
+        reasoning=model_entry.get("reasoning"),
     )
 
     model_dir = out_dir / model

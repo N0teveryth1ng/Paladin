@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 
+from app.eval import constants
 from app.llm.client import (
     Completion,
     LLMTimeoutError,
@@ -63,15 +64,19 @@ class StubClient:
         return item
 
 
-def config(mode: str = "json_schema") -> GenerationConfig:
+def config(
+    mode: str = "json_schema",
+    reasoning: dict[str, Any] | None = None,
+) -> GenerationConfig:
     return GenerationConfig(
         temperature=0.3,
         max_tokens=8000,
-        timeout_s=120,
+        timeout_s=constants.TIMEOUT_S,
         max_attempts=3,
         response_mode=mode,
         system_prompt=load_system_prompt(),
         schema=SCHEMA,
+        reasoning=reasoning,
     )
 
 
@@ -243,3 +248,32 @@ def test_build_messages_starts_with_system_and_user() -> None:
     messages = build_messages("Design something.", config())
     assert [message["role"] for message in messages] == ["system", "user"]
     assert messages[1]["content"] == "Design something."
+
+
+def test_reasoning_object_is_forwarded_to_the_client() -> None:
+    client = StubClient([VALID])
+    generate(client, "Design something.", config(reasoning={"enabled": False}))
+
+    assert client.calls[0]["reasoning"] == {"enabled": False}
+
+
+def test_reasoning_defaults_to_none() -> None:
+    client = StubClient([VALID])
+    generate(client, "Design something.", config())
+
+    assert client.calls[0]["reasoning"] is None
+
+
+@pytest.mark.parametrize(
+    "reasoning",
+    [
+        {"enabled": "no"},
+        {"effort": "none"},
+        {"enabled": False, "extra": True},
+    ],
+)
+def test_invalid_reasoning_is_rejected_by_the_config(
+    reasoning: dict[str, Any],
+) -> None:
+    with pytest.raises(ValueError, match="reasoning"):
+        config(reasoning=reasoning)
