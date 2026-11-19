@@ -1,0 +1,430 @@
+{
+  "title": "URL Shortener (malformed variants)",
+  "summary": "A deliberately malformed but schema-valid variant of the small URL shortener. It exists only to prove that layout and render survive soft-rule violations: a component in two groups, group nesting deeper than one level, a group with a missing parent, a self-loop, parallel connections, duplicate names and labels, one isolated component, one invalid pairing and one judgment pairing.",
+  "requirements": [
+    {
+      "id": "req_create",
+      "text": "Users can create a short link from a long URL.",
+      "kind": "functional",
+      "source": "prompt"
+    },
+    {
+      "id": "req_latency",
+      "text": "Redirects must complete in under 50 ms at p95.",
+      "kind": "non_functional",
+      "source": "prompt"
+    },
+    {
+      "id": "req_single_region",
+      "text": "The system must run in a single region.",
+      "kind": "constraint",
+      "source": "prompt"
+    },
+    {
+      "id": "req_region_failover",
+      "text": "The system must survive the loss of any single region.",
+      "kind": "constraint",
+      "source": "prompt"
+    }
+  ],
+  "components": [
+    {
+      "id": "cmp_web",
+      "type": "client",
+      "name": "Web Client",
+      "technology": "React",
+      "description": "Browser application where users create short links and follow redirects.",
+      "attributes": {},
+      "requirement_refs": ["req_create"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_gateway",
+      "type": "api_gateway",
+      "name": "API Gateway",
+      "technology": "Kong",
+      "description": "Single entry point for create and redirect traffic.",
+      "attributes": {},
+      "requirement_refs": ["req_create", "req_latency"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_shortener",
+      "type": "service",
+      "name": "Shortener Service",
+      "technology": "FastAPI",
+      "description": "Creates short codes and resolves them to target URLs.",
+      "attributes": {
+        "replicas": "2"
+      },
+      "requirement_refs": ["req_create", "req_latency"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_db",
+      "type": "database",
+      "name": "Link Database",
+      "technology": "PostgreSQL",
+      "description": "Durable store of short code to target URL mappings.",
+      "attributes": {
+        "consistency": "strong",
+        "replicas": "3"
+      },
+      "requirement_refs": ["req_create"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_cache",
+      "type": "cache",
+      "name": "Redirect Cache",
+      "technology": "Redis",
+      "description": "Hot redirect mappings, keeping p95 redirect latency under budget.",
+      "attributes": {
+        "consistency": "not_applicable",
+        "protocol": "tcp"
+      },
+      "requirement_refs": ["req_latency"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_orphan",
+      "type": "service",
+      "name": "Orphan Service",
+      "technology": "FastAPI",
+      "description": "A service with no connections, used to prove the disconnected-component issue is reported.",
+      "attributes": {},
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Included only to carry the disconnected-component case."
+    },
+    {
+      "id": "cmp_worker",
+      "type": "worker",
+      "name": "Background Worker",
+      "technology": "Celery",
+      "description": "Consumes background jobs and writes rendered artefacts.",
+      "attributes": {},
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "The prompt does not mention background processing."
+    },
+    {
+      "id": "cmp_storage",
+      "type": "object_storage",
+      "name": "Artefact Storage",
+      "technology": "S3",
+      "description": "Stores rendered artefacts produced by the worker.",
+      "attributes": {},
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Artefact retention is not specified."
+    },
+    {
+      "id": "cmp_cdn",
+      "type": "cdn",
+      "name": "Edge CDN",
+      "technology": "CloudFront",
+      "description": "Serves static assets close to users.",
+      "attributes": {},
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Static asset delivery is not specified."
+    },
+    {
+      "id": "cmp_search",
+      "type": "search_index",
+      "name": "Link Search",
+      "technology": "OpenSearch",
+      "description": "Indexes link metadata for search.",
+      "attributes": {},
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Search is not specified in the prompt."
+    },
+    {
+      "id": "cmp_auth",
+      "type": "auth_provider",
+      "name": "Identity Provider",
+      "technology": "Auth0",
+      "description": "Authenticates operators and issues tokens.",
+      "attributes": {},
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Operator authentication is not specified."
+    },
+    {
+      "id": "cmp_scheduler",
+      "type": "scheduler",
+      "name": "Background Worker",
+      "technology": "Temporal",
+      "description": "Schedules recurring cleanup jobs. Shares its name with the worker on purpose.",
+      "attributes": {},
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "A cleanup schedule is not specified."
+    },
+    {
+      "id": "cmp_external",
+      "type": "external_service",
+      "name": "Billing Provider",
+      "technology": "Stripe",
+      "description": "External billing service called by the shortener.",
+      "attributes": {},
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Billing is not specified."
+    }
+  ],
+  "connections": [
+    {
+      "id": "cnx_client_gateway",
+      "from": "cmp_web",
+      "to": "cmp_gateway",
+      "type": "sync",
+      "label": "HTTPS requests",
+      "technology": "https",
+      "requirement_refs": ["req_create"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_gateway_service",
+      "from": "cmp_gateway",
+      "to": "cmp_shortener",
+      "type": "sync",
+      "label": "forwarded request",
+      "technology": "http",
+      "requirement_refs": ["req_create", "req_latency"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_service_db",
+      "from": "cmp_shortener",
+      "to": "cmp_db",
+      "type": "sync",
+      "label": "read/write link mappings",
+      "technology": "sql",
+      "requirement_refs": ["req_create"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_service_cache",
+      "from": "cmp_shortener",
+      "to": "cmp_cache",
+      "type": "sync",
+      "label": "cache lookup",
+      "technology": "tcp",
+      "requirement_refs": ["req_latency"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_db_client",
+      "from": "cmp_db",
+      "to": "cmp_web",
+      "type": "sync",
+      "label": "reverse read",
+      "technology": "sql",
+      "requirement_refs": ["req_create"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_client_cache",
+      "from": "cmp_web",
+      "to": "cmp_cache",
+      "type": "sync",
+      "label": "direct cache read",
+      "technology": "tcp",
+      "requirement_refs": ["req_latency"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_self_loop",
+      "from": "cmp_shortener",
+      "to": "cmp_shortener",
+      "type": "sync",
+      "label": "internal retry",
+      "technology": "http",
+      "requirement_refs": ["req_create"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_parallel_a",
+      "from": "cmp_shortener",
+      "to": "cmp_search",
+      "type": "sync",
+      "label": "parallel lookup",
+      "technology": "http",
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Search traffic is an assumption, and this edge is one of two parallel paths."
+    },
+    {
+      "id": "cnx_parallel_b",
+      "from": "cmp_shortener",
+      "to": "cmp_search",
+      "type": "async",
+      "label": "parallel lookup",
+      "technology": "http",
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Search traffic is an assumption, and this edge is one of two parallel paths."
+    },
+    {
+      "id": "cnx_worker_storage",
+      "from": "cmp_worker",
+      "to": "cmp_storage",
+      "type": "async",
+      "label": "write artefacts",
+      "technology": "s3",
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Background artefact storage is an assumption."
+    },
+    {
+      "id": "cnx_gateway_auth",
+      "from": "cmp_gateway",
+      "to": "cmp_auth",
+      "type": "sync",
+      "label": "token validation",
+      "technology": "https",
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Operator authentication is an assumption."
+    },
+    {
+      "id": "cnx_scheduler_worker",
+      "from": "cmp_scheduler",
+      "to": "cmp_worker",
+      "type": "async",
+      "label": "scheduled jobs",
+      "technology": "amqp",
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Scheduled cleanup is an assumption."
+    },
+    {
+      "id": "cnx_cdn_client",
+      "from": "cmp_cdn",
+      "to": "cmp_web",
+      "type": "sync",
+      "label": "static assets",
+      "technology": "https",
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Static asset delivery is an assumption."
+    },
+    {
+      "id": "cnx_service_external",
+      "from": "cmp_shortener",
+      "to": "cmp_external",
+      "type": "sync",
+      "label": "billing calls",
+      "technology": "https",
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Billing is an assumption."
+    }
+  ],
+  "groups": [
+    {
+      "id": "grp_backend",
+      "name": "Backend Tier",
+      "description": "Everything that runs behind the public edge.",
+      "members": ["cmp_gateway", "cmp_shortener", "cmp_db", "cmp_cache"],
+      "parent_id": null,
+      "requirement_refs": ["req_create"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "grp_edge",
+      "name": "Edge Tier",
+      "description": "Public edge components. It also lists the shortener, which is already in the backend group.",
+      "members": ["cmp_web", "cmp_shortener"],
+      "parent_id": null,
+      "requirement_refs": ["req_create"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "grp_deep_root",
+      "name": "Deep Tier",
+      "description": "Root of a nesting chain that is one level too deep.",
+      "members": ["cmp_worker"],
+      "parent_id": null,
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Grouping is illustrative only."
+    },
+    {
+      "id": "grp_deep_mid",
+      "name": "Deep Tier",
+      "description": "Middle of the nesting chain; this group is legal on its own.",
+      "members": ["cmp_storage"],
+      "parent_id": "grp_deep_root",
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Grouping is illustrative only."
+    },
+    {
+      "id": "grp_deep_leaf",
+      "name": "Deep Tier",
+      "description": "Leaf of the nesting chain; nested under a group that already has a parent.",
+      "members": ["cmp_cdn"],
+      "parent_id": "grp_deep_mid",
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Grouping is illustrative only."
+    },
+    {
+      "id": "grp_orphan_parent",
+      "name": "Orphaned Parent Tier",
+      "description": "Names a parent that does not exist.",
+      "members": ["cmp_search"],
+      "parent_id": "grp_missing",
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Grouping is illustrative only."
+    },
+    {
+      "id": "grp_aux",
+      "name": "Auxiliary Tier",
+      "description": "Authentication, scheduling and billing integrations.",
+      "members": ["cmp_auth", "cmp_scheduler", "cmp_external"],
+      "parent_id": null,
+      "requirement_refs": [],
+      "assumed": true,
+      "rationale": "Grouping is illustrative only."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "asm_no_expiry",
+      "text": "Short links never expire and there is no deletion workflow in v1.",
+      "scope": "global",
+      "element_refs": [],
+      "rationale": "The prompt does not state a retention or expiry policy."
+    }
+  ],
+  "flags": [
+    {
+      "id": "flg_region_conflict",
+      "kind": "contradiction",
+      "description": "req_single_region requires a single region while req_region_failover requires surviving the loss of any single region. Both cannot hold.",
+      "requirement_refs": ["req_single_region", "req_region_failover"],
+      "severity": "blocking",
+      "resolved_by": null
+    }
+  ]
+}

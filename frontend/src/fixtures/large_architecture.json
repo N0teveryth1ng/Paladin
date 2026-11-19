@@ -1,0 +1,5678 @@
+{
+  "title": "Large Stress Architecture",
+  "summary": "A deterministic 120-component, 300-connection fixture. It exists to measure layout time and rendering under load; it is not a design review target.",
+  "requirements": [
+    {
+      "id": "req_scale",
+      "text": "The platform serves a large multi-tenant workload with predictable behaviour under load.",
+      "kind": "non_functional",
+      "source": "prompt"
+    }
+  ],
+  "components": [
+    {
+      "id": "cmp_000",
+      "type": "client",
+      "name": "Web Client 000",
+      "technology": "React",
+      "description": "Stress-fixture client number 0, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_001",
+      "type": "api_gateway",
+      "name": "API Gateway 001",
+      "technology": "Kong",
+      "description": "Stress-fixture api_gateway number 1, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_002",
+      "type": "load_balancer",
+      "name": "Load Balancer 002",
+      "technology": "HAProxy",
+      "description": "Stress-fixture load_balancer number 2, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_003",
+      "type": "service",
+      "name": "Service 003",
+      "technology": "FastAPI",
+      "description": "Stress-fixture service number 3, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_004",
+      "type": "worker",
+      "name": "Worker 004",
+      "technology": "Celery",
+      "description": "Stress-fixture worker number 4, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_005",
+      "type": "database",
+      "name": "Database 005",
+      "technology": "PostgreSQL",
+      "description": "Stress-fixture database number 5, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_006",
+      "type": "cache",
+      "name": "Cache 006",
+      "technology": "Redis",
+      "description": "Stress-fixture cache number 6, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_007",
+      "type": "message_queue",
+      "name": "Message Queue 007",
+      "technology": "Kafka",
+      "description": "Stress-fixture message_queue number 7, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_008",
+      "type": "object_storage",
+      "name": "Object Storage 008",
+      "technology": "S3",
+      "description": "Stress-fixture object_storage number 8, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_009",
+      "type": "cdn",
+      "name": "CDN 009",
+      "technology": "CloudFront",
+      "description": "Stress-fixture cdn number 9, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_010",
+      "type": "auth_provider",
+      "name": "Auth Provider 010",
+      "technology": "Auth0",
+      "description": "Stress-fixture auth_provider number 10, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_011",
+      "type": "search_index",
+      "name": "Search Index 011",
+      "technology": "OpenSearch",
+      "description": "Stress-fixture search_index number 11, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_012",
+      "type": "scheduler",
+      "name": "Scheduler 012",
+      "technology": "Temporal",
+      "description": "Stress-fixture scheduler number 12, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_013",
+      "type": "external_service",
+      "name": "External Service 013",
+      "technology": "Stripe",
+      "description": "Stress-fixture external_service number 13, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_014",
+      "type": "client",
+      "name": "Web Client 014",
+      "technology": "React",
+      "description": "Stress-fixture client number 14, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_015",
+      "type": "api_gateway",
+      "name": "API Gateway 015",
+      "technology": "Kong",
+      "description": "Stress-fixture api_gateway number 15, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_016",
+      "type": "load_balancer",
+      "name": "Load Balancer 016",
+      "technology": "HAProxy",
+      "description": "Stress-fixture load_balancer number 16, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_017",
+      "type": "service",
+      "name": "Service 017",
+      "technology": "FastAPI",
+      "description": "Stress-fixture service number 17, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_018",
+      "type": "worker",
+      "name": "Worker 018",
+      "technology": "Celery",
+      "description": "Stress-fixture worker number 18, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_019",
+      "type": "database",
+      "name": "Database 019",
+      "technology": "PostgreSQL",
+      "description": "Stress-fixture database number 19, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_020",
+      "type": "cache",
+      "name": "Cache 020",
+      "technology": "Redis",
+      "description": "Stress-fixture cache number 20, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_021",
+      "type": "message_queue",
+      "name": "Message Queue 021",
+      "technology": "Kafka",
+      "description": "Stress-fixture message_queue number 21, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_022",
+      "type": "object_storage",
+      "name": "Object Storage 022",
+      "technology": "S3",
+      "description": "Stress-fixture object_storage number 22, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_023",
+      "type": "cdn",
+      "name": "CDN 023",
+      "technology": "CloudFront",
+      "description": "Stress-fixture cdn number 23, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_024",
+      "type": "auth_provider",
+      "name": "Auth Provider 024",
+      "technology": "Auth0",
+      "description": "Stress-fixture auth_provider number 24, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_025",
+      "type": "search_index",
+      "name": "Search Index 025",
+      "technology": "OpenSearch",
+      "description": "Stress-fixture search_index number 25, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_026",
+      "type": "scheduler",
+      "name": "Scheduler 026",
+      "technology": "Temporal",
+      "description": "Stress-fixture scheduler number 26, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_027",
+      "type": "external_service",
+      "name": "External Service 027",
+      "technology": "Stripe",
+      "description": "Stress-fixture external_service number 27, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_028",
+      "type": "client",
+      "name": "Web Client 028",
+      "technology": "React",
+      "description": "Stress-fixture client number 28, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_029",
+      "type": "api_gateway",
+      "name": "API Gateway 029",
+      "technology": "Kong",
+      "description": "Stress-fixture api_gateway number 29, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_030",
+      "type": "load_balancer",
+      "name": "Load Balancer 030",
+      "technology": "HAProxy",
+      "description": "Stress-fixture load_balancer number 30, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_031",
+      "type": "service",
+      "name": "Service 031",
+      "technology": "FastAPI",
+      "description": "Stress-fixture service number 31, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_032",
+      "type": "worker",
+      "name": "Worker 032",
+      "technology": "Celery",
+      "description": "Stress-fixture worker number 32, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_033",
+      "type": "database",
+      "name": "Database 033",
+      "technology": "PostgreSQL",
+      "description": "Stress-fixture database number 33, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_034",
+      "type": "cache",
+      "name": "Cache 034",
+      "technology": "Redis",
+      "description": "Stress-fixture cache number 34, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_035",
+      "type": "message_queue",
+      "name": "Message Queue 035",
+      "technology": "Kafka",
+      "description": "Stress-fixture message_queue number 35, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_036",
+      "type": "object_storage",
+      "name": "Object Storage 036",
+      "technology": "S3",
+      "description": "Stress-fixture object_storage number 36, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_037",
+      "type": "cdn",
+      "name": "CDN 037",
+      "technology": "CloudFront",
+      "description": "Stress-fixture cdn number 37, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_038",
+      "type": "auth_provider",
+      "name": "Auth Provider 038",
+      "technology": "Auth0",
+      "description": "Stress-fixture auth_provider number 38, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_039",
+      "type": "search_index",
+      "name": "Search Index 039",
+      "technology": "OpenSearch",
+      "description": "Stress-fixture search_index number 39, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_040",
+      "type": "scheduler",
+      "name": "Scheduler 040",
+      "technology": "Temporal",
+      "description": "Stress-fixture scheduler number 40, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_041",
+      "type": "external_service",
+      "name": "External Service 041",
+      "technology": "Stripe",
+      "description": "Stress-fixture external_service number 41, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_042",
+      "type": "client",
+      "name": "Web Client 042",
+      "technology": "React",
+      "description": "Stress-fixture client number 42, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_043",
+      "type": "api_gateway",
+      "name": "API Gateway 043",
+      "technology": "Kong",
+      "description": "Stress-fixture api_gateway number 43, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_044",
+      "type": "load_balancer",
+      "name": "Load Balancer 044",
+      "technology": "HAProxy",
+      "description": "Stress-fixture load_balancer number 44, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_045",
+      "type": "service",
+      "name": "Service 045",
+      "technology": "FastAPI",
+      "description": "Stress-fixture service number 45, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_046",
+      "type": "worker",
+      "name": "Worker 046",
+      "technology": "Celery",
+      "description": "Stress-fixture worker number 46, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_047",
+      "type": "database",
+      "name": "Database 047",
+      "technology": "PostgreSQL",
+      "description": "Stress-fixture database number 47, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_048",
+      "type": "cache",
+      "name": "Cache 048",
+      "technology": "Redis",
+      "description": "Stress-fixture cache number 48, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_049",
+      "type": "message_queue",
+      "name": "Message Queue 049",
+      "technology": "Kafka",
+      "description": "Stress-fixture message_queue number 49, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_050",
+      "type": "object_storage",
+      "name": "Object Storage 050",
+      "technology": "S3",
+      "description": "Stress-fixture object_storage number 50, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_051",
+      "type": "cdn",
+      "name": "CDN 051",
+      "technology": "CloudFront",
+      "description": "Stress-fixture cdn number 51, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_052",
+      "type": "auth_provider",
+      "name": "Auth Provider 052",
+      "technology": "Auth0",
+      "description": "Stress-fixture auth_provider number 52, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_053",
+      "type": "search_index",
+      "name": "Search Index 053",
+      "technology": "OpenSearch",
+      "description": "Stress-fixture search_index number 53, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_054",
+      "type": "scheduler",
+      "name": "Scheduler 054",
+      "technology": "Temporal",
+      "description": "Stress-fixture scheduler number 54, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_055",
+      "type": "external_service",
+      "name": "External Service 055",
+      "technology": "Stripe",
+      "description": "Stress-fixture external_service number 55, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_056",
+      "type": "client",
+      "name": "Web Client 056",
+      "technology": "React",
+      "description": "Stress-fixture client number 56, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_057",
+      "type": "api_gateway",
+      "name": "API Gateway 057",
+      "technology": "Kong",
+      "description": "Stress-fixture api_gateway number 57, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_058",
+      "type": "load_balancer",
+      "name": "Load Balancer 058",
+      "technology": "HAProxy",
+      "description": "Stress-fixture load_balancer number 58, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_059",
+      "type": "service",
+      "name": "Service 059",
+      "technology": "FastAPI",
+      "description": "Stress-fixture service number 59, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_060",
+      "type": "worker",
+      "name": "Worker 060",
+      "technology": "Celery",
+      "description": "Stress-fixture worker number 60, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_061",
+      "type": "database",
+      "name": "Database 061",
+      "technology": "PostgreSQL",
+      "description": "Stress-fixture database number 61, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_062",
+      "type": "cache",
+      "name": "Cache 062",
+      "technology": "Redis",
+      "description": "Stress-fixture cache number 62, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_063",
+      "type": "message_queue",
+      "name": "Message Queue 063",
+      "technology": "Kafka",
+      "description": "Stress-fixture message_queue number 63, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_064",
+      "type": "object_storage",
+      "name": "Object Storage 064",
+      "technology": "S3",
+      "description": "Stress-fixture object_storage number 64, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_065",
+      "type": "cdn",
+      "name": "CDN 065",
+      "technology": "CloudFront",
+      "description": "Stress-fixture cdn number 65, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_066",
+      "type": "auth_provider",
+      "name": "Auth Provider 066",
+      "technology": "Auth0",
+      "description": "Stress-fixture auth_provider number 66, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_067",
+      "type": "search_index",
+      "name": "Search Index 067",
+      "technology": "OpenSearch",
+      "description": "Stress-fixture search_index number 67, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_068",
+      "type": "scheduler",
+      "name": "Scheduler 068",
+      "technology": "Temporal",
+      "description": "Stress-fixture scheduler number 68, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_069",
+      "type": "external_service",
+      "name": "External Service 069",
+      "technology": "Stripe",
+      "description": "Stress-fixture external_service number 69, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_070",
+      "type": "client",
+      "name": "Web Client 070",
+      "technology": "React",
+      "description": "Stress-fixture client number 70, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_071",
+      "type": "api_gateway",
+      "name": "API Gateway 071",
+      "technology": "Kong",
+      "description": "Stress-fixture api_gateway number 71, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_072",
+      "type": "load_balancer",
+      "name": "Load Balancer 072",
+      "technology": "HAProxy",
+      "description": "Stress-fixture load_balancer number 72, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_073",
+      "type": "service",
+      "name": "Service 073",
+      "technology": "FastAPI",
+      "description": "Stress-fixture service number 73, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_074",
+      "type": "worker",
+      "name": "Worker 074",
+      "technology": "Celery",
+      "description": "Stress-fixture worker number 74, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_075",
+      "type": "database",
+      "name": "Database 075",
+      "technology": "PostgreSQL",
+      "description": "Stress-fixture database number 75, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_076",
+      "type": "cache",
+      "name": "Cache 076",
+      "technology": "Redis",
+      "description": "Stress-fixture cache number 76, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_077",
+      "type": "message_queue",
+      "name": "Message Queue 077",
+      "technology": "Kafka",
+      "description": "Stress-fixture message_queue number 77, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_078",
+      "type": "object_storage",
+      "name": "Object Storage 078",
+      "technology": "S3",
+      "description": "Stress-fixture object_storage number 78, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_079",
+      "type": "cdn",
+      "name": "CDN 079",
+      "technology": "CloudFront",
+      "description": "Stress-fixture cdn number 79, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_080",
+      "type": "auth_provider",
+      "name": "Auth Provider 080",
+      "technology": "Auth0",
+      "description": "Stress-fixture auth_provider number 80, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_081",
+      "type": "search_index",
+      "name": "Search Index 081",
+      "technology": "OpenSearch",
+      "description": "Stress-fixture search_index number 81, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_082",
+      "type": "scheduler",
+      "name": "Scheduler 082",
+      "technology": "Temporal",
+      "description": "Stress-fixture scheduler number 82, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_083",
+      "type": "external_service",
+      "name": "External Service 083",
+      "technology": "Stripe",
+      "description": "Stress-fixture external_service number 83, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_084",
+      "type": "client",
+      "name": "Web Client 084",
+      "technology": "React",
+      "description": "Stress-fixture client number 84, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_085",
+      "type": "api_gateway",
+      "name": "API Gateway 085",
+      "technology": "Kong",
+      "description": "Stress-fixture api_gateway number 85, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_086",
+      "type": "load_balancer",
+      "name": "Load Balancer 086",
+      "technology": "HAProxy",
+      "description": "Stress-fixture load_balancer number 86, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_087",
+      "type": "service",
+      "name": "Service 087",
+      "technology": "FastAPI",
+      "description": "Stress-fixture service number 87, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_088",
+      "type": "worker",
+      "name": "Worker 088",
+      "technology": "Celery",
+      "description": "Stress-fixture worker number 88, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_089",
+      "type": "database",
+      "name": "Database 089",
+      "technology": "PostgreSQL",
+      "description": "Stress-fixture database number 89, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_090",
+      "type": "cache",
+      "name": "Cache 090",
+      "technology": "Redis",
+      "description": "Stress-fixture cache number 90, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_091",
+      "type": "message_queue",
+      "name": "Message Queue 091",
+      "technology": "Kafka",
+      "description": "Stress-fixture message_queue number 91, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_092",
+      "type": "object_storage",
+      "name": "Object Storage 092",
+      "technology": "S3",
+      "description": "Stress-fixture object_storage number 92, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_093",
+      "type": "cdn",
+      "name": "CDN 093",
+      "technology": "CloudFront",
+      "description": "Stress-fixture cdn number 93, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_094",
+      "type": "auth_provider",
+      "name": "Auth Provider 094",
+      "technology": "Auth0",
+      "description": "Stress-fixture auth_provider number 94, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_095",
+      "type": "search_index",
+      "name": "Search Index 095",
+      "technology": "OpenSearch",
+      "description": "Stress-fixture search_index number 95, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_096",
+      "type": "scheduler",
+      "name": "Scheduler 096",
+      "technology": "Temporal",
+      "description": "Stress-fixture scheduler number 96, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_097",
+      "type": "external_service",
+      "name": "External Service 097",
+      "technology": "Stripe",
+      "description": "Stress-fixture external_service number 97, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_098",
+      "type": "client",
+      "name": "Web Client 098",
+      "technology": "React",
+      "description": "Stress-fixture client number 98, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_099",
+      "type": "api_gateway",
+      "name": "API Gateway 099",
+      "technology": "Kong",
+      "description": "Stress-fixture api_gateway number 99, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_100",
+      "type": "load_balancer",
+      "name": "Load Balancer 100",
+      "technology": "HAProxy",
+      "description": "Stress-fixture load_balancer number 100, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_101",
+      "type": "service",
+      "name": "Service 101",
+      "technology": "FastAPI",
+      "description": "Stress-fixture service number 101, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_102",
+      "type": "worker",
+      "name": "Worker 102",
+      "technology": "Celery",
+      "description": "Stress-fixture worker number 102, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_103",
+      "type": "database",
+      "name": "Database 103",
+      "technology": "PostgreSQL",
+      "description": "Stress-fixture database number 103, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_104",
+      "type": "cache",
+      "name": "Cache 104",
+      "technology": "Redis",
+      "description": "Stress-fixture cache number 104, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_105",
+      "type": "message_queue",
+      "name": "Message Queue 105",
+      "technology": "Kafka",
+      "description": "Stress-fixture message_queue number 105, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_106",
+      "type": "object_storage",
+      "name": "Object Storage 106",
+      "technology": "S3",
+      "description": "Stress-fixture object_storage number 106, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_107",
+      "type": "cdn",
+      "name": "CDN 107",
+      "technology": "CloudFront",
+      "description": "Stress-fixture cdn number 107, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_108",
+      "type": "auth_provider",
+      "name": "Auth Provider 108",
+      "technology": "Auth0",
+      "description": "Stress-fixture auth_provider number 108, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_109",
+      "type": "search_index",
+      "name": "Search Index 109",
+      "technology": "OpenSearch",
+      "description": "Stress-fixture search_index number 109, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_110",
+      "type": "scheduler",
+      "name": "Scheduler 110",
+      "technology": "Temporal",
+      "description": "Stress-fixture scheduler number 110, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_111",
+      "type": "external_service",
+      "name": "External Service 111",
+      "technology": "Stripe",
+      "description": "Stress-fixture external_service number 111, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_112",
+      "type": "client",
+      "name": "Web Client 112",
+      "technology": "React",
+      "description": "Stress-fixture client number 112, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_113",
+      "type": "api_gateway",
+      "name": "API Gateway 113",
+      "technology": "Kong",
+      "description": "Stress-fixture api_gateway number 113, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_114",
+      "type": "load_balancer",
+      "name": "Load Balancer 114",
+      "technology": "HAProxy",
+      "description": "Stress-fixture load_balancer number 114, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_115",
+      "type": "service",
+      "name": "Service 115",
+      "technology": "FastAPI",
+      "description": "Stress-fixture service number 115, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_116",
+      "type": "worker",
+      "name": "Worker 116",
+      "technology": "Celery",
+      "description": "Stress-fixture worker number 116, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_117",
+      "type": "database",
+      "name": "Database 117",
+      "technology": "PostgreSQL",
+      "description": "Stress-fixture database number 117, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_118",
+      "type": "cache",
+      "name": "Cache 118",
+      "technology": "Redis",
+      "description": "Stress-fixture cache number 118, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_119",
+      "type": "message_queue",
+      "name": "Message Queue 119",
+      "technology": "Kafka",
+      "description": "Stress-fixture message_queue number 119, used to measure deterministic layout at scale.",
+      "attributes": {},
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    }
+  ],
+  "connections": [
+    {
+      "id": "cnx_0000",
+      "from": "cmp_000",
+      "to": "cmp_001",
+      "type": "async",
+      "label": "link 0",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0001",
+      "from": "cmp_001",
+      "to": "cmp_002",
+      "type": "sync",
+      "label": "link 1",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0002",
+      "from": "cmp_002",
+      "to": "cmp_003",
+      "type": "sync",
+      "label": "link 2",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0003",
+      "from": "cmp_003",
+      "to": "cmp_004",
+      "type": "async",
+      "label": "link 3",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0004",
+      "from": "cmp_004",
+      "to": "cmp_005",
+      "type": "sync",
+      "label": "link 4",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0005",
+      "from": "cmp_005",
+      "to": "cmp_006",
+      "type": "sync",
+      "label": "link 5",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0006",
+      "from": "cmp_006",
+      "to": "cmp_007",
+      "type": "async",
+      "label": "link 6",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0007",
+      "from": "cmp_007",
+      "to": "cmp_008",
+      "type": "sync",
+      "label": "link 7",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0008",
+      "from": "cmp_008",
+      "to": "cmp_009",
+      "type": "sync",
+      "label": "link 8",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0009",
+      "from": "cmp_009",
+      "to": "cmp_010",
+      "type": "async",
+      "label": "link 9",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0010",
+      "from": "cmp_010",
+      "to": "cmp_011",
+      "type": "sync",
+      "label": "link 10",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0011",
+      "from": "cmp_011",
+      "to": "cmp_012",
+      "type": "sync",
+      "label": "link 11",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0012",
+      "from": "cmp_012",
+      "to": "cmp_013",
+      "type": "async",
+      "label": "link 12",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0013",
+      "from": "cmp_013",
+      "to": "cmp_014",
+      "type": "sync",
+      "label": "link 13",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0014",
+      "from": "cmp_014",
+      "to": "cmp_015",
+      "type": "sync",
+      "label": "link 14",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0015",
+      "from": "cmp_015",
+      "to": "cmp_016",
+      "type": "async",
+      "label": "link 15",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0016",
+      "from": "cmp_016",
+      "to": "cmp_017",
+      "type": "sync",
+      "label": "link 16",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0017",
+      "from": "cmp_017",
+      "to": "cmp_018",
+      "type": "sync",
+      "label": "link 17",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0018",
+      "from": "cmp_018",
+      "to": "cmp_019",
+      "type": "async",
+      "label": "link 18",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0019",
+      "from": "cmp_019",
+      "to": "cmp_020",
+      "type": "sync",
+      "label": "link 19",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0020",
+      "from": "cmp_020",
+      "to": "cmp_021",
+      "type": "sync",
+      "label": "link 20",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0021",
+      "from": "cmp_021",
+      "to": "cmp_022",
+      "type": "async",
+      "label": "link 21",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0022",
+      "from": "cmp_022",
+      "to": "cmp_023",
+      "type": "sync",
+      "label": "link 22",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0023",
+      "from": "cmp_023",
+      "to": "cmp_024",
+      "type": "sync",
+      "label": "link 23",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0024",
+      "from": "cmp_024",
+      "to": "cmp_025",
+      "type": "async",
+      "label": "link 24",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0025",
+      "from": "cmp_025",
+      "to": "cmp_026",
+      "type": "sync",
+      "label": "link 25",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0026",
+      "from": "cmp_026",
+      "to": "cmp_027",
+      "type": "sync",
+      "label": "link 26",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0027",
+      "from": "cmp_027",
+      "to": "cmp_028",
+      "type": "async",
+      "label": "link 27",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0028",
+      "from": "cmp_028",
+      "to": "cmp_029",
+      "type": "sync",
+      "label": "link 28",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0029",
+      "from": "cmp_029",
+      "to": "cmp_030",
+      "type": "sync",
+      "label": "link 29",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0030",
+      "from": "cmp_030",
+      "to": "cmp_031",
+      "type": "async",
+      "label": "link 30",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0031",
+      "from": "cmp_031",
+      "to": "cmp_032",
+      "type": "sync",
+      "label": "link 31",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0032",
+      "from": "cmp_032",
+      "to": "cmp_033",
+      "type": "sync",
+      "label": "link 32",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0033",
+      "from": "cmp_033",
+      "to": "cmp_034",
+      "type": "async",
+      "label": "link 33",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0034",
+      "from": "cmp_034",
+      "to": "cmp_035",
+      "type": "sync",
+      "label": "link 34",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0035",
+      "from": "cmp_035",
+      "to": "cmp_036",
+      "type": "sync",
+      "label": "link 35",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0036",
+      "from": "cmp_036",
+      "to": "cmp_037",
+      "type": "async",
+      "label": "link 36",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0037",
+      "from": "cmp_037",
+      "to": "cmp_038",
+      "type": "sync",
+      "label": "link 37",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0038",
+      "from": "cmp_038",
+      "to": "cmp_039",
+      "type": "sync",
+      "label": "link 38",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0039",
+      "from": "cmp_039",
+      "to": "cmp_040",
+      "type": "async",
+      "label": "link 39",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0040",
+      "from": "cmp_040",
+      "to": "cmp_041",
+      "type": "sync",
+      "label": "link 40",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0041",
+      "from": "cmp_041",
+      "to": "cmp_042",
+      "type": "sync",
+      "label": "link 41",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0042",
+      "from": "cmp_042",
+      "to": "cmp_043",
+      "type": "async",
+      "label": "link 42",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0043",
+      "from": "cmp_043",
+      "to": "cmp_044",
+      "type": "sync",
+      "label": "link 43",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0044",
+      "from": "cmp_044",
+      "to": "cmp_045",
+      "type": "sync",
+      "label": "link 44",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0045",
+      "from": "cmp_045",
+      "to": "cmp_046",
+      "type": "async",
+      "label": "link 45",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0046",
+      "from": "cmp_046",
+      "to": "cmp_047",
+      "type": "sync",
+      "label": "link 46",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0047",
+      "from": "cmp_047",
+      "to": "cmp_048",
+      "type": "sync",
+      "label": "link 47",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0048",
+      "from": "cmp_048",
+      "to": "cmp_049",
+      "type": "async",
+      "label": "link 48",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0049",
+      "from": "cmp_049",
+      "to": "cmp_050",
+      "type": "sync",
+      "label": "link 49",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0050",
+      "from": "cmp_050",
+      "to": "cmp_051",
+      "type": "sync",
+      "label": "link 50",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0051",
+      "from": "cmp_051",
+      "to": "cmp_052",
+      "type": "async",
+      "label": "link 51",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0052",
+      "from": "cmp_052",
+      "to": "cmp_053",
+      "type": "sync",
+      "label": "link 52",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0053",
+      "from": "cmp_053",
+      "to": "cmp_054",
+      "type": "sync",
+      "label": "link 53",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0054",
+      "from": "cmp_054",
+      "to": "cmp_055",
+      "type": "async",
+      "label": "link 54",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0055",
+      "from": "cmp_055",
+      "to": "cmp_056",
+      "type": "sync",
+      "label": "link 55",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0056",
+      "from": "cmp_056",
+      "to": "cmp_057",
+      "type": "sync",
+      "label": "link 56",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0057",
+      "from": "cmp_057",
+      "to": "cmp_058",
+      "type": "async",
+      "label": "link 57",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0058",
+      "from": "cmp_058",
+      "to": "cmp_059",
+      "type": "sync",
+      "label": "link 58",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0059",
+      "from": "cmp_059",
+      "to": "cmp_060",
+      "type": "sync",
+      "label": "link 59",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0060",
+      "from": "cmp_060",
+      "to": "cmp_061",
+      "type": "async",
+      "label": "link 60",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0061",
+      "from": "cmp_061",
+      "to": "cmp_062",
+      "type": "sync",
+      "label": "link 61",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0062",
+      "from": "cmp_062",
+      "to": "cmp_063",
+      "type": "sync",
+      "label": "link 62",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0063",
+      "from": "cmp_063",
+      "to": "cmp_064",
+      "type": "async",
+      "label": "link 63",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0064",
+      "from": "cmp_064",
+      "to": "cmp_065",
+      "type": "sync",
+      "label": "link 64",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0065",
+      "from": "cmp_065",
+      "to": "cmp_066",
+      "type": "sync",
+      "label": "link 65",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0066",
+      "from": "cmp_066",
+      "to": "cmp_067",
+      "type": "async",
+      "label": "link 66",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0067",
+      "from": "cmp_067",
+      "to": "cmp_068",
+      "type": "sync",
+      "label": "link 67",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0068",
+      "from": "cmp_068",
+      "to": "cmp_069",
+      "type": "sync",
+      "label": "link 68",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0069",
+      "from": "cmp_069",
+      "to": "cmp_070",
+      "type": "async",
+      "label": "link 69",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0070",
+      "from": "cmp_070",
+      "to": "cmp_071",
+      "type": "sync",
+      "label": "link 70",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0071",
+      "from": "cmp_071",
+      "to": "cmp_072",
+      "type": "sync",
+      "label": "link 71",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0072",
+      "from": "cmp_072",
+      "to": "cmp_073",
+      "type": "async",
+      "label": "link 72",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0073",
+      "from": "cmp_073",
+      "to": "cmp_074",
+      "type": "sync",
+      "label": "link 73",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0074",
+      "from": "cmp_074",
+      "to": "cmp_075",
+      "type": "sync",
+      "label": "link 74",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0075",
+      "from": "cmp_075",
+      "to": "cmp_076",
+      "type": "async",
+      "label": "link 75",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0076",
+      "from": "cmp_076",
+      "to": "cmp_077",
+      "type": "sync",
+      "label": "link 76",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0077",
+      "from": "cmp_077",
+      "to": "cmp_078",
+      "type": "sync",
+      "label": "link 77",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0078",
+      "from": "cmp_078",
+      "to": "cmp_079",
+      "type": "async",
+      "label": "link 78",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0079",
+      "from": "cmp_079",
+      "to": "cmp_080",
+      "type": "sync",
+      "label": "link 79",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0080",
+      "from": "cmp_080",
+      "to": "cmp_081",
+      "type": "sync",
+      "label": "link 80",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0081",
+      "from": "cmp_081",
+      "to": "cmp_082",
+      "type": "async",
+      "label": "link 81",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0082",
+      "from": "cmp_082",
+      "to": "cmp_083",
+      "type": "sync",
+      "label": "link 82",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0083",
+      "from": "cmp_083",
+      "to": "cmp_084",
+      "type": "sync",
+      "label": "link 83",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0084",
+      "from": "cmp_084",
+      "to": "cmp_085",
+      "type": "async",
+      "label": "link 84",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0085",
+      "from": "cmp_085",
+      "to": "cmp_086",
+      "type": "sync",
+      "label": "link 85",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0086",
+      "from": "cmp_086",
+      "to": "cmp_087",
+      "type": "sync",
+      "label": "link 86",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0087",
+      "from": "cmp_087",
+      "to": "cmp_088",
+      "type": "async",
+      "label": "link 87",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0088",
+      "from": "cmp_088",
+      "to": "cmp_089",
+      "type": "sync",
+      "label": "link 88",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0089",
+      "from": "cmp_089",
+      "to": "cmp_090",
+      "type": "sync",
+      "label": "link 89",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0090",
+      "from": "cmp_090",
+      "to": "cmp_091",
+      "type": "async",
+      "label": "link 90",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0091",
+      "from": "cmp_091",
+      "to": "cmp_092",
+      "type": "sync",
+      "label": "link 91",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0092",
+      "from": "cmp_092",
+      "to": "cmp_093",
+      "type": "sync",
+      "label": "link 92",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0093",
+      "from": "cmp_093",
+      "to": "cmp_094",
+      "type": "async",
+      "label": "link 93",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0094",
+      "from": "cmp_094",
+      "to": "cmp_095",
+      "type": "sync",
+      "label": "link 94",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0095",
+      "from": "cmp_095",
+      "to": "cmp_096",
+      "type": "sync",
+      "label": "link 95",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0096",
+      "from": "cmp_096",
+      "to": "cmp_097",
+      "type": "async",
+      "label": "link 96",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0097",
+      "from": "cmp_097",
+      "to": "cmp_098",
+      "type": "sync",
+      "label": "link 97",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0098",
+      "from": "cmp_098",
+      "to": "cmp_099",
+      "type": "sync",
+      "label": "link 98",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0099",
+      "from": "cmp_099",
+      "to": "cmp_100",
+      "type": "async",
+      "label": "link 99",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0100",
+      "from": "cmp_100",
+      "to": "cmp_101",
+      "type": "sync",
+      "label": "link 100",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0101",
+      "from": "cmp_101",
+      "to": "cmp_102",
+      "type": "sync",
+      "label": "link 101",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0102",
+      "from": "cmp_102",
+      "to": "cmp_103",
+      "type": "async",
+      "label": "link 102",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0103",
+      "from": "cmp_103",
+      "to": "cmp_104",
+      "type": "sync",
+      "label": "link 103",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0104",
+      "from": "cmp_104",
+      "to": "cmp_105",
+      "type": "sync",
+      "label": "link 104",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0105",
+      "from": "cmp_105",
+      "to": "cmp_106",
+      "type": "async",
+      "label": "link 105",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0106",
+      "from": "cmp_106",
+      "to": "cmp_107",
+      "type": "sync",
+      "label": "link 106",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0107",
+      "from": "cmp_107",
+      "to": "cmp_108",
+      "type": "sync",
+      "label": "link 107",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0108",
+      "from": "cmp_108",
+      "to": "cmp_109",
+      "type": "async",
+      "label": "link 108",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0109",
+      "from": "cmp_109",
+      "to": "cmp_110",
+      "type": "sync",
+      "label": "link 109",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0110",
+      "from": "cmp_110",
+      "to": "cmp_111",
+      "type": "sync",
+      "label": "link 110",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0111",
+      "from": "cmp_111",
+      "to": "cmp_112",
+      "type": "async",
+      "label": "link 111",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0112",
+      "from": "cmp_112",
+      "to": "cmp_113",
+      "type": "sync",
+      "label": "link 112",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0113",
+      "from": "cmp_113",
+      "to": "cmp_114",
+      "type": "sync",
+      "label": "link 113",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0114",
+      "from": "cmp_114",
+      "to": "cmp_115",
+      "type": "async",
+      "label": "link 114",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0115",
+      "from": "cmp_115",
+      "to": "cmp_116",
+      "type": "sync",
+      "label": "link 115",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0116",
+      "from": "cmp_116",
+      "to": "cmp_117",
+      "type": "sync",
+      "label": "link 116",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0117",
+      "from": "cmp_117",
+      "to": "cmp_118",
+      "type": "async",
+      "label": "link 117",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0118",
+      "from": "cmp_118",
+      "to": "cmp_119",
+      "type": "sync",
+      "label": "link 118",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0119",
+      "from": "cmp_119",
+      "to": "cmp_000",
+      "type": "sync",
+      "label": "link 119",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0120",
+      "from": "cmp_000",
+      "to": "cmp_002",
+      "type": "async",
+      "label": "link 120",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0121",
+      "from": "cmp_001",
+      "to": "cmp_003",
+      "type": "sync",
+      "label": "link 121",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0122",
+      "from": "cmp_002",
+      "to": "cmp_004",
+      "type": "sync",
+      "label": "link 122",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0123",
+      "from": "cmp_003",
+      "to": "cmp_005",
+      "type": "async",
+      "label": "link 123",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0124",
+      "from": "cmp_004",
+      "to": "cmp_006",
+      "type": "sync",
+      "label": "link 124",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0125",
+      "from": "cmp_005",
+      "to": "cmp_007",
+      "type": "sync",
+      "label": "link 125",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0126",
+      "from": "cmp_006",
+      "to": "cmp_008",
+      "type": "async",
+      "label": "link 126",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0127",
+      "from": "cmp_007",
+      "to": "cmp_009",
+      "type": "sync",
+      "label": "link 127",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0128",
+      "from": "cmp_008",
+      "to": "cmp_010",
+      "type": "sync",
+      "label": "link 128",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0129",
+      "from": "cmp_009",
+      "to": "cmp_011",
+      "type": "async",
+      "label": "link 129",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0130",
+      "from": "cmp_010",
+      "to": "cmp_012",
+      "type": "sync",
+      "label": "link 130",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0131",
+      "from": "cmp_011",
+      "to": "cmp_013",
+      "type": "sync",
+      "label": "link 131",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0132",
+      "from": "cmp_012",
+      "to": "cmp_014",
+      "type": "async",
+      "label": "link 132",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0133",
+      "from": "cmp_013",
+      "to": "cmp_015",
+      "type": "sync",
+      "label": "link 133",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0134",
+      "from": "cmp_014",
+      "to": "cmp_016",
+      "type": "sync",
+      "label": "link 134",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0135",
+      "from": "cmp_015",
+      "to": "cmp_017",
+      "type": "async",
+      "label": "link 135",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0136",
+      "from": "cmp_016",
+      "to": "cmp_018",
+      "type": "sync",
+      "label": "link 136",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0137",
+      "from": "cmp_017",
+      "to": "cmp_019",
+      "type": "sync",
+      "label": "link 137",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0138",
+      "from": "cmp_018",
+      "to": "cmp_020",
+      "type": "async",
+      "label": "link 138",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0139",
+      "from": "cmp_019",
+      "to": "cmp_021",
+      "type": "sync",
+      "label": "link 139",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0140",
+      "from": "cmp_020",
+      "to": "cmp_022",
+      "type": "sync",
+      "label": "link 140",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0141",
+      "from": "cmp_021",
+      "to": "cmp_023",
+      "type": "async",
+      "label": "link 141",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0142",
+      "from": "cmp_022",
+      "to": "cmp_024",
+      "type": "sync",
+      "label": "link 142",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0143",
+      "from": "cmp_023",
+      "to": "cmp_025",
+      "type": "sync",
+      "label": "link 143",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0144",
+      "from": "cmp_024",
+      "to": "cmp_026",
+      "type": "async",
+      "label": "link 144",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0145",
+      "from": "cmp_025",
+      "to": "cmp_027",
+      "type": "sync",
+      "label": "link 145",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0146",
+      "from": "cmp_026",
+      "to": "cmp_028",
+      "type": "sync",
+      "label": "link 146",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0147",
+      "from": "cmp_027",
+      "to": "cmp_029",
+      "type": "async",
+      "label": "link 147",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0148",
+      "from": "cmp_028",
+      "to": "cmp_030",
+      "type": "sync",
+      "label": "link 148",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0149",
+      "from": "cmp_029",
+      "to": "cmp_031",
+      "type": "sync",
+      "label": "link 149",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0150",
+      "from": "cmp_030",
+      "to": "cmp_032",
+      "type": "async",
+      "label": "link 150",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0151",
+      "from": "cmp_031",
+      "to": "cmp_033",
+      "type": "sync",
+      "label": "link 151",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0152",
+      "from": "cmp_032",
+      "to": "cmp_034",
+      "type": "sync",
+      "label": "link 152",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0153",
+      "from": "cmp_033",
+      "to": "cmp_035",
+      "type": "async",
+      "label": "link 153",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0154",
+      "from": "cmp_034",
+      "to": "cmp_036",
+      "type": "sync",
+      "label": "link 154",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0155",
+      "from": "cmp_035",
+      "to": "cmp_037",
+      "type": "sync",
+      "label": "link 155",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0156",
+      "from": "cmp_036",
+      "to": "cmp_038",
+      "type": "async",
+      "label": "link 156",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0157",
+      "from": "cmp_037",
+      "to": "cmp_039",
+      "type": "sync",
+      "label": "link 157",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0158",
+      "from": "cmp_038",
+      "to": "cmp_040",
+      "type": "sync",
+      "label": "link 158",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0159",
+      "from": "cmp_039",
+      "to": "cmp_041",
+      "type": "async",
+      "label": "link 159",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0160",
+      "from": "cmp_040",
+      "to": "cmp_042",
+      "type": "sync",
+      "label": "link 160",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0161",
+      "from": "cmp_041",
+      "to": "cmp_043",
+      "type": "sync",
+      "label": "link 161",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0162",
+      "from": "cmp_042",
+      "to": "cmp_044",
+      "type": "async",
+      "label": "link 162",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0163",
+      "from": "cmp_043",
+      "to": "cmp_045",
+      "type": "sync",
+      "label": "link 163",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0164",
+      "from": "cmp_044",
+      "to": "cmp_046",
+      "type": "sync",
+      "label": "link 164",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0165",
+      "from": "cmp_045",
+      "to": "cmp_047",
+      "type": "async",
+      "label": "link 165",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0166",
+      "from": "cmp_046",
+      "to": "cmp_048",
+      "type": "sync",
+      "label": "link 166",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0167",
+      "from": "cmp_047",
+      "to": "cmp_049",
+      "type": "sync",
+      "label": "link 167",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0168",
+      "from": "cmp_048",
+      "to": "cmp_050",
+      "type": "async",
+      "label": "link 168",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0169",
+      "from": "cmp_049",
+      "to": "cmp_051",
+      "type": "sync",
+      "label": "link 169",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0170",
+      "from": "cmp_050",
+      "to": "cmp_052",
+      "type": "sync",
+      "label": "link 170",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0171",
+      "from": "cmp_051",
+      "to": "cmp_053",
+      "type": "async",
+      "label": "link 171",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0172",
+      "from": "cmp_052",
+      "to": "cmp_054",
+      "type": "sync",
+      "label": "link 172",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0173",
+      "from": "cmp_053",
+      "to": "cmp_055",
+      "type": "sync",
+      "label": "link 173",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0174",
+      "from": "cmp_054",
+      "to": "cmp_056",
+      "type": "async",
+      "label": "link 174",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0175",
+      "from": "cmp_055",
+      "to": "cmp_057",
+      "type": "sync",
+      "label": "link 175",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0176",
+      "from": "cmp_056",
+      "to": "cmp_058",
+      "type": "sync",
+      "label": "link 176",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0177",
+      "from": "cmp_057",
+      "to": "cmp_059",
+      "type": "async",
+      "label": "link 177",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0178",
+      "from": "cmp_058",
+      "to": "cmp_060",
+      "type": "sync",
+      "label": "link 178",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0179",
+      "from": "cmp_059",
+      "to": "cmp_061",
+      "type": "sync",
+      "label": "link 179",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0180",
+      "from": "cmp_060",
+      "to": "cmp_062",
+      "type": "async",
+      "label": "link 180",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0181",
+      "from": "cmp_061",
+      "to": "cmp_063",
+      "type": "sync",
+      "label": "link 181",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0182",
+      "from": "cmp_062",
+      "to": "cmp_064",
+      "type": "sync",
+      "label": "link 182",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0183",
+      "from": "cmp_063",
+      "to": "cmp_065",
+      "type": "async",
+      "label": "link 183",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0184",
+      "from": "cmp_064",
+      "to": "cmp_066",
+      "type": "sync",
+      "label": "link 184",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0185",
+      "from": "cmp_065",
+      "to": "cmp_067",
+      "type": "sync",
+      "label": "link 185",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0186",
+      "from": "cmp_066",
+      "to": "cmp_068",
+      "type": "async",
+      "label": "link 186",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0187",
+      "from": "cmp_067",
+      "to": "cmp_069",
+      "type": "sync",
+      "label": "link 187",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0188",
+      "from": "cmp_068",
+      "to": "cmp_070",
+      "type": "sync",
+      "label": "link 188",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0189",
+      "from": "cmp_069",
+      "to": "cmp_071",
+      "type": "async",
+      "label": "link 189",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0190",
+      "from": "cmp_070",
+      "to": "cmp_072",
+      "type": "sync",
+      "label": "link 190",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0191",
+      "from": "cmp_071",
+      "to": "cmp_073",
+      "type": "sync",
+      "label": "link 191",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0192",
+      "from": "cmp_072",
+      "to": "cmp_074",
+      "type": "async",
+      "label": "link 192",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0193",
+      "from": "cmp_073",
+      "to": "cmp_075",
+      "type": "sync",
+      "label": "link 193",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0194",
+      "from": "cmp_074",
+      "to": "cmp_076",
+      "type": "sync",
+      "label": "link 194",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0195",
+      "from": "cmp_075",
+      "to": "cmp_077",
+      "type": "async",
+      "label": "link 195",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0196",
+      "from": "cmp_076",
+      "to": "cmp_078",
+      "type": "sync",
+      "label": "link 196",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0197",
+      "from": "cmp_077",
+      "to": "cmp_079",
+      "type": "sync",
+      "label": "link 197",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0198",
+      "from": "cmp_078",
+      "to": "cmp_080",
+      "type": "async",
+      "label": "link 198",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0199",
+      "from": "cmp_079",
+      "to": "cmp_081",
+      "type": "sync",
+      "label": "link 199",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0200",
+      "from": "cmp_080",
+      "to": "cmp_082",
+      "type": "sync",
+      "label": "link 200",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0201",
+      "from": "cmp_081",
+      "to": "cmp_083",
+      "type": "async",
+      "label": "link 201",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0202",
+      "from": "cmp_082",
+      "to": "cmp_084",
+      "type": "sync",
+      "label": "link 202",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0203",
+      "from": "cmp_083",
+      "to": "cmp_085",
+      "type": "sync",
+      "label": "link 203",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0204",
+      "from": "cmp_084",
+      "to": "cmp_086",
+      "type": "async",
+      "label": "link 204",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0205",
+      "from": "cmp_085",
+      "to": "cmp_087",
+      "type": "sync",
+      "label": "link 205",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0206",
+      "from": "cmp_086",
+      "to": "cmp_088",
+      "type": "sync",
+      "label": "link 206",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0207",
+      "from": "cmp_087",
+      "to": "cmp_089",
+      "type": "async",
+      "label": "link 207",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0208",
+      "from": "cmp_088",
+      "to": "cmp_090",
+      "type": "sync",
+      "label": "link 208",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0209",
+      "from": "cmp_089",
+      "to": "cmp_091",
+      "type": "sync",
+      "label": "link 209",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0210",
+      "from": "cmp_090",
+      "to": "cmp_092",
+      "type": "async",
+      "label": "link 210",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0211",
+      "from": "cmp_091",
+      "to": "cmp_093",
+      "type": "sync",
+      "label": "link 211",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0212",
+      "from": "cmp_092",
+      "to": "cmp_094",
+      "type": "sync",
+      "label": "link 212",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0213",
+      "from": "cmp_093",
+      "to": "cmp_095",
+      "type": "async",
+      "label": "link 213",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0214",
+      "from": "cmp_094",
+      "to": "cmp_096",
+      "type": "sync",
+      "label": "link 214",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0215",
+      "from": "cmp_095",
+      "to": "cmp_097",
+      "type": "sync",
+      "label": "link 215",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0216",
+      "from": "cmp_096",
+      "to": "cmp_098",
+      "type": "async",
+      "label": "link 216",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0217",
+      "from": "cmp_097",
+      "to": "cmp_099",
+      "type": "sync",
+      "label": "link 217",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0218",
+      "from": "cmp_098",
+      "to": "cmp_100",
+      "type": "sync",
+      "label": "link 218",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0219",
+      "from": "cmp_099",
+      "to": "cmp_101",
+      "type": "async",
+      "label": "link 219",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0220",
+      "from": "cmp_100",
+      "to": "cmp_102",
+      "type": "sync",
+      "label": "link 220",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0221",
+      "from": "cmp_101",
+      "to": "cmp_103",
+      "type": "sync",
+      "label": "link 221",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0222",
+      "from": "cmp_102",
+      "to": "cmp_104",
+      "type": "async",
+      "label": "link 222",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0223",
+      "from": "cmp_103",
+      "to": "cmp_105",
+      "type": "sync",
+      "label": "link 223",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0224",
+      "from": "cmp_104",
+      "to": "cmp_106",
+      "type": "sync",
+      "label": "link 224",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0225",
+      "from": "cmp_105",
+      "to": "cmp_107",
+      "type": "async",
+      "label": "link 225",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0226",
+      "from": "cmp_106",
+      "to": "cmp_108",
+      "type": "sync",
+      "label": "link 226",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0227",
+      "from": "cmp_107",
+      "to": "cmp_109",
+      "type": "sync",
+      "label": "link 227",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0228",
+      "from": "cmp_108",
+      "to": "cmp_110",
+      "type": "async",
+      "label": "link 228",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0229",
+      "from": "cmp_109",
+      "to": "cmp_111",
+      "type": "sync",
+      "label": "link 229",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0230",
+      "from": "cmp_110",
+      "to": "cmp_112",
+      "type": "sync",
+      "label": "link 230",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0231",
+      "from": "cmp_111",
+      "to": "cmp_113",
+      "type": "async",
+      "label": "link 231",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0232",
+      "from": "cmp_112",
+      "to": "cmp_114",
+      "type": "sync",
+      "label": "link 232",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0233",
+      "from": "cmp_113",
+      "to": "cmp_115",
+      "type": "sync",
+      "label": "link 233",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0234",
+      "from": "cmp_114",
+      "to": "cmp_116",
+      "type": "async",
+      "label": "link 234",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0235",
+      "from": "cmp_115",
+      "to": "cmp_117",
+      "type": "sync",
+      "label": "link 235",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0236",
+      "from": "cmp_116",
+      "to": "cmp_118",
+      "type": "sync",
+      "label": "link 236",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0237",
+      "from": "cmp_117",
+      "to": "cmp_119",
+      "type": "async",
+      "label": "link 237",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0238",
+      "from": "cmp_118",
+      "to": "cmp_000",
+      "type": "sync",
+      "label": "link 238",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0239",
+      "from": "cmp_119",
+      "to": "cmp_001",
+      "type": "sync",
+      "label": "link 239",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0240",
+      "from": "cmp_000",
+      "to": "cmp_003",
+      "type": "async",
+      "label": "link 240",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0241",
+      "from": "cmp_001",
+      "to": "cmp_004",
+      "type": "sync",
+      "label": "link 241",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0242",
+      "from": "cmp_002",
+      "to": "cmp_005",
+      "type": "sync",
+      "label": "link 242",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0243",
+      "from": "cmp_003",
+      "to": "cmp_006",
+      "type": "async",
+      "label": "link 243",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0244",
+      "from": "cmp_004",
+      "to": "cmp_007",
+      "type": "sync",
+      "label": "link 244",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0245",
+      "from": "cmp_005",
+      "to": "cmp_008",
+      "type": "sync",
+      "label": "link 245",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0246",
+      "from": "cmp_006",
+      "to": "cmp_009",
+      "type": "async",
+      "label": "link 246",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0247",
+      "from": "cmp_007",
+      "to": "cmp_010",
+      "type": "sync",
+      "label": "link 247",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0248",
+      "from": "cmp_008",
+      "to": "cmp_011",
+      "type": "sync",
+      "label": "link 248",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0249",
+      "from": "cmp_009",
+      "to": "cmp_012",
+      "type": "async",
+      "label": "link 249",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0250",
+      "from": "cmp_010",
+      "to": "cmp_013",
+      "type": "sync",
+      "label": "link 250",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0251",
+      "from": "cmp_011",
+      "to": "cmp_014",
+      "type": "sync",
+      "label": "link 251",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0252",
+      "from": "cmp_012",
+      "to": "cmp_015",
+      "type": "async",
+      "label": "link 252",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0253",
+      "from": "cmp_013",
+      "to": "cmp_016",
+      "type": "sync",
+      "label": "link 253",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0254",
+      "from": "cmp_014",
+      "to": "cmp_017",
+      "type": "sync",
+      "label": "link 254",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0255",
+      "from": "cmp_015",
+      "to": "cmp_018",
+      "type": "async",
+      "label": "link 255",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0256",
+      "from": "cmp_016",
+      "to": "cmp_019",
+      "type": "sync",
+      "label": "link 256",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0257",
+      "from": "cmp_017",
+      "to": "cmp_020",
+      "type": "sync",
+      "label": "link 257",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0258",
+      "from": "cmp_018",
+      "to": "cmp_021",
+      "type": "async",
+      "label": "link 258",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0259",
+      "from": "cmp_019",
+      "to": "cmp_022",
+      "type": "sync",
+      "label": "link 259",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0260",
+      "from": "cmp_020",
+      "to": "cmp_023",
+      "type": "sync",
+      "label": "link 260",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0261",
+      "from": "cmp_021",
+      "to": "cmp_024",
+      "type": "async",
+      "label": "link 261",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0262",
+      "from": "cmp_022",
+      "to": "cmp_025",
+      "type": "sync",
+      "label": "link 262",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0263",
+      "from": "cmp_023",
+      "to": "cmp_026",
+      "type": "sync",
+      "label": "link 263",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0264",
+      "from": "cmp_024",
+      "to": "cmp_027",
+      "type": "async",
+      "label": "link 264",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0265",
+      "from": "cmp_025",
+      "to": "cmp_028",
+      "type": "sync",
+      "label": "link 265",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0266",
+      "from": "cmp_026",
+      "to": "cmp_029",
+      "type": "sync",
+      "label": "link 266",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0267",
+      "from": "cmp_027",
+      "to": "cmp_030",
+      "type": "async",
+      "label": "link 267",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0268",
+      "from": "cmp_028",
+      "to": "cmp_031",
+      "type": "sync",
+      "label": "link 268",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0269",
+      "from": "cmp_029",
+      "to": "cmp_032",
+      "type": "sync",
+      "label": "link 269",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0270",
+      "from": "cmp_030",
+      "to": "cmp_033",
+      "type": "async",
+      "label": "link 270",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0271",
+      "from": "cmp_031",
+      "to": "cmp_034",
+      "type": "sync",
+      "label": "link 271",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0272",
+      "from": "cmp_032",
+      "to": "cmp_035",
+      "type": "sync",
+      "label": "link 272",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0273",
+      "from": "cmp_033",
+      "to": "cmp_036",
+      "type": "async",
+      "label": "link 273",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0274",
+      "from": "cmp_034",
+      "to": "cmp_037",
+      "type": "sync",
+      "label": "link 274",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0275",
+      "from": "cmp_035",
+      "to": "cmp_038",
+      "type": "sync",
+      "label": "link 275",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0276",
+      "from": "cmp_036",
+      "to": "cmp_039",
+      "type": "async",
+      "label": "link 276",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0277",
+      "from": "cmp_037",
+      "to": "cmp_040",
+      "type": "sync",
+      "label": "link 277",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0278",
+      "from": "cmp_038",
+      "to": "cmp_041",
+      "type": "sync",
+      "label": "link 278",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0279",
+      "from": "cmp_039",
+      "to": "cmp_042",
+      "type": "async",
+      "label": "link 279",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0280",
+      "from": "cmp_040",
+      "to": "cmp_043",
+      "type": "sync",
+      "label": "link 280",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0281",
+      "from": "cmp_041",
+      "to": "cmp_044",
+      "type": "sync",
+      "label": "link 281",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0282",
+      "from": "cmp_042",
+      "to": "cmp_045",
+      "type": "async",
+      "label": "link 282",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0283",
+      "from": "cmp_043",
+      "to": "cmp_046",
+      "type": "sync",
+      "label": "link 283",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0284",
+      "from": "cmp_044",
+      "to": "cmp_047",
+      "type": "sync",
+      "label": "link 284",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0285",
+      "from": "cmp_045",
+      "to": "cmp_048",
+      "type": "async",
+      "label": "link 285",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0286",
+      "from": "cmp_046",
+      "to": "cmp_049",
+      "type": "sync",
+      "label": "link 286",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0287",
+      "from": "cmp_047",
+      "to": "cmp_050",
+      "type": "sync",
+      "label": "link 287",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0288",
+      "from": "cmp_048",
+      "to": "cmp_051",
+      "type": "async",
+      "label": "link 288",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0289",
+      "from": "cmp_049",
+      "to": "cmp_052",
+      "type": "sync",
+      "label": "link 289",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0290",
+      "from": "cmp_050",
+      "to": "cmp_053",
+      "type": "sync",
+      "label": "link 290",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0291",
+      "from": "cmp_051",
+      "to": "cmp_054",
+      "type": "async",
+      "label": "link 291",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0292",
+      "from": "cmp_052",
+      "to": "cmp_055",
+      "type": "sync",
+      "label": "link 292",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0293",
+      "from": "cmp_053",
+      "to": "cmp_056",
+      "type": "sync",
+      "label": "link 293",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0294",
+      "from": "cmp_054",
+      "to": "cmp_057",
+      "type": "async",
+      "label": "link 294",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0295",
+      "from": "cmp_055",
+      "to": "cmp_058",
+      "type": "sync",
+      "label": "link 295",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0296",
+      "from": "cmp_056",
+      "to": "cmp_059",
+      "type": "sync",
+      "label": "link 296",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0297",
+      "from": "cmp_057",
+      "to": "cmp_060",
+      "type": "async",
+      "label": "link 297",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0298",
+      "from": "cmp_058",
+      "to": "cmp_061",
+      "type": "sync",
+      "label": "link 298",
+      "technology": "http",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_0299",
+      "from": "cmp_059",
+      "to": "cmp_062",
+      "type": "sync",
+      "label": "link 299",
+      "technology": "tcp",
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    }
+  ],
+  "groups": [
+    {
+      "id": "grp_00",
+      "name": "Tier 0",
+      "description": "Deployment tier 0 of the stress fixture.",
+      "members": [
+        "cmp_000",
+        "cmp_001",
+        "cmp_002",
+        "cmp_003",
+        "cmp_004",
+        "cmp_005",
+        "cmp_006",
+        "cmp_007",
+        "cmp_008",
+        "cmp_009",
+        "cmp_010",
+        "cmp_011",
+        "cmp_012",
+        "cmp_013",
+        "cmp_014",
+        "cmp_015",
+        "cmp_016",
+        "cmp_017",
+        "cmp_018",
+        "cmp_019"
+      ],
+      "parent_id": null,
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "grp_01",
+      "name": "Tier 1",
+      "description": "Deployment tier 1 of the stress fixture.",
+      "members": [
+        "cmp_020",
+        "cmp_021",
+        "cmp_022",
+        "cmp_023",
+        "cmp_024",
+        "cmp_025",
+        "cmp_026",
+        "cmp_027",
+        "cmp_028",
+        "cmp_029",
+        "cmp_030",
+        "cmp_031",
+        "cmp_032",
+        "cmp_033",
+        "cmp_034",
+        "cmp_035",
+        "cmp_036",
+        "cmp_037",
+        "cmp_038",
+        "cmp_039"
+      ],
+      "parent_id": null,
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "grp_02",
+      "name": "Tier 2",
+      "description": "Deployment tier 2 of the stress fixture.",
+      "members": [
+        "cmp_040",
+        "cmp_041",
+        "cmp_042",
+        "cmp_043",
+        "cmp_044",
+        "cmp_045",
+        "cmp_046",
+        "cmp_047",
+        "cmp_048",
+        "cmp_049",
+        "cmp_050",
+        "cmp_051",
+        "cmp_052",
+        "cmp_053",
+        "cmp_054",
+        "cmp_055",
+        "cmp_056",
+        "cmp_057",
+        "cmp_058",
+        "cmp_059"
+      ],
+      "parent_id": null,
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "grp_03",
+      "name": "Tier 3",
+      "description": "Deployment tier 3 of the stress fixture.",
+      "members": [
+        "cmp_060",
+        "cmp_061",
+        "cmp_062",
+        "cmp_063",
+        "cmp_064",
+        "cmp_065",
+        "cmp_066",
+        "cmp_067",
+        "cmp_068",
+        "cmp_069",
+        "cmp_070",
+        "cmp_071",
+        "cmp_072",
+        "cmp_073",
+        "cmp_074",
+        "cmp_075",
+        "cmp_076",
+        "cmp_077",
+        "cmp_078",
+        "cmp_079"
+      ],
+      "parent_id": null,
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "grp_04",
+      "name": "Tier 4",
+      "description": "Deployment tier 4 of the stress fixture.",
+      "members": [
+        "cmp_080",
+        "cmp_081",
+        "cmp_082",
+        "cmp_083",
+        "cmp_084",
+        "cmp_085",
+        "cmp_086",
+        "cmp_087",
+        "cmp_088",
+        "cmp_089",
+        "cmp_090",
+        "cmp_091",
+        "cmp_092",
+        "cmp_093",
+        "cmp_094",
+        "cmp_095",
+        "cmp_096",
+        "cmp_097",
+        "cmp_098",
+        "cmp_099"
+      ],
+      "parent_id": null,
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "grp_05",
+      "name": "Tier 5",
+      "description": "Deployment tier 5 of the stress fixture.",
+      "members": [
+        "cmp_100",
+        "cmp_101",
+        "cmp_102",
+        "cmp_103",
+        "cmp_104",
+        "cmp_105",
+        "cmp_106",
+        "cmp_107",
+        "cmp_108",
+        "cmp_109",
+        "cmp_110",
+        "cmp_111",
+        "cmp_112",
+        "cmp_113",
+        "cmp_114",
+        "cmp_115",
+        "cmp_116",
+        "cmp_117",
+        "cmp_118",
+        "cmp_119"
+      ],
+      "parent_id": null,
+      "requirement_refs": [
+        "req_scale"
+      ],
+      "assumed": false,
+      "rationale": null
+    }
+  ],
+  "assumptions": [],
+  "flags": []
+}

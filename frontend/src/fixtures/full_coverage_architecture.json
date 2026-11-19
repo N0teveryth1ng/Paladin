@@ -1,0 +1,501 @@
+{
+  "title": "Video Streaming Platform",
+  "summary": "A video platform covering upload, asynchronous transcoding, adaptive playback, search, auth and billing. Edge CDN serves static assets and video segments; the API service owns metadata, search queries and payment calls; a Kafka queue decouples transcoding from upload. Data-tier services sit inside the core platform boundary. Peak concurrency drives the cache and load balancer sizing.",
+  "requirements": [
+    {
+      "id": "req_auth",
+      "text": "Users must sign in with email and password.",
+      "kind": "functional",
+      "source": "prompt"
+    },
+    {
+      "id": "req_upload",
+      "text": "Creators upload videos, which are transcoded asynchronously into multiple renditions.",
+      "kind": "functional",
+      "source": "prompt"
+    },
+    {
+      "id": "req_playback",
+      "text": "Viewers stream videos with adaptive bitrate playback.",
+      "kind": "functional",
+      "source": "prompt"
+    },
+    {
+      "id": "req_search",
+      "text": "Viewers can search videos by title and description.",
+      "kind": "functional",
+      "source": "prompt"
+    },
+    {
+      "id": "req_reports",
+      "text": "Operators receive a nightly usage report.",
+      "kind": "functional",
+      "source": "prompt"
+    },
+    {
+      "id": "req_scale",
+      "text": "The system must serve 50,000 concurrent viewers with p95 playback start under 2 seconds.",
+      "kind": "non_functional",
+      "source": "prompt"
+    },
+    {
+      "id": "req_budget",
+      "text": "Monthly infrastructure spend must stay under 2,000 USD.",
+      "kind": "constraint",
+      "source": "prompt"
+    }
+  ],
+  "components": [
+    {
+      "id": "cmp_web_client",
+      "type": "client",
+      "name": "Web Client",
+      "technology": "React",
+      "description": "Browser application for uploading, browsing, searching and watching videos.",
+      "attributes": {},
+      "requirement_refs": ["req_playback", "req_search"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_mobile_client",
+      "type": "client",
+      "name": "Mobile Client",
+      "technology": "React Native",
+      "description": "Mobile application for browsing and watching videos.",
+      "attributes": {},
+      "requirement_refs": ["req_playback"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_edge_cdn",
+      "type": "cdn",
+      "name": "Edge CDN",
+      "technology": "Cloudflare",
+      "description": "Caches static assets and video segments close to viewers.",
+      "attributes": {
+        "protocol": "https"
+      },
+      "requirement_refs": ["req_playback", "req_scale"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_gateway",
+      "type": "api_gateway",
+      "name": "API Gateway",
+      "technology": "Kong",
+      "description": "Single entry point for authenticated API traffic.",
+      "attributes": {},
+      "requirement_refs": ["req_playback", "req_auth"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_load_balancer",
+      "type": "load_balancer",
+      "name": "Load Balancer",
+      "technology": "HAProxy",
+      "description": "Spreads API traffic across service replicas.",
+      "attributes": {
+        "replicas": "2"
+      },
+      "requirement_refs": ["req_scale"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_auth",
+      "type": "auth_provider",
+      "name": "Identity Provider",
+      "technology": "Keycloak",
+      "description": "Issues and validates user sessions and tokens.",
+      "attributes": {
+        "consistency": "strong"
+      },
+      "requirement_refs": ["req_auth"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_api",
+      "type": "service",
+      "name": "API Service",
+      "technology": "FastAPI",
+      "description": "Owns metadata, upload orchestration, search queries and billing calls.",
+      "attributes": {
+        "replicas": "4"
+      },
+      "requirement_refs": ["req_playback", "req_search", "req_upload"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_transcoder",
+      "type": "worker",
+      "name": "Transcode Worker",
+      "technology": "FFmpeg",
+      "description": "Consumes transcode jobs and writes renditions back to object storage.",
+      "attributes": {
+        "replicas": "8"
+      },
+      "requirement_refs": ["req_upload"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_db",
+      "type": "database",
+      "name": "Primary Database",
+      "technology": "PostgreSQL",
+      "description": "Durable store of users, video metadata and transcode job state.",
+      "attributes": {
+        "consistency": "strong",
+        "replicas": "3"
+      },
+      "requirement_refs": ["req_auth", "req_upload"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_cache",
+      "type": "cache",
+      "name": "Session Cache",
+      "technology": "Redis",
+      "description": "Hot session and metadata lookups that keep p95 playback start within budget.",
+      "attributes": {
+        "consistency": "not_applicable",
+        "protocol": "tcp"
+      },
+      "requirement_refs": ["req_scale"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_queue",
+      "type": "message_queue",
+      "name": "Transcode Queue",
+      "technology": "Kafka",
+      "description": "Durable job queue decoupling upload from transcoding.",
+      "attributes": {
+        "protocol": "other"
+      },
+      "requirement_refs": ["req_upload"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_storage",
+      "type": "object_storage",
+      "name": "Video Store",
+      "technology": "S3",
+      "description": "Stores original uploads and every transcoded rendition.",
+      "attributes": {
+        "protocol": "https"
+      },
+      "requirement_refs": ["req_upload", "req_playback"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_search",
+      "type": "search_index",
+      "name": "Video Search Index",
+      "technology": "OpenSearch",
+      "description": "Full-text index over video titles and descriptions.",
+      "attributes": {
+        "consistency": "eventual"
+      },
+      "requirement_refs": ["req_search"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_scheduler",
+      "type": "scheduler",
+      "name": "Report Scheduler",
+      "technology": "Celery Beat",
+      "description": "Triggers the nightly usage report job.",
+      "attributes": {},
+      "requirement_refs": ["req_reports"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cmp_billing",
+      "type": "external_service",
+      "name": "Payment Provider",
+      "technology": "Stripe",
+      "description": "Third-party processor for subscription charges.",
+      "attributes": {},
+      "requirement_refs": ["req_budget"],
+      "assumed": false,
+      "rationale": null
+    }
+  ],
+  "connections": [
+    {
+      "id": "cnx_web_cdn",
+      "from": "cmp_web_client",
+      "to": "cmp_edge_cdn",
+      "type": "sync",
+      "label": "static asset requests",
+      "technology": "https",
+      "requirement_refs": ["req_playback"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_mobile_cdn",
+      "from": "cmp_mobile_client",
+      "to": "cmp_edge_cdn",
+      "type": "sync",
+      "label": "static asset requests",
+      "technology": "https",
+      "requirement_refs": ["req_playback"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_cdn_storage",
+      "from": "cmp_edge_cdn",
+      "to": "cmp_storage",
+      "type": "sync",
+      "label": "origin fetches",
+      "technology": "https",
+      "requirement_refs": ["req_playback"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_mobile_gateway",
+      "from": "cmp_mobile_client",
+      "to": "cmp_gateway",
+      "type": "sync",
+      "label": "HTTPS API calls",
+      "technology": "https",
+      "requirement_refs": ["req_playback"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_gateway_lb",
+      "from": "cmp_gateway",
+      "to": "cmp_load_balancer",
+      "type": "sync",
+      "label": "forwarded requests",
+      "technology": "http",
+      "requirement_refs": ["req_scale"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_lb_api",
+      "from": "cmp_load_balancer",
+      "to": "cmp_api",
+      "type": "sync",
+      "label": "load balanced HTTP",
+      "technology": "http",
+      "requirement_refs": ["req_scale"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_api_auth",
+      "from": "cmp_api",
+      "to": "cmp_auth",
+      "type": "sync",
+      "label": "token introspection",
+      "technology": "https",
+      "requirement_refs": ["req_auth"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_api_cache",
+      "from": "cmp_api",
+      "to": "cmp_cache",
+      "type": "sync",
+      "label": "session lookup",
+      "technology": "tcp",
+      "requirement_refs": ["req_scale"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_api_db",
+      "from": "cmp_api",
+      "to": "cmp_db",
+      "type": "sync",
+      "label": "read/write metadata",
+      "technology": "sql",
+      "requirement_refs": ["req_upload"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_api_queue",
+      "from": "cmp_api",
+      "to": "cmp_queue",
+      "type": "async",
+      "label": "publishes transcode jobs",
+      "technology": "other",
+      "requirement_refs": ["req_upload"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_queue_transcoder",
+      "from": "cmp_queue",
+      "to": "cmp_transcoder",
+      "type": "async",
+      "label": "job consumption",
+      "technology": "other",
+      "requirement_refs": ["req_upload"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_transcoder_storage",
+      "from": "cmp_transcoder",
+      "to": "cmp_storage",
+      "type": "sync",
+      "label": "stores renditions",
+      "technology": "https",
+      "requirement_refs": ["req_upload"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_transcoder_queue",
+      "from": "cmp_transcoder",
+      "to": "cmp_queue",
+      "type": "async",
+      "label": "completion events",
+      "technology": "other",
+      "requirement_refs": ["req_upload"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_api_search",
+      "from": "cmp_api",
+      "to": "cmp_search",
+      "type": "sync",
+      "label": "index queries",
+      "technology": "https",
+      "requirement_refs": ["req_search"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_api_billing",
+      "from": "cmp_api",
+      "to": "cmp_billing",
+      "type": "sync",
+      "label": "charge requests",
+      "technology": "https",
+      "requirement_refs": ["req_budget"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_scheduler_api",
+      "from": "cmp_scheduler",
+      "to": "cmp_api",
+      "type": "sync",
+      "label": "nightly report trigger",
+      "technology": "http",
+      "requirement_refs": ["req_reports"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "cnx_api_storage",
+      "from": "cmp_api",
+      "to": "cmp_storage",
+      "type": "sync",
+      "label": "presigned upload URLs",
+      "technology": "https",
+      "requirement_refs": ["req_upload"],
+      "assumed": false,
+      "rationale": null
+    }
+  ],
+  "groups": [
+    {
+      "id": "grp_edge",
+      "name": "Edge Tier",
+      "description": "Client-facing delivery: clients and the CDN.",
+      "members": ["cmp_web_client", "cmp_mobile_client", "cmp_edge_cdn"],
+      "parent_id": null,
+      "requirement_refs": ["req_playback"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "grp_core",
+      "name": "Core Platform",
+      "description": "Request handling, identity and scheduled work.",
+      "members": ["cmp_gateway", "cmp_load_balancer", "cmp_api", "cmp_auth", "cmp_scheduler"],
+      "parent_id": null,
+      "requirement_refs": ["req_playback", "req_auth"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "grp_data",
+      "name": "Data Tier",
+      "description": "Stateful stores, nested inside the core platform boundary.",
+      "members": ["cmp_db", "cmp_cache", "cmp_storage", "cmp_search"],
+      "parent_id": "grp_core",
+      "requirement_refs": ["req_upload"],
+      "assumed": false,
+      "rationale": null
+    },
+    {
+      "id": "grp_async",
+      "name": "Async Processing",
+      "description": "Queue and transcode workers, nested inside the core platform boundary.",
+      "members": ["cmp_queue", "cmp_transcoder"],
+      "parent_id": "grp_core",
+      "requirement_refs": ["req_upload"],
+      "assumed": false,
+      "rationale": null
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "asm_resolution",
+      "text": "Transcoding targets 720p and 1080p renditions only; there is no 4K output in v1.",
+      "scope": "element",
+      "element_refs": ["cmp_transcoder"],
+      "rationale": "The prompt does not state target resolutions."
+    },
+    {
+      "id": "asm_traffic",
+      "text": "50,000 concurrent viewers is a peak figure; average load is a fifth of peak.",
+      "scope": "global",
+      "element_refs": [],
+      "rationale": "The prompt gives a peak number without an average, and cost sizing depends on it."
+    },
+    {
+      "id": "asm_retention",
+      "text": "Uploaded videos are retained indefinitely; there is no deletion workflow in v1.",
+      "scope": "element",
+      "element_refs": ["cmp_storage"],
+      "rationale": "The prompt does not state a retention policy."
+    }
+  ],
+  "flags": [
+    {
+      "id": "flg_retention",
+      "kind": "underspecified",
+      "description": "No retention or deletion policy is stated for uploaded videos, so storage growth and cost cannot be bounded.",
+      "requirement_refs": ["req_upload", "req_budget"],
+      "severity": "warning",
+      "resolved_by": "asm_retention"
+    }
+  ]
+}

@@ -1,0 +1,1020 @@
+{
+  "fixture": "large_architecture.json",
+  "rules_version": "1.1",
+  "issues": [
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0003",
+      "message": "connection 'cnx_0003': service -> worker: a service may dispatch work to a worker directly, but a queue is more common"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0005",
+      "message": "connection 'cnx_0005': database -> cache: a database may push changes to a cache, but the cache is normally read-through"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0006",
+      "message": "connection 'cnx_0006': cache -> message_queue: a cache may publish invalidation events, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0007",
+      "message": "connection 'cnx_0007': message_queue -> object_storage: a queue may sink into object storage via a connector, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0008",
+      "message": "connection 'cnx_0008': object_storage -> cdn: object storage may be an origin for a CDN, but the CDN normally pulls"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0009",
+      "message": "connection 'cnx_0009': cdn -> auth_provider: a CDN may validate tokens at the edge, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0010",
+      "message": "connection 'cnx_0010': auth_provider -> search_index: an auth provider does not call a search index"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0011",
+      "message": "connection 'cnx_0011': search_index -> scheduler: a search index does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0017",
+      "message": "connection 'cnx_0017': service -> worker: a service may dispatch work to a worker directly, but a queue is more common"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0019",
+      "message": "connection 'cnx_0019': database -> cache: a database may push changes to a cache, but the cache is normally read-through"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0020",
+      "message": "connection 'cnx_0020': cache -> message_queue: a cache may publish invalidation events, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0021",
+      "message": "connection 'cnx_0021': message_queue -> object_storage: a queue may sink into object storage via a connector, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0022",
+      "message": "connection 'cnx_0022': object_storage -> cdn: object storage may be an origin for a CDN, but the CDN normally pulls"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0023",
+      "message": "connection 'cnx_0023': cdn -> auth_provider: a CDN may validate tokens at the edge, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0024",
+      "message": "connection 'cnx_0024': auth_provider -> search_index: an auth provider does not call a search index"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0025",
+      "message": "connection 'cnx_0025': search_index -> scheduler: a search index does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0031",
+      "message": "connection 'cnx_0031': service -> worker: a service may dispatch work to a worker directly, but a queue is more common"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0033",
+      "message": "connection 'cnx_0033': database -> cache: a database may push changes to a cache, but the cache is normally read-through"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0034",
+      "message": "connection 'cnx_0034': cache -> message_queue: a cache may publish invalidation events, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0035",
+      "message": "connection 'cnx_0035': message_queue -> object_storage: a queue may sink into object storage via a connector, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0036",
+      "message": "connection 'cnx_0036': object_storage -> cdn: object storage may be an origin for a CDN, but the CDN normally pulls"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0037",
+      "message": "connection 'cnx_0037': cdn -> auth_provider: a CDN may validate tokens at the edge, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0038",
+      "message": "connection 'cnx_0038': auth_provider -> search_index: an auth provider does not call a search index"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0039",
+      "message": "connection 'cnx_0039': search_index -> scheduler: a search index does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0045",
+      "message": "connection 'cnx_0045': service -> worker: a service may dispatch work to a worker directly, but a queue is more common"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0047",
+      "message": "connection 'cnx_0047': database -> cache: a database may push changes to a cache, but the cache is normally read-through"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0048",
+      "message": "connection 'cnx_0048': cache -> message_queue: a cache may publish invalidation events, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0049",
+      "message": "connection 'cnx_0049': message_queue -> object_storage: a queue may sink into object storage via a connector, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0050",
+      "message": "connection 'cnx_0050': object_storage -> cdn: object storage may be an origin for a CDN, but the CDN normally pulls"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0051",
+      "message": "connection 'cnx_0051': cdn -> auth_provider: a CDN may validate tokens at the edge, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0052",
+      "message": "connection 'cnx_0052': auth_provider -> search_index: an auth provider does not call a search index"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0053",
+      "message": "connection 'cnx_0053': search_index -> scheduler: a search index does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0059",
+      "message": "connection 'cnx_0059': service -> worker: a service may dispatch work to a worker directly, but a queue is more common"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0061",
+      "message": "connection 'cnx_0061': database -> cache: a database may push changes to a cache, but the cache is normally read-through"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0062",
+      "message": "connection 'cnx_0062': cache -> message_queue: a cache may publish invalidation events, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0063",
+      "message": "connection 'cnx_0063': message_queue -> object_storage: a queue may sink into object storage via a connector, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0064",
+      "message": "connection 'cnx_0064': object_storage -> cdn: object storage may be an origin for a CDN, but the CDN normally pulls"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0065",
+      "message": "connection 'cnx_0065': cdn -> auth_provider: a CDN may validate tokens at the edge, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0066",
+      "message": "connection 'cnx_0066': auth_provider -> search_index: an auth provider does not call a search index"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0067",
+      "message": "connection 'cnx_0067': search_index -> scheduler: a search index does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0073",
+      "message": "connection 'cnx_0073': service -> worker: a service may dispatch work to a worker directly, but a queue is more common"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0075",
+      "message": "connection 'cnx_0075': database -> cache: a database may push changes to a cache, but the cache is normally read-through"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0076",
+      "message": "connection 'cnx_0076': cache -> message_queue: a cache may publish invalidation events, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0077",
+      "message": "connection 'cnx_0077': message_queue -> object_storage: a queue may sink into object storage via a connector, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0078",
+      "message": "connection 'cnx_0078': object_storage -> cdn: object storage may be an origin for a CDN, but the CDN normally pulls"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0079",
+      "message": "connection 'cnx_0079': cdn -> auth_provider: a CDN may validate tokens at the edge, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0080",
+      "message": "connection 'cnx_0080': auth_provider -> search_index: an auth provider does not call a search index"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0081",
+      "message": "connection 'cnx_0081': search_index -> scheduler: a search index does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0087",
+      "message": "connection 'cnx_0087': service -> worker: a service may dispatch work to a worker directly, but a queue is more common"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0089",
+      "message": "connection 'cnx_0089': database -> cache: a database may push changes to a cache, but the cache is normally read-through"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0090",
+      "message": "connection 'cnx_0090': cache -> message_queue: a cache may publish invalidation events, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0091",
+      "message": "connection 'cnx_0091': message_queue -> object_storage: a queue may sink into object storage via a connector, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0092",
+      "message": "connection 'cnx_0092': object_storage -> cdn: object storage may be an origin for a CDN, but the CDN normally pulls"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0093",
+      "message": "connection 'cnx_0093': cdn -> auth_provider: a CDN may validate tokens at the edge, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0094",
+      "message": "connection 'cnx_0094': auth_provider -> search_index: an auth provider does not call a search index"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0095",
+      "message": "connection 'cnx_0095': search_index -> scheduler: a search index does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0101",
+      "message": "connection 'cnx_0101': service -> worker: a service may dispatch work to a worker directly, but a queue is more common"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0103",
+      "message": "connection 'cnx_0103': database -> cache: a database may push changes to a cache, but the cache is normally read-through"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0104",
+      "message": "connection 'cnx_0104': cache -> message_queue: a cache may publish invalidation events, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0105",
+      "message": "connection 'cnx_0105': message_queue -> object_storage: a queue may sink into object storage via a connector, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0106",
+      "message": "connection 'cnx_0106': object_storage -> cdn: object storage may be an origin for a CDN, but the CDN normally pulls"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0107",
+      "message": "connection 'cnx_0107': cdn -> auth_provider: a CDN may validate tokens at the edge, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0108",
+      "message": "connection 'cnx_0108': auth_provider -> search_index: an auth provider does not call a search index"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0109",
+      "message": "connection 'cnx_0109': search_index -> scheduler: a search index does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0115",
+      "message": "connection 'cnx_0115': service -> worker: a service may dispatch work to a worker directly, but a queue is more common"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0117",
+      "message": "connection 'cnx_0117': database -> cache: a database may push changes to a cache, but the cache is normally read-through"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0118",
+      "message": "connection 'cnx_0118': cache -> message_queue: a cache may publish invalidation events, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0119",
+      "message": "connection 'cnx_0119': message_queue -> client: a queue does not call a client directly; a push service delivers to clients"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0126",
+      "message": "connection 'cnx_0126': cache -> object_storage: a cache may export backups to object storage, but the compute layer normally drives cache fill"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0127",
+      "message": "connection 'cnx_0127': message_queue -> cdn: a queue does not call a CDN directly"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0128",
+      "message": "connection 'cnx_0128': object_storage -> auth_provider: object storage does not call an auth provider"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0129",
+      "message": "connection 'cnx_0129': cdn -> search_index: a CDN does not call a search index"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0130",
+      "message": "connection 'cnx_0130': auth_provider -> scheduler: an auth provider does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0131",
+      "message": "connection 'cnx_0131': search_index -> external_service: a search index may call an external enrichment service, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0132",
+      "message": "connection 'cnx_0132': scheduler -> client: a scheduler triggers backend work; it does not call clients"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0140",
+      "message": "connection 'cnx_0140': cache -> object_storage: a cache may export backups to object storage, but the compute layer normally drives cache fill"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0141",
+      "message": "connection 'cnx_0141': message_queue -> cdn: a queue does not call a CDN directly"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0142",
+      "message": "connection 'cnx_0142': object_storage -> auth_provider: object storage does not call an auth provider"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0143",
+      "message": "connection 'cnx_0143': cdn -> search_index: a CDN does not call a search index"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0144",
+      "message": "connection 'cnx_0144': auth_provider -> scheduler: an auth provider does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0145",
+      "message": "connection 'cnx_0145': search_index -> external_service: a search index may call an external enrichment service, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0146",
+      "message": "connection 'cnx_0146': scheduler -> client: a scheduler triggers backend work; it does not call clients"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0154",
+      "message": "connection 'cnx_0154': cache -> object_storage: a cache may export backups to object storage, but the compute layer normally drives cache fill"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0155",
+      "message": "connection 'cnx_0155': message_queue -> cdn: a queue does not call a CDN directly"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0156",
+      "message": "connection 'cnx_0156': object_storage -> auth_provider: object storage does not call an auth provider"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0157",
+      "message": "connection 'cnx_0157': cdn -> search_index: a CDN does not call a search index"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0158",
+      "message": "connection 'cnx_0158': auth_provider -> scheduler: an auth provider does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0159",
+      "message": "connection 'cnx_0159': search_index -> external_service: a search index may call an external enrichment service, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0160",
+      "message": "connection 'cnx_0160': scheduler -> client: a scheduler triggers backend work; it does not call clients"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0168",
+      "message": "connection 'cnx_0168': cache -> object_storage: a cache may export backups to object storage, but the compute layer normally drives cache fill"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0169",
+      "message": "connection 'cnx_0169': message_queue -> cdn: a queue does not call a CDN directly"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0170",
+      "message": "connection 'cnx_0170': object_storage -> auth_provider: object storage does not call an auth provider"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0171",
+      "message": "connection 'cnx_0171': cdn -> search_index: a CDN does not call a search index"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0172",
+      "message": "connection 'cnx_0172': auth_provider -> scheduler: an auth provider does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0173",
+      "message": "connection 'cnx_0173': search_index -> external_service: a search index may call an external enrichment service, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0174",
+      "message": "connection 'cnx_0174': scheduler -> client: a scheduler triggers backend work; it does not call clients"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0182",
+      "message": "connection 'cnx_0182': cache -> object_storage: a cache may export backups to object storage, but the compute layer normally drives cache fill"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0183",
+      "message": "connection 'cnx_0183': message_queue -> cdn: a queue does not call a CDN directly"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0184",
+      "message": "connection 'cnx_0184': object_storage -> auth_provider: object storage does not call an auth provider"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0185",
+      "message": "connection 'cnx_0185': cdn -> search_index: a CDN does not call a search index"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0186",
+      "message": "connection 'cnx_0186': auth_provider -> scheduler: an auth provider does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0187",
+      "message": "connection 'cnx_0187': search_index -> external_service: a search index may call an external enrichment service, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0188",
+      "message": "connection 'cnx_0188': scheduler -> client: a scheduler triggers backend work; it does not call clients"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0196",
+      "message": "connection 'cnx_0196': cache -> object_storage: a cache may export backups to object storage, but the compute layer normally drives cache fill"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0197",
+      "message": "connection 'cnx_0197': message_queue -> cdn: a queue does not call a CDN directly"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0198",
+      "message": "connection 'cnx_0198': object_storage -> auth_provider: object storage does not call an auth provider"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0199",
+      "message": "connection 'cnx_0199': cdn -> search_index: a CDN does not call a search index"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0200",
+      "message": "connection 'cnx_0200': auth_provider -> scheduler: an auth provider does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0201",
+      "message": "connection 'cnx_0201': search_index -> external_service: a search index may call an external enrichment service, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0202",
+      "message": "connection 'cnx_0202': scheduler -> client: a scheduler triggers backend work; it does not call clients"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0210",
+      "message": "connection 'cnx_0210': cache -> object_storage: a cache may export backups to object storage, but the compute layer normally drives cache fill"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0211",
+      "message": "connection 'cnx_0211': message_queue -> cdn: a queue does not call a CDN directly"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0212",
+      "message": "connection 'cnx_0212': object_storage -> auth_provider: object storage does not call an auth provider"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0213",
+      "message": "connection 'cnx_0213': cdn -> search_index: a CDN does not call a search index"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0214",
+      "message": "connection 'cnx_0214': auth_provider -> scheduler: an auth provider does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0215",
+      "message": "connection 'cnx_0215': search_index -> external_service: a search index may call an external enrichment service, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0216",
+      "message": "connection 'cnx_0216': scheduler -> client: a scheduler triggers backend work; it does not call clients"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0224",
+      "message": "connection 'cnx_0224': cache -> object_storage: a cache may export backups to object storage, but the compute layer normally drives cache fill"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0225",
+      "message": "connection 'cnx_0225': message_queue -> cdn: a queue does not call a CDN directly"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0226",
+      "message": "connection 'cnx_0226': object_storage -> auth_provider: object storage does not call an auth provider"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0227",
+      "message": "connection 'cnx_0227': cdn -> search_index: a CDN does not call a search index"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0228",
+      "message": "connection 'cnx_0228': auth_provider -> scheduler: an auth provider does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0229",
+      "message": "connection 'cnx_0229': search_index -> external_service: a search index may call an external enrichment service, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0230",
+      "message": "connection 'cnx_0230': scheduler -> client: a scheduler triggers backend work; it does not call clients"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0238",
+      "message": "connection 'cnx_0238': cache -> client: a cache is passive; it does not originate calls to clients"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0239",
+      "message": "connection 'cnx_0239': message_queue -> api_gateway: a queue does not call a gateway directly"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0242",
+      "message": "connection 'cnx_0242': load_balancer -> database: a load balancer may health-check or proxy a database, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0246",
+      "message": "connection 'cnx_0246': cache -> cdn: a cache does not call a CDN; the CDN normally sits in front"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0247",
+      "message": "connection 'cnx_0247': message_queue -> auth_provider: a queue does not call an auth provider directly"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0248",
+      "message": "connection 'cnx_0248': object_storage -> search_index: object storage does not call a search index directly; events normally go through compute"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0249",
+      "message": "connection 'cnx_0249': cdn -> scheduler: a CDN does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0251",
+      "message": "connection 'cnx_0251': search_index -> client: a search index may return results to a client through a gateway, not directly"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0252",
+      "message": "connection 'cnx_0252': scheduler -> api_gateway: a scheduler normally calls a service, not a gateway, but it is possible"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0253",
+      "message": "connection 'cnx_0253': external_service -> load_balancer: an external service may call a load balancer webhook, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0256",
+      "message": "connection 'cnx_0256': load_balancer -> database: a load balancer may health-check or proxy a database, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0260",
+      "message": "connection 'cnx_0260': cache -> cdn: a cache does not call a CDN; the CDN normally sits in front"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0261",
+      "message": "connection 'cnx_0261': message_queue -> auth_provider: a queue does not call an auth provider directly"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0262",
+      "message": "connection 'cnx_0262': object_storage -> search_index: object storage does not call a search index directly; events normally go through compute"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0263",
+      "message": "connection 'cnx_0263': cdn -> scheduler: a CDN does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0265",
+      "message": "connection 'cnx_0265': search_index -> client: a search index may return results to a client through a gateway, not directly"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0266",
+      "message": "connection 'cnx_0266': scheduler -> api_gateway: a scheduler normally calls a service, not a gateway, but it is possible"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0267",
+      "message": "connection 'cnx_0267': external_service -> load_balancer: an external service may call a load balancer webhook, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0270",
+      "message": "connection 'cnx_0270': load_balancer -> database: a load balancer may health-check or proxy a database, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0274",
+      "message": "connection 'cnx_0274': cache -> cdn: a cache does not call a CDN; the CDN normally sits in front"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0275",
+      "message": "connection 'cnx_0275': message_queue -> auth_provider: a queue does not call an auth provider directly"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0276",
+      "message": "connection 'cnx_0276': object_storage -> search_index: object storage does not call a search index directly; events normally go through compute"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0277",
+      "message": "connection 'cnx_0277': cdn -> scheduler: a CDN does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0279",
+      "message": "connection 'cnx_0279': search_index -> client: a search index may return results to a client through a gateway, not directly"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0280",
+      "message": "connection 'cnx_0280': scheduler -> api_gateway: a scheduler normally calls a service, not a gateway, but it is possible"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0281",
+      "message": "connection 'cnx_0281': external_service -> load_balancer: an external service may call a load balancer webhook, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0284",
+      "message": "connection 'cnx_0284': load_balancer -> database: a load balancer may health-check or proxy a database, but it is unusual"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0288",
+      "message": "connection 'cnx_0288': cache -> cdn: a cache does not call a CDN; the CDN normally sits in front"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0289",
+      "message": "connection 'cnx_0289': message_queue -> auth_provider: a queue does not call an auth provider directly"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0290",
+      "message": "connection 'cnx_0290': object_storage -> search_index: object storage does not call a search index directly; events normally go through compute"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_0291",
+      "message": "connection 'cnx_0291': cdn -> scheduler: a CDN does not call a scheduler"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0293",
+      "message": "connection 'cnx_0293': search_index -> client: a search index may return results to a client through a gateway, not directly"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0294",
+      "message": "connection 'cnx_0294': scheduler -> api_gateway: a scheduler normally calls a service, not a gateway, but it is possible"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0295",
+      "message": "connection 'cnx_0295': external_service -> load_balancer: an external service may call a load balancer webhook, but it is unusual"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_0298",
+      "message": "connection 'cnx_0298': load_balancer -> database: a load balancer may health-check or proxy a database, but it is unusual"
+    },
+    {
+      "kind": "synchronous_cycle",
+      "severity": "judgment",
+      "element_id": "cmp_001",
+      "message": "synchronous cycle across 80 components: cmp_001, cmp_002, cmp_004, cmp_005, cmp_007, cmp_008, cmp_010, cmp_011 and 72 more"
+    },
+    {
+      "kind": "missing_required_link",
+      "severity": "judgment",
+      "element_id": "cmp_011",
+      "message": "component 'cmp_011' (search_index) has no in link to client, api_gateway, load_balancer, service, worker, database, message_queue, search_index: an index may be populated by an unshown pipeline; flag for review, do not reject"
+    },
+    {
+      "kind": "missing_required_link",
+      "severity": "judgment",
+      "element_id": "cmp_025",
+      "message": "component 'cmp_025' (search_index) has no in link to client, api_gateway, load_balancer, service, worker, database, message_queue, search_index: an index may be populated by an unshown pipeline; flag for review, do not reject"
+    },
+    {
+      "kind": "missing_required_link",
+      "severity": "judgment",
+      "element_id": "cmp_039",
+      "message": "component 'cmp_039' (search_index) has no in link to client, api_gateway, load_balancer, service, worker, database, message_queue, search_index: an index may be populated by an unshown pipeline; flag for review, do not reject"
+    },
+    {
+      "kind": "missing_required_link",
+      "severity": "judgment",
+      "element_id": "cmp_053",
+      "message": "component 'cmp_053' (search_index) has no in link to client, api_gateway, load_balancer, service, worker, database, message_queue, search_index: an index may be populated by an unshown pipeline; flag for review, do not reject"
+    },
+    {
+      "kind": "missing_required_link",
+      "severity": "judgment",
+      "element_id": "cmp_067",
+      "message": "component 'cmp_067' (search_index) has no in link to client, api_gateway, load_balancer, service, worker, database, message_queue, search_index: an index may be populated by an unshown pipeline; flag for review, do not reject"
+    },
+    {
+      "kind": "missing_required_link",
+      "severity": "judgment",
+      "element_id": "cmp_081",
+      "message": "component 'cmp_081' (search_index) has no in link to client, api_gateway, load_balancer, service, worker, database, message_queue, search_index: an index may be populated by an unshown pipeline; flag for review, do not reject"
+    },
+    {
+      "kind": "missing_required_link",
+      "severity": "judgment",
+      "element_id": "cmp_095",
+      "message": "component 'cmp_095' (search_index) has no in link to client, api_gateway, load_balancer, service, worker, database, message_queue, search_index: an index may be populated by an unshown pipeline; flag for review, do not reject"
+    },
+    {
+      "kind": "missing_required_link",
+      "severity": "judgment",
+      "element_id": "cmp_109",
+      "message": "component 'cmp_109' (search_index) has no in link to client, api_gateway, load_balancer, service, worker, database, message_queue, search_index: an index may be populated by an unshown pipeline; flag for review, do not reject"
+    },
+    {
+      "kind": "missing_required_link",
+      "severity": "judgment",
+      "element_id": "cmp_119",
+      "message": "component 'cmp_119' (message_queue) has no out link to service, worker, database, cache, message_queue, object_storage, search_index, external_service: a queue with no consumer never drains; flag for review, do not reject"
+    }
+  ]
+}

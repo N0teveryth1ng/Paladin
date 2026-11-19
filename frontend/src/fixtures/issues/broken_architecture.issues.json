@@ -1,0 +1,54 @@
+{
+  "fixture": "broken_architecture.json",
+  "rules_version": "1.1",
+  "issues": [
+    {
+      "kind": "group_nesting_too_deep",
+      "severity": "invalid",
+      "element_id": "grp_deep_leaf",
+      "message": "group 'grp_deep_leaf' is nested under 'grp_deep_mid', which already has a parent (v1 allows one level)"
+    },
+    {
+      "kind": "unknown_group_parent",
+      "severity": "invalid",
+      "element_id": "grp_orphan_parent",
+      "message": "group 'grp_orphan_parent' has unknown parent 'grp_missing'"
+    },
+    {
+      "kind": "component_in_multiple_groups",
+      "severity": "invalid",
+      "element_id": "cmp_shortener",
+      "message": "component 'cmp_shortener' belongs to multiple groups: ['grp_backend', 'grp_edge']"
+    },
+    {
+      "kind": "disconnected_component",
+      "severity": "invalid",
+      "element_id": "cmp_orphan",
+      "message": "component 'cmp_orphan' has no connections"
+    },
+    {
+      "kind": "invalid_type_pairing",
+      "severity": "invalid",
+      "element_id": "cnx_db_client",
+      "message": "connection 'cnx_db_client': database -> client: a database is passive; it does not originate calls to clients"
+    },
+    {
+      "kind": "questionable_type_pairing",
+      "severity": "judgment",
+      "element_id": "cnx_client_cache",
+      "message": "connection 'cnx_client_cache': client -> cache: a client may read a shared cache directly, but it usually goes through a service"
+    },
+    {
+      "kind": "synchronous_cycle",
+      "severity": "invalid",
+      "element_id": "cmp_shortener",
+      "message": "component 'cmp_shortener' has a synchronous self-loop"
+    },
+    {
+      "kind": "synchronous_cycle",
+      "severity": "judgment",
+      "element_id": "cmp_db",
+      "message": "synchronous cycle across 4 components: cmp_db, cmp_gateway, cmp_shortener, cmp_web"
+    }
+  ]
+}
