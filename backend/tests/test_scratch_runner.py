@@ -6,7 +6,10 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
-from app.llm.client import Completion
+import pytest
+
+from app.llm.budget import BudgetExhausted
+from app.llm.client import Completion, RateLimitedError
 from app.llm.scratch_runner import (
     SCRATCH_MAX_TOKENS_CEILING,
     SCRATCH_START_MAX_TOKENS,
@@ -84,7 +87,13 @@ def test_truncation_at_the_ceiling_is_not_used_for_measurement(
     tmp_path: Path,
 ) -> None:
     client = CapStubClient(lambda cap: completion(VALID, "length"))
-    run_scratch(model="model-a", mode="json_schema", client=client, out_dir=tmp_path)
+    run_scratch(
+        model="model-a",
+        mode="json_schema",
+        client=client,
+        out_dir=tmp_path,
+        max_calls=None,
+    )
 
     for record in records(tmp_path, "json_schema"):
         assert record["cap_used"] == SCRATCH_MAX_TOKENS_CEILING
@@ -107,3 +116,58 @@ def test_schema_invalid_output_is_not_used_for_measurement(tmp_path: Path) -> No
         assert all(
             attempt["finish_reason"] == "stop" for attempt in record["attempts"]
         )
+
+
+def test_call_cap_stops_and_the_next_run_resumes_settled_prompts(
+    tmp_path: Path,
+) -> None:
+    first = CapStubClient(lambda cap: completion(VALID, "stop"))
+    with pytest.raises(BudgetExhausted):
+        run_scratch(
+            model="model-a",
+            mode="json_schema",
+            client=first,
+            out_dir=tmp_path,
+            max_calls=2,
+        )
+
+    assert first.caps == [SCRATCH_START_MAX_TOKENS] * 2
+    assert len(records(tmp_path, "json_schema")) == 2
+
+    second = CapStubClient(lambda cap: completion(VALID, "stop"))
+    written = run_scratch(
+        model="model-a",
+        mode="json_schema",
+        client=second,
+        out_dir=tmp_path,
+        max_calls=3,
+    )
+
+    # The two settled prompts are skipped; only the remaining three are run.
+    assert second.caps == [SCRATCH_START_MAX_TOKENS] * 3
+    assert len(written) == 3
+    assert len(records(tmp_path, "json_schema")) == len(load_scratch_prompts())
+
+
+def test_rate_limit_stops_the_scratch_run_and_resumes(tmp_path: Path) -> None:
+    def limited_decide(cap: int) -> Completion:
+        raise RateLimitedError("429")
+
+    limited = CapStubClient(limited_decide)
+    written = run_scratch(
+        model="model-a", mode="json_schema", client=limited, out_dir=tmp_path
+    )
+
+    assert len(written) == 1
+    assert limited.caps == [SCRATCH_START_MAX_TOKENS]
+    record = records(tmp_path, "json_schema")[0]
+    assert record["final_status"] == "rate_limited"
+    assert record["measurement_usable"] is False
+
+    resumed = CapStubClient(lambda cap: completion(VALID, "stop"))
+    run_scratch(
+        model="model-a", mode="json_schema", client=resumed, out_dir=tmp_path
+    )
+
+    assert len(records(tmp_path, "json_schema")) == len(load_scratch_prompts())
+    assert len(resumed.caps) == len(load_scratch_prompts())

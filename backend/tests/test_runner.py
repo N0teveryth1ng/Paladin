@@ -117,7 +117,6 @@ def run(
     model: str = "test-model",
     only_prompt: str | None = "ev_01",
     force: bool = False,
-    sleep=lambda seconds: None,
 ) -> list[Path]:
     freeze_path = write_freeze(tmp_path, freeze_payload or freeze())
     return run_scored(
@@ -129,7 +128,6 @@ def run(
         schema_path=SCHEMA,
         only_prompt=only_prompt,
         force=force,
-        sleep=sleep,
         base_url="https://stub.test/v1",
     )
 
@@ -257,20 +255,19 @@ def test_force_reruns_terminal_records(tmp_path: Path) -> None:
     assert client.calls == 6
 
 
-def test_rate_limit_waits_are_bounded(tmp_path: Path) -> None:
-    sleeps: list[float] = []
+def test_rate_limit_stops_and_resumes_without_a_retry(tmp_path: Path) -> None:
     client = StubClient([RateLimitedError("429")] * 100)
 
-    run(tmp_path, client=client, sleep=sleeps.append)
+    written = run(tmp_path, client=client)
 
-    record = json.loads(
-        (tmp_path / "runs" / "test-model" / "ev_01" / "run-1.json").read_text(
-            encoding="utf-8"
-        )
-    )
+    assert len(written) == 1
+    assert client.calls == 1
+    record = json.loads(written[0].read_text(encoding="utf-8"))
     assert record["final_status"] == "rate_limited"
-    assert len(record["attempts"]) == constants.MAX_RATE_LIMIT_WAITS + 1
-    assert len(sleeps) == constants.RUNS_PER_PROMPT * constants.MAX_RATE_LIMIT_WAITS
+    assert len(record["attempts"]) == 1
+
+    prompt_dir = tmp_path / "runs" / "test-model" / "ev_01"
+    assert sorted(path.name for path in prompt_dir.glob("run-*.json")) == ["run-1.json"]
 
 
 def test_prompt_flag_restricts_the_run(tmp_path: Path) -> None:

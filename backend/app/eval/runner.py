@@ -11,8 +11,6 @@ import argparse
 import hashlib
 import json
 import sys
-import time
-from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -21,6 +19,7 @@ from urllib.parse import urlsplit
 from app.eval import constants
 from app.eval.evaluate import deterministic_gate
 from app.eval.models import EvalPrompt, EvalSet
+from app.llm.budget import BudgetedClient
 from app.llm.generate import (
     REASONING_TRANSFORMS,
     GenerationConfig,
@@ -34,6 +33,9 @@ DEFAULT_EVAL_SET = REPO_ROOT / "eval" / "eval_set.json"
 DEFAULT_FREEZE = REPO_ROOT / "eval" / "freeze.json"
 DEFAULT_SCHEMA = REPO_ROOT / "schema" / "architecture.generation.schema.json"
 DEFAULT_OUT = REPO_ROOT / "runs"
+
+#: Hard cap per model invocation. The free-model daily limit is 50 requests.
+SCORED_MAX_CALLS_PER_MODEL = 50
 
 
 class RefusalError(RuntimeError):
@@ -139,34 +141,16 @@ def _run_once(
     prompt: EvalPrompt,
     config: GenerationConfig,
     reasoning_transform: Callable[[str], str] | None,
-    sleep: Callable[[float], None],
 ) -> tuple[GenerationResult, list[Any]]:
-    """Call generation, waiting out rate limits within the frozen budget."""
+    """Call generation once. A 429 is stop-and-resume, never a retry."""
 
-    all_attempts: list[Any] = []
-    waits = 0
-    while True:
-        result = generate(
-            client,
-            prompt.prompt,
-            config,
-            reasoning_transform=reasoning_transform,
-        )
-        all_attempts.extend(result.attempts)
-        if result.status != "rate_limited":
-            break
-        if waits >= constants.MAX_RATE_LIMIT_WAITS:
-            break
-        sleep(constants.BACKOFF_SECONDS[min(waits, len(constants.BACKOFF_SECONDS) - 1)])
-        waits += 1
-
-    if len(all_attempts) != len(result.attempts):
-        result.attempts = [
-            replace(attempt, index=index)
-            for index, attempt in enumerate(all_attempts, start=1)
-        ]
-        all_attempts = result.attempts
-    return result, all_attempts
+    result = generate(
+        client,
+        prompt.prompt,
+        config,
+        reasoning_transform=reasoning_transform,
+    )
+    return result, list(result.attempts)
 
 
 def _build_record(
@@ -247,13 +231,14 @@ def run_scored(
     schema_path: Path = DEFAULT_SCHEMA,
     only_prompt: str | None = None,
     force: bool = False,
-    sleep: Callable[[float], None] = time.sleep,
+    max_calls: int | None = SCORED_MAX_CALLS_PER_MODEL,
     base_url: str = "",
 ) -> list[Path]:
     """Run the frozen protocol. Returns the record paths written this call."""
 
     freeze = _load_json(freeze_path)
     check_preconditions(freeze, eval_set_path, model)
+    budgeted = client if max_calls is None else BudgetedClient(client, max_calls)
 
     system_prompt = load_system_prompt()
     actual_prompt_hash = system_prompt_sha256(system_prompt)
@@ -283,6 +268,7 @@ def run_scored(
 
     model_dir = out_dir / model
     written: list[Path] = []
+    stopped = False
 
     for prompt in eval_set.prompts:
         if only_prompt is not None and prompt.id != only_prompt:
@@ -304,11 +290,10 @@ def run_scored(
 
             started_at = _now()
             result, attempts = _run_once(
-                client=client,
+                client=budgeted,
                 prompt=prompt,
                 config=config,
                 reasoning_transform=reasoning_transform,
-                sleep=sleep,
             )
             finished_at = _now()
 
@@ -340,7 +325,13 @@ def run_scored(
             )
             written.append(record_path)
 
+            if result.status == "rate_limited":
+                stopped = True
+                break
+
         _write_index(model_dir, model, freeze["eval_set_sha256"])
+        if stopped:
+            break
 
     if model_dir.exists():
         _write_index(model_dir, model, freeze["eval_set_sha256"])
@@ -353,8 +344,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--prompt", default=None)
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--out", default=str(DEFAULT_OUT))
+    parser.add_argument(
+        "--max-calls",
+        type=int,
+        default=SCORED_MAX_CALLS_PER_MODEL,
+        help=(
+            "Hard call cap for this invocation "
+            f"(default {SCORED_MAX_CALLS_PER_MODEL})."
+        ),
+    )
     args = parser.parse_args(argv)
 
+    from app.llm.budget import BudgetExhausted
     from app.llm.client import ChatClient
     from app.llm.settings import SettingsError, load_model_settings
 
@@ -369,12 +370,13 @@ def main(argv: list[str] | None = None) -> int:
             model=settings.model,
             timeout_s=constants.TIMEOUT_S,
         )
-        run_scored(
+        written = run_scored(
             model=args.model,
             client=client,
             out_dir=Path(args.out),
             only_prompt=args.prompt,
             force=args.force,
+            max_calls=args.max_calls,
             base_url=settings.base_url,
         )
     except RefusalError as error:
@@ -383,6 +385,18 @@ def main(argv: list[str] | None = None) -> int:
     except SettingsError as error:
         print(f"settings error: {error}", file=sys.stderr)
         return 1
+    except BudgetExhausted as error:
+        print(f"stopped: {error}; rerun the same command to resume", file=sys.stderr)
+        return 3
+
+    if written:
+        last = _load_json(written[-1])
+        if last.get("final_status") == "rate_limited":
+            print(
+                "stopped on HTTP 429; rerun the same command to resume",
+                file=sys.stderr,
+            )
+            return 3
     return 0
 
 

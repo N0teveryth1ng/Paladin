@@ -158,7 +158,6 @@ def test_scored_runner_never_reads_the_scratch_file(
         eval_set_path=EVAL_SET_PATH,
         schema_path=REPO_ROOT / "schema" / "architecture.generation.schema.json",
         only_prompt="ev_01",
-        sleep=lambda seconds: None,
     )
 
     assert not [path for path in opened if "scratch" in path.lower()]

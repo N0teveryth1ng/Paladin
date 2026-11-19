@@ -6,6 +6,10 @@ They are never scored and never counted.
 Every call records ``finish_reason``. A response truncated by the token cap
 (``finish_reason == "length"``) is rerun with a higher cap before its token count
 may be used for the ``max_tokens`` measurement.
+
+A 429 stops the whole scratch invocation; it is never retried. Completed
+records are skipped on the next invocation, so a stop-and-resume costs only the
+unfinished prompts.
 """
 
 from __future__ import annotations
@@ -17,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from app.eval import constants
+from app.llm.budget import BudgetExhausted, BudgetedClient
 from app.llm.client import ChatClient
 from app.llm.generate import RESPONSE_MODES, GenerationConfig, GenerationResult, generate
 from app.llm.settings import (
@@ -36,6 +41,9 @@ SCHEMA_PATH = REPO_ROOT / "schema" / "architecture.generation.schema.json"
 SCRATCH_START_MAX_TOKENS = 4096
 SCRATCH_MAX_TOKENS_CEILING = 32768
 SCRATCH_MAX_CAPS = 4
+
+#: Hard cap per model invocation. 10 base calls + 6 recovery calls.
+SCRATCH_MAX_CALLS_PER_MODEL = 16
 
 
 def load_scratch_prompts(path: Path = SCRATCH_PROMPTS_PATH) -> list[dict[str, Any]]:
@@ -78,6 +86,35 @@ def _run_payload(cap: int, result: GenerationResult) -> dict[str, Any]:
     }
 
 
+def _settled(record: dict[str, Any]) -> bool:
+    """True when rerunning the prompt cannot add usable evidence.
+
+    ``rate_limited`` and ``transport_error`` are the only statuses worth
+    resuming. A schema-invalid result, a failed timeout, or truncation at the
+    ceiling is already the answer for that prompt.
+    """
+
+    if record.get("measurement_usable"):
+        return True
+    if record.get("final_status") in {"schema_invalid", "timeout_failed"}:
+        return True
+    if (
+        record.get("truncated")
+        and record.get("cap_used") == SCRATCH_MAX_TOKENS_CEILING
+    ):
+        return True
+    return False
+
+
+def _existing_record(path: Path) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
 def run_scratch(
     *,
     model: str,
@@ -87,6 +124,8 @@ def run_scratch(
     out_dir: Path = SCRATCH_RUNS_DIR,
     prompts_path: Path = SCRATCH_PROMPTS_PATH,
     schema_path: Path = SCHEMA_PATH,
+    max_calls: int | None = SCRATCH_MAX_CALLS_PER_MODEL,
+    force: bool = False,
 ) -> list[Path]:
     if mode not in RESPONSE_MODES:
         raise ValueError(f"unknown response mode: {mode!r}")
@@ -94,13 +133,20 @@ def run_scratch(
     prompts = load_scratch_prompts(prompts_path)
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     system_prompt = load_system_prompt()
+    budgeted = client if max_calls is None else BudgetedClient(client, max_calls)
 
     target = out_dir / model / mode
     target.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
 
     for prompt in prompts:
+        path = target / f"{prompt['id']}.json"
+        existing = _existing_record(path)
+        if not force and existing is not None and _settled(existing):
+            continue
+
         runs: list[dict[str, Any]] = []
+        stop_after_record = False
         for cap in _caps():
             config = GenerationConfig(
                 temperature=constants.TEMPERATURE,
@@ -111,8 +157,11 @@ def run_scratch(
                 system_prompt=system_prompt,
                 schema=schema,
             )
-            result = generate(client, prompt["prompt"], config)
+            result = generate(budgeted, prompt["prompt"], config)
             runs.append(_run_payload(cap, result))
+            if result.status == "rate_limited":
+                stop_after_record = True
+                break
             if not any(reason == "length" for reason in runs[-1]["finish_reasons"]):
                 break
 
@@ -139,19 +188,22 @@ def run_scratch(
             "measurement_usable": measurement_usable,
             "final_status": final["final_status"],
             "first_attempt_schema_valid": final["first_attempt_schema_valid"],
+            "calls": sum(len(run["attempts"]) for run in runs),
             "attempts": final["attempts"],
             "finish_reasons": final["finish_reasons"],
             "output_tokens": final["output_tokens"],
             "max_completion_tokens": final["max_completion_tokens"],
             "runs": runs,
         }
-        path = target / f"{prompt['id']}.json"
         path.write_text(
             json.dumps(record, indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8",
             newline="\n",
         )
         written.append(path)
+
+        if stop_after_record:
+            break
 
     return written
 
@@ -175,6 +227,16 @@ def main(argv: list[str] | None = None) -> int:
         default=API_KEY_VAR,
         help=f"Name of the API-key variable (default {API_KEY_VAR}).",
     )
+    parser.add_argument(
+        "--max-calls",
+        type=int,
+        default=SCRATCH_MAX_CALLS_PER_MODEL,
+        help=(
+            "Hard call cap for this invocation "
+            f"(default {SCRATCH_MAX_CALLS_PER_MODEL})."
+        ),
+    )
+    parser.add_argument("--force", action="store_true", help="Rerun settled records.")
     args = parser.parse_args(argv)
 
     entry = {
@@ -196,13 +258,27 @@ def main(argv: list[str] | None = None) -> int:
             mode=args.mode,
             client=client,
             model_id=args.model_id,
+            max_calls=args.max_calls,
+            force=args.force,
         )
     except SettingsError as error:
         print(f"settings error: {error}", file=sys.stderr)
         return 1
+    except BudgetExhausted as error:
+        print(f"stopped: {error}; rerun the same command to resume", file=sys.stderr)
+        return 3
 
     for path in written:
         print(f"wrote {path}")
+
+    if written:
+        last = _existing_record(written[-1]) or {}
+        if last.get("final_status") == "rate_limited":
+            print(
+                "stopped on HTTP 429; rerun the same command to resume",
+                file=sys.stderr,
+            )
+            return 3
     return 0
 
 

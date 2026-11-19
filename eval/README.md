@@ -76,6 +76,22 @@ by the product owner only. There is no LLM judge.
   - `forbidden` — the prompt fails if a blocking flag is present.
   - `optional` — recorded, not scored.
 
+### Stop-and-resume
+
+- Every invocation has a hard provider-call cap: **scratch 16 calls per model**
+  (10 base + 6 recovery) and **scored 50 calls per model**, matching the
+  free-model daily limit reported by the provider.
+- An HTTP **429 is stop-and-resume**. The run records the `rate_limited`
+  result, stops the invocation, and resumes when the same command is rerun.
+  A 429 is **never retried**.
+- Hitting the call cap stops the invocation the same way. Settled scratch
+  records and terminal scored records are skipped on resume; `rate_limited`
+  and `transport_error` records are retried.
+- The provider's daily free-model limit is read from `GET /api/v1/key`
+  (`free_model_daily_requests`) before calibration. It is never guessed.
+- `MAX_RATE_LIMIT_WAITS` and `BACKOFF_SECONDS` stay in the frozen record for
+  compatibility; the stop-and-resume rule above supersedes them.
+
 ### Provider credentials
 
 Base URLs and keys are read from environment variables, falling back to the
