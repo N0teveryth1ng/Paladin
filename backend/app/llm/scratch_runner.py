@@ -147,6 +147,7 @@ def run_scratch(
 
         runs: list[dict[str, Any]] = []
         stop_after_record = False
+        budget_stop = False
         caps = _caps()
         if not force and existing is not None and existing.get("truncated"):
             # Resume the ladder above the cap that already truncated, so a
@@ -163,13 +164,24 @@ def run_scratch(
                 system_prompt=system_prompt,
                 schema=schema,
             )
-            result = generate(budgeted, prompt["prompt"], config)
+            try:
+                result = generate(budgeted, prompt["prompt"], config)
+            except BudgetExhausted:
+                # Keep the caps already paid for so the resume starts above
+                # them instead of repeating the whole ladder.
+                budget_stop = True
+                break
             runs.append(_run_payload(cap, result))
             if result.status == "rate_limited":
                 stop_after_record = True
                 break
             if not any(reason == "length" for reason in runs[-1]["finish_reasons"]):
                 break
+
+        if not runs:
+            if budget_stop:
+                raise BudgetExhausted("call budget exhausted before the first prompt")
+            continue
 
         final = runs[-1]
         truncated = any(
@@ -180,6 +192,7 @@ def run_scratch(
         measurement_usable = (
             final["final_status"] == "schema_valid"
             and "length" not in final["finish_reasons"]
+            and not budget_stop
         )
 
         record = {
@@ -192,7 +205,7 @@ def run_scratch(
             "caps_tried": [run["cap"] for run in runs],
             "truncated": truncated,
             "measurement_usable": measurement_usable,
-            "final_status": final["final_status"],
+            "final_status": "budget_exhausted" if budget_stop else final["final_status"],
             "first_attempt_schema_valid": final["first_attempt_schema_valid"],
             "calls": sum(len(run["attempts"]) for run in runs),
             "attempts": final["attempts"],
@@ -208,6 +221,10 @@ def run_scratch(
         )
         written.append(path)
 
+        if budget_stop:
+            raise BudgetExhausted(
+                "call budget exhausted; rerun the same command to resume"
+            )
         if stop_after_record:
             break
 

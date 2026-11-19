@@ -129,6 +129,37 @@ def test_resume_skips_a_cap_that_already_truncated(tmp_path: Path) -> None:
     assert client.caps[0] == SCRATCH_START_MAX_TOKENS * 2
 
 
+def test_budget_exhaustion_mid_ladder_keeps_the_paid_caps(tmp_path: Path) -> None:
+    def truncate(cap: int) -> Completion:
+        raise TruncatedError(
+            "provider stopped at the token cap before returning content",
+            finish_reason="length",
+            usage={"completion_tokens": cap},
+            latency_ms=1.0,
+        )
+
+    first = CapStubClient(truncate)
+    with pytest.raises(BudgetExhausted):
+        run_scratch(
+            model="model-a",
+            mode="json_schema",
+            client=first,
+            out_dir=tmp_path,
+            max_calls=1,
+        )
+
+    assert first.caps == [SCRATCH_START_MAX_TOKENS]
+    record = records(tmp_path, "json_schema")[0]
+    assert record["final_status"] == "budget_exhausted"
+    assert record["caps_tried"] == [SCRATCH_START_MAX_TOKENS]
+    assert record["measurement_usable"] is False
+
+    second = CapStubClient(lambda cap: completion(VALID, "stop"))
+    run_scratch(model="model-a", mode="json_schema", client=second, out_dir=tmp_path)
+
+    assert second.caps[0] == SCRATCH_START_MAX_TOKENS * 2
+
+
 def test_truncation_at_the_ceiling_is_not_used_for_measurement(
     tmp_path: Path,
 ) -> None:
