@@ -174,6 +174,8 @@ Division of responsibility:
 
 Hard-fail on shape; report on meaning. If the model raised on a dangling edge, step 4 could never explain the problem to the user.
 
+**Step 4 note.** `Issue` carries `severity: invalid | judgment`. `check_references()` findings default to `invalid`; graph-semantic findings from `app.validation` use `judgment` for arguable design choices. The severity split is deliberately separate from the flag `Severity` (`blocking` / `warning`), which describes the requirements, not the graph. `check_references()` remains referential-only; disconnection, sync cycles, type pairings and required links are owned by `app.validation`.
+
 ---
 
 ## 7. Measurable acceptance criteria

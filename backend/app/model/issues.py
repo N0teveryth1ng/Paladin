@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .enums import IssueKind
+from .enums import IssueKind, IssueSeverity
 
 
 class Issue(BaseModel):
@@ -20,4 +20,11 @@ class Issue(BaseModel):
     element_id: str | None = Field(
         default=None,
         description="The element the issue was found on, when one applies.",
+    )
+    severity: IssueSeverity = Field(
+        default=IssueSeverity.INVALID,
+        description=(
+            "invalid for an objectively broken structure; judgment for an "
+            "arguable design choice that must be reported, not rejected."
+        ),
     )

@@ -1,0 +1,944 @@
+{
+  "rules_version": "1.0",
+  "pairing_default": "allowed",
+  "pairings": [
+    {
+      "from": "client",
+      "to": "client",
+      "severity": "judgment",
+      "reason": "clients normally talk to an edge service, not to another client; peer-to-peer clients are unusual but possible"
+    },
+    {
+      "from": "client",
+      "to": "worker",
+      "severity": "judgment",
+      "reason": "a client reaching a worker directly bypasses the edge; possible for internal tools"
+    },
+    {
+      "from": "client",
+      "to": "database",
+      "severity": "invalid",
+      "reason": "clients do not hold database credentials; data access goes through a service"
+    },
+    {
+      "from": "client",
+      "to": "cache",
+      "severity": "judgment",
+      "reason": "a client may read a shared cache directly, but it usually goes through a service"
+    },
+    {
+      "from": "client",
+      "to": "message_queue",
+      "severity": "judgment",
+      "reason": "a client may publish to a queue, but it usually goes through a service"
+    },
+    {
+      "from": "client",
+      "to": "search_index",
+      "severity": "judgment",
+      "reason": "a client may query a search service directly, but it usually goes through a service"
+    },
+    {
+      "from": "client",
+      "to": "scheduler",
+      "severity": "judgment",
+      "reason": "a client triggering a scheduler directly is unusual but possible"
+    },
+    {
+      "from": "api_gateway",
+      "to": "client",
+      "severity": "judgment",
+      "reason": "a gateway may push to a connected client over a persistent channel; unusual"
+    },
+    {
+      "from": "api_gateway",
+      "to": "api_gateway",
+      "severity": "judgment",
+      "reason": "gateway chaining or federation is possible but not typical"
+    },
+    {
+      "from": "api_gateway",
+      "to": "database",
+      "severity": "judgment",
+      "reason": "a gateway may own a small direct datastore (BFF pattern), but it is unusual"
+    },
+    {
+      "from": "api_gateway",
+      "to": "search_index",
+      "severity": "judgment",
+      "reason": "a gateway may proxy search queries directly; unusual"
+    },
+    {
+      "from": "api_gateway",
+      "to": "scheduler",
+      "severity": "judgment",
+      "reason": "a gateway may trigger scheduled work directly; unusual"
+    },
+    {
+      "from": "load_balancer",
+      "to": "client",
+      "severity": "invalid",
+      "reason": "a load balancer distributes inbound traffic; it does not originate calls to clients"
+    },
+    {
+      "from": "load_balancer",
+      "to": "api_gateway",
+      "severity": "judgment",
+      "reason": "a load balancer in front of a gateway is possible but reverses the usual order"
+    },
+    {
+      "from": "load_balancer",
+      "to": "load_balancer",
+      "severity": "judgment",
+      "reason": "load-balancer chaining or hierarchy is possible"
+    },
+    {
+      "from": "load_balancer",
+      "to": "database",
+      "severity": "judgment",
+      "reason": "a load balancer may health-check or proxy a database, but it is unusual"
+    },
+    {
+      "from": "load_balancer",
+      "to": "cache",
+      "severity": "judgment",
+      "reason": "a load balancer may proxy a cache, but it is unusual"
+    },
+    {
+      "from": "load_balancer",
+      "to": "message_queue",
+      "severity": "judgment",
+      "reason": "a load balancer may proxy a queue endpoint, but it is unusual"
+    },
+    {
+      "from": "load_balancer",
+      "to": "object_storage",
+      "severity": "judgment",
+      "reason": "a load balancer may proxy storage traffic, but it is unusual"
+    },
+    {
+      "from": "load_balancer",
+      "to": "cdn",
+      "severity": "judgment",
+      "reason": "a load balancer in front of a CDN is possible but unusual"
+    },
+    {
+      "from": "load_balancer",
+      "to": "auth_provider",
+      "severity": "judgment",
+      "reason": "a load balancer may proxy auth traffic, but it is unusual"
+    },
+    {
+      "from": "load_balancer",
+      "to": "scheduler",
+      "severity": "judgment",
+      "reason": "a load balancer may proxy a scheduler endpoint, but it is unusual"
+    },
+    {
+      "from": "load_balancer",
+      "to": "external_service",
+      "severity": "judgment",
+      "reason": "a load balancer may proxy an external service, but it is unusual"
+    },
+    {
+      "from": "service",
+      "to": "api_gateway",
+      "severity": "judgment",
+      "reason": "a service normally sits behind the gateway; calling it back is unusual"
+    },
+    {
+      "from": "service",
+      "to": "load_balancer",
+      "severity": "judgment",
+      "reason": "a service normally sits behind the load balancer; calling it is unusual"
+    },
+    {
+      "from": "service",
+      "to": "worker",
+      "severity": "judgment",
+      "reason": "a service may dispatch work to a worker directly, but a queue is more common"
+    },
+    {
+      "from": "worker",
+      "to": "client",
+      "severity": "judgment",
+      "reason": "a worker may push to a client through a gateway, not directly"
+    },
+    {
+      "from": "worker",
+      "to": "api_gateway",
+      "severity": "judgment",
+      "reason": "a worker calling the gateway is unusual"
+    },
+    {
+      "from": "worker",
+      "to": "load_balancer",
+      "severity": "judgment",
+      "reason": "a worker calling the load balancer is unusual"
+    },
+    {
+      "from": "worker",
+      "to": "auth_provider",
+      "severity": "judgment",
+      "reason": "a worker may validate tokens with the auth provider; possible"
+    },
+    {
+      "from": "worker",
+      "to": "scheduler",
+      "severity": "judgment",
+      "reason": "a worker triggering a scheduler is unusual"
+    },
+    {
+      "from": "database",
+      "to": "client",
+      "severity": "invalid",
+      "reason": "a database is passive; it does not originate calls to clients"
+    },
+    {
+      "from": "database",
+      "to": "api_gateway",
+      "severity": "invalid",
+      "reason": "a database is passive; it does not originate calls to a gateway"
+    },
+    {
+      "from": "database",
+      "to": "load_balancer",
+      "severity": "invalid",
+      "reason": "a database is passive; it does not originate calls to a load balancer"
+    },
+    {
+      "from": "database",
+      "to": "service",
+      "severity": "judgment",
+      "reason": "a database may invoke a stored procedure or trigger, but application logic normally calls it"
+    },
+    {
+      "from": "database",
+      "to": "worker",
+      "severity": "judgment",
+      "reason": "a database may trigger a worker via change events, but application logic normally calls it"
+    },
+    {
+      "from": "database",
+      "to": "cache",
+      "severity": "judgment",
+      "reason": "a database may push changes to a cache, but the cache is normally read-through"
+    },
+    {
+      "from": "database",
+      "to": "cdn",
+      "severity": "invalid",
+      "reason": "a database is passive; it does not originate calls to a CDN"
+    },
+    {
+      "from": "database",
+      "to": "auth_provider",
+      "severity": "invalid",
+      "reason": "a database does not call an auth provider"
+    },
+    {
+      "from": "database",
+      "to": "scheduler",
+      "severity": "judgment",
+      "reason": "a database may trigger scheduled work, but a scheduler normally polls or is called"
+    },
+    {
+      "from": "database",
+      "to": "external_service",
+      "severity": "judgment",
+      "reason": "a database may call an external service via a trigger or extension, but it is unusual"
+    },
+    {
+      "from": "cache",
+      "to": "client",
+      "severity": "invalid",
+      "reason": "a cache is passive; it does not originate calls to clients"
+    },
+    {
+      "from": "cache",
+      "to": "api_gateway",
+      "severity": "invalid",
+      "reason": "a cache is passive; it does not originate calls to a gateway"
+    },
+    {
+      "from": "cache",
+      "to": "load_balancer",
+      "severity": "invalid",
+      "reason": "a cache is passive; it does not originate calls to a load balancer"
+    },
+    {
+      "from": "cache",
+      "to": "service",
+      "severity": "judgment",
+      "reason": "a cache may invoke a service on a miss, but the service normally drives the cache"
+    },
+    {
+      "from": "cache",
+      "to": "worker",
+      "severity": "judgment",
+      "reason": "a cache may invoke a worker on a miss, but the worker normally drives the cache"
+    },
+    {
+      "from": "cache",
+      "to": "database",
+      "severity": "judgment",
+      "reason": "a cache may read through to a database, but the application normally drives both"
+    },
+    {
+      "from": "cache",
+      "to": "message_queue",
+      "severity": "judgment",
+      "reason": "a cache may publish invalidation events, but it is unusual"
+    },
+    {
+      "from": "cache",
+      "to": "object_storage",
+      "severity": "invalid",
+      "reason": "a cache does not originate fetches to object storage; the compute layer drives cache fill"
+    },
+    {
+      "from": "cache",
+      "to": "cdn",
+      "severity": "invalid",
+      "reason": "a cache does not call a CDN; the CDN normally sits in front"
+    },
+    {
+      "from": "cache",
+      "to": "auth_provider",
+      "severity": "invalid",
+      "reason": "a cache does not call an auth provider"
+    },
+    {
+      "from": "cache",
+      "to": "search_index",
+      "severity": "invalid",
+      "reason": "a cache does not call a search index"
+    },
+    {
+      "from": "cache",
+      "to": "scheduler",
+      "severity": "invalid",
+      "reason": "a cache does not call a scheduler"
+    },
+    {
+      "from": "cache",
+      "to": "external_service",
+      "severity": "invalid",
+      "reason": "a cache does not call an external service"
+    },
+    {
+      "from": "message_queue",
+      "to": "client",
+      "severity": "invalid",
+      "reason": "a queue does not call a client directly; a push service delivers to clients"
+    },
+    {
+      "from": "message_queue",
+      "to": "api_gateway",
+      "severity": "invalid",
+      "reason": "a queue does not call a gateway directly"
+    },
+    {
+      "from": "message_queue",
+      "to": "load_balancer",
+      "severity": "invalid",
+      "reason": "a queue does not call a load balancer directly"
+    },
+    {
+      "from": "message_queue",
+      "to": "database",
+      "severity": "judgment",
+      "reason": "a queue may sink into a database via a connector, but it is unusual"
+    },
+    {
+      "from": "message_queue",
+      "to": "cache",
+      "severity": "judgment",
+      "reason": "a queue may sink into a cache via a connector, but it is unusual"
+    },
+    {
+      "from": "message_queue",
+      "to": "object_storage",
+      "severity": "judgment",
+      "reason": "a queue may sink into object storage via a connector, but it is unusual"
+    },
+    {
+      "from": "message_queue",
+      "to": "cdn",
+      "severity": "invalid",
+      "reason": "a queue does not call a CDN directly"
+    },
+    {
+      "from": "message_queue",
+      "to": "auth_provider",
+      "severity": "invalid",
+      "reason": "a queue does not call an auth provider directly"
+    },
+    {
+      "from": "message_queue",
+      "to": "search_index",
+      "severity": "judgment",
+      "reason": "a queue may feed a search index via a connector, but it is unusual"
+    },
+    {
+      "from": "message_queue",
+      "to": "scheduler",
+      "severity": "invalid",
+      "reason": "a queue does not call a scheduler directly"
+    },
+    {
+      "from": "message_queue",
+      "to": "external_service",
+      "severity": "judgment",
+      "reason": "a queue may sink into an external service via a connector, but it is unusual"
+    },
+    {
+      "from": "object_storage",
+      "to": "api_gateway",
+      "severity": "invalid",
+      "reason": "object storage is passive; it does not originate calls to a gateway"
+    },
+    {
+      "from": "object_storage",
+      "to": "load_balancer",
+      "severity": "invalid",
+      "reason": "object storage is passive; it does not originate calls to a load balancer"
+    },
+    {
+      "from": "object_storage",
+      "to": "database",
+      "severity": "judgment",
+      "reason": "object storage may notify a database via an event connector, but it is unusual"
+    },
+    {
+      "from": "object_storage",
+      "to": "cache",
+      "severity": "invalid",
+      "reason": "object storage does not call a cache directly; events normally go through compute"
+    },
+    {
+      "from": "object_storage",
+      "to": "cdn",
+      "severity": "judgment",
+      "reason": "object storage may be an origin for a CDN, but the CDN normally pulls"
+    },
+    {
+      "from": "object_storage",
+      "to": "auth_provider",
+      "severity": "invalid",
+      "reason": "object storage does not call an auth provider"
+    },
+    {
+      "from": "object_storage",
+      "to": "search_index",
+      "severity": "invalid",
+      "reason": "object storage does not call a search index directly; events normally go through compute"
+    },
+    {
+      "from": "object_storage",
+      "to": "scheduler",
+      "severity": "invalid",
+      "reason": "object storage does not call a scheduler"
+    },
+    {
+      "from": "object_storage",
+      "to": "external_service",
+      "severity": "judgment",
+      "reason": "object storage may notify an external service via an event connector, but it is unusual"
+    },
+    {
+      "from": "cdn",
+      "to": "worker",
+      "severity": "judgment",
+      "reason": "a CDN may invoke a worker at the edge, but it is unusual"
+    },
+    {
+      "from": "cdn",
+      "to": "database",
+      "severity": "invalid",
+      "reason": "a CDN is an edge cache; it does not call a database directly"
+    },
+    {
+      "from": "cdn",
+      "to": "cache",
+      "severity": "judgment",
+      "reason": "a CDN may sit in front of a cache; calling it is unusual"
+    },
+    {
+      "from": "cdn",
+      "to": "message_queue",
+      "severity": "judgment",
+      "reason": "a CDN may publish edge events to a queue, but it is unusual"
+    },
+    {
+      "from": "cdn",
+      "to": "auth_provider",
+      "severity": "judgment",
+      "reason": "a CDN may validate tokens at the edge, but it is unusual"
+    },
+    {
+      "from": "cdn",
+      "to": "search_index",
+      "severity": "invalid",
+      "reason": "a CDN does not call a search index"
+    },
+    {
+      "from": "cdn",
+      "to": "scheduler",
+      "severity": "invalid",
+      "reason": "a CDN does not call a scheduler"
+    },
+    {
+      "from": "cdn",
+      "to": "external_service",
+      "severity": "judgment",
+      "reason": "a CDN may call an external service at the edge, but it is unusual"
+    },
+    {
+      "from": "auth_provider",
+      "to": "api_gateway",
+      "severity": "judgment",
+      "reason": "an auth provider may call a gateway webhook, but it is unusual"
+    },
+    {
+      "from": "auth_provider",
+      "to": "load_balancer",
+      "severity": "judgment",
+      "reason": "an auth provider may call a load balancer, but it is unusual"
+    },
+    {
+      "from": "auth_provider",
+      "to": "worker",
+      "severity": "judgment",
+      "reason": "an auth provider may call a worker webhook, but it is unusual"
+    },
+    {
+      "from": "auth_provider",
+      "to": "database",
+      "severity": "judgment",
+      "reason": "an auth provider may write to a database, but it normally owns its own store"
+    },
+    {
+      "from": "auth_provider",
+      "to": "cache",
+      "severity": "judgment",
+      "reason": "an auth provider may use a cache, but it normally owns its own store"
+    },
+    {
+      "from": "auth_provider",
+      "to": "message_queue",
+      "severity": "judgment",
+      "reason": "an auth provider may publish events to a queue, but it is unusual"
+    },
+    {
+      "from": "auth_provider",
+      "to": "object_storage",
+      "severity": "judgment",
+      "reason": "an auth provider may store assets in object storage, but it is unusual"
+    },
+    {
+      "from": "auth_provider",
+      "to": "cdn",
+      "severity": "judgment",
+      "reason": "an auth provider may use a CDN for assets, but it is unusual"
+    },
+    {
+      "from": "auth_provider",
+      "to": "search_index",
+      "severity": "invalid",
+      "reason": "an auth provider does not call a search index"
+    },
+    {
+      "from": "auth_provider",
+      "to": "scheduler",
+      "severity": "invalid",
+      "reason": "an auth provider does not call a scheduler"
+    },
+    {
+      "from": "search_index",
+      "to": "client",
+      "severity": "judgment",
+      "reason": "a search index may return results to a client through a gateway, not directly"
+    },
+    {
+      "from": "search_index",
+      "to": "api_gateway",
+      "severity": "invalid",
+      "reason": "a search index is passive; it does not call a gateway"
+    },
+    {
+      "from": "search_index",
+      "to": "load_balancer",
+      "severity": "invalid",
+      "reason": "a search index is passive; it does not call a load balancer"
+    },
+    {
+      "from": "search_index",
+      "to": "service",
+      "severity": "judgment",
+      "reason": "a search index may call a service for enrichment, but it is unusual"
+    },
+    {
+      "from": "search_index",
+      "to": "worker",
+      "severity": "judgment",
+      "reason": "a search index may call a worker for enrichment, but it is unusual"
+    },
+    {
+      "from": "search_index",
+      "to": "database",
+      "severity": "invalid",
+      "reason": "a search index does not write to the primary database directly"
+    },
+    {
+      "from": "search_index",
+      "to": "cache",
+      "severity": "invalid",
+      "reason": "a search index does not call a cache directly"
+    },
+    {
+      "from": "search_index",
+      "to": "message_queue",
+      "severity": "judgment",
+      "reason": "a search index may publish events to a queue, but it is unusual"
+    },
+    {
+      "from": "search_index",
+      "to": "object_storage",
+      "severity": "invalid",
+      "reason": "a search index does not call object storage directly"
+    },
+    {
+      "from": "search_index",
+      "to": "cdn",
+      "severity": "invalid",
+      "reason": "a search index does not call a CDN"
+    },
+    {
+      "from": "search_index",
+      "to": "auth_provider",
+      "severity": "invalid",
+      "reason": "a search index does not call an auth provider"
+    },
+    {
+      "from": "search_index",
+      "to": "scheduler",
+      "severity": "invalid",
+      "reason": "a search index does not call a scheduler"
+    },
+    {
+      "from": "search_index",
+      "to": "external_service",
+      "severity": "judgment",
+      "reason": "a search index may call an external enrichment service, but it is unusual"
+    },
+    {
+      "from": "scheduler",
+      "to": "client",
+      "severity": "invalid",
+      "reason": "a scheduler triggers backend work; it does not call clients"
+    },
+    {
+      "from": "scheduler",
+      "to": "api_gateway",
+      "severity": "judgment",
+      "reason": "a scheduler normally calls a service, not a gateway, but it is possible"
+    },
+    {
+      "from": "scheduler",
+      "to": "load_balancer",
+      "severity": "judgment",
+      "reason": "a scheduler normally calls a service, not a load balancer, but it is possible"
+    },
+    {
+      "from": "scheduler",
+      "to": "database",
+      "severity": "judgment",
+      "reason": "a scheduler may write job state directly, but a service normally owns it"
+    },
+    {
+      "from": "scheduler",
+      "to": "cache",
+      "severity": "judgment",
+      "reason": "a scheduler may write to a cache directly, but it is unusual"
+    },
+    {
+      "from": "scheduler",
+      "to": "object_storage",
+      "severity": "judgment",
+      "reason": "a scheduler may write to object storage directly, but it is unusual"
+    },
+    {
+      "from": "scheduler",
+      "to": "cdn",
+      "severity": "invalid",
+      "reason": "a scheduler does not call a CDN"
+    },
+    {
+      "from": "scheduler",
+      "to": "auth_provider",
+      "severity": "invalid",
+      "reason": "a scheduler does not call an auth provider"
+    },
+    {
+      "from": "scheduler",
+      "to": "search_index",
+      "severity": "invalid",
+      "reason": "a scheduler does not call a search index"
+    },
+    {
+      "from": "external_service",
+      "to": "load_balancer",
+      "severity": "judgment",
+      "reason": "an external service may call a load balancer webhook, but it is unusual"
+    },
+    {
+      "from": "external_service",
+      "to": "database",
+      "severity": "judgment",
+      "reason": "an external service may write to a database via a webhook, but it is unusual"
+    },
+    {
+      "from": "external_service",
+      "to": "cache",
+      "severity": "invalid",
+      "reason": "an external service does not call a cache directly"
+    },
+    {
+      "from": "external_service",
+      "to": "cdn",
+      "severity": "judgment",
+      "reason": "an external service may use a CDN, but it is unusual"
+    },
+    {
+      "from": "external_service",
+      "to": "search_index",
+      "severity": "invalid",
+      "reason": "an external service does not write to a search index directly; ingestion goes through compute"
+    },
+    {
+      "from": "external_service",
+      "to": "scheduler",
+      "severity": "invalid",
+      "reason": "an external service does not call a scheduler"
+    }
+  ],
+  "required_links": [
+    {
+      "id": "api_gateway_backend",
+      "applies_to": "api_gateway",
+      "direction": "out",
+      "counterpart_types": [
+        "service",
+        "worker",
+        "load_balancer",
+        "api_gateway"
+      ],
+      "min_connections": 1,
+      "severity": "invalid",
+      "reason": "a gateway with no backend routes nowhere"
+    },
+    {
+      "id": "load_balancer_backend",
+      "applies_to": "load_balancer",
+      "direction": "out",
+      "counterpart_types": [
+        "service",
+        "worker",
+        "load_balancer"
+      ],
+      "min_connections": 1,
+      "severity": "invalid",
+      "reason": "a load balancer with no backend balances nothing"
+    },
+    {
+      "id": "database_accessor",
+      "applies_to": "database",
+      "direction": "in",
+      "counterpart_types": [
+        "service",
+        "worker",
+        "database"
+      ],
+      "min_connections": 1,
+      "severity": "invalid",
+      "reason": "a database must be read or written by application compute; replication counts as a link"
+    },
+    {
+      "id": "cache_accessor",
+      "applies_to": "cache",
+      "direction": "in",
+      "counterpart_types": [
+        "service",
+        "worker",
+        "api_gateway",
+        "cache"
+      ],
+      "min_connections": 1,
+      "severity": "invalid",
+      "reason": "a cache with no reader or writer is dead weight"
+    },
+    {
+      "id": "queue_producer",
+      "applies_to": "message_queue",
+      "direction": "in",
+      "counterpart_types": [
+        "service",
+        "worker",
+        "api_gateway",
+        "scheduler",
+        "external_service",
+        "database",
+        "object_storage",
+        "message_queue"
+      ],
+      "min_connections": 1,
+      "severity": "invalid",
+      "reason": "a queue with no producer never receives work"
+    },
+    {
+      "id": "queue_consumer",
+      "applies_to": "message_queue",
+      "direction": "out",
+      "counterpart_types": [
+        "service",
+        "worker",
+        "message_queue"
+      ],
+      "min_connections": 1,
+      "severity": "judgment",
+      "reason": "a queue with no consumer never drains; flag for review, do not reject"
+    },
+    {
+      "id": "object_storage_accessor",
+      "applies_to": "object_storage",
+      "direction": "in",
+      "counterpart_types": [
+        "service",
+        "worker",
+        "cdn",
+        "api_gateway",
+        "client",
+        "external_service",
+        "object_storage"
+      ],
+      "min_connections": 1,
+      "severity": "invalid",
+      "reason": "storage with no accessor is unused"
+    },
+    {
+      "id": "cdn_origin",
+      "applies_to": "cdn",
+      "direction": "out",
+      "counterpart_types": [
+        "service",
+        "api_gateway",
+        "load_balancer",
+        "object_storage",
+        "external_service",
+        "cdn"
+      ],
+      "min_connections": 1,
+      "severity": "invalid",
+      "reason": "a CDN with no origin cannot serve"
+    },
+    {
+      "id": "scheduler_target",
+      "applies_to": "scheduler",
+      "direction": "out",
+      "counterpart_types": [
+        "service",
+        "worker",
+        "message_queue",
+        "external_service",
+        "scheduler"
+      ],
+      "min_connections": 1,
+      "severity": "invalid",
+      "reason": "a scheduler with no target triggers nothing"
+    },
+    {
+      "id": "worker_input",
+      "applies_to": "worker",
+      "direction": "in",
+      "counterpart_types": [
+        "message_queue",
+        "service",
+        "scheduler",
+        "database",
+        "object_storage",
+        "external_service",
+        "worker"
+      ],
+      "min_connections": 1,
+      "severity": "invalid",
+      "reason": "a worker with no input never runs"
+    },
+    {
+      "id": "service_caller",
+      "applies_to": "service",
+      "direction": "in",
+      "counterpart_types": [
+        "client",
+        "api_gateway",
+        "load_balancer",
+        "scheduler",
+        "worker",
+        "external_service",
+        "service",
+        "message_queue",
+        "cdn",
+        "object_storage",
+        "auth_provider"
+      ],
+      "min_connections": 1,
+      "severity": "judgment",
+      "reason": "a service with no caller is unused; flag for review, do not reject"
+    },
+    {
+      "id": "external_service_caller",
+      "applies_to": "external_service",
+      "direction": "either",
+      "counterpart_types": [
+        "client",
+        "api_gateway",
+        "service",
+        "worker",
+        "scheduler",
+        "external_service"
+      ],
+      "min_connections": 1,
+      "severity": "invalid",
+      "reason": "an external service with no caller is unused"
+    },
+    {
+      "id": "auth_provider_used",
+      "applies_to": "auth_provider",
+      "direction": "either",
+      "counterpart_types": [
+        "client",
+        "api_gateway",
+        "service",
+        "external_service",
+        "auth_provider"
+      ],
+      "min_connections": 1,
+      "severity": "judgment",
+      "reason": "auth may be delegated outside the diagram; flag for review, do not reject"
+    },
+    {
+      "id": "search_index_writer",
+      "applies_to": "search_index",
+      "direction": "in",
+      "counterpart_types": [
+        "service",
+        "worker",
+        "database",
+        "search_index"
+      ],
+      "min_connections": 1,
+      "severity": "judgment",
+      "reason": "an index may be populated by an unshown pipeline; flag for review, do not reject"
+    }
+  ]
+}

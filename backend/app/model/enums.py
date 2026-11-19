@@ -65,8 +65,19 @@ class Severity(str, Enum):
     WARNING = "warning"
 
 
+class IssueSeverity(str, Enum):
+    """How strongly a soft issue should be treated.
+
+    Deliberately distinct from Severity: that enum describes a flag about the
+    requirements, not the structural health of the graph.
+    """
+
+    INVALID = "invalid"      # objectively broken structure
+    JUDGMENT = "judgment"    # arguable; report, do not reject
+
+
 class IssueKind(str, Enum):
-    """Soft referential-integrity findings from ArchitectureDraft.check_references()."""
+    """Soft referential-integrity and graph-semantic findings."""
 
     DANGLING_CONNECTION_SOURCE = "dangling_connection_source"
     DANGLING_CONNECTION_TARGET = "dangling_connection_target"
@@ -78,3 +89,9 @@ class IssueKind(str, Enum):
     UNKNOWN_REQUIREMENT_REF = "unknown_requirement_ref"
     UNKNOWN_ASSUMPTION_REF = "unknown_assumption_ref"
     UNKNOWN_ELEMENT_REF = "unknown_element_ref"
+    DISCONNECTED_COMPONENT = "disconnected_component"
+    DISCONNECTED_GRAPH = "disconnected_graph"
+    INVALID_TYPE_PAIRING = "invalid_type_pairing"
+    QUESTIONABLE_TYPE_PAIRING = "questionable_type_pairing"
+    SYNCHRONOUS_CYCLE = "synchronous_cycle"
+    MISSING_REQUIRED_LINK = "missing_required_link"

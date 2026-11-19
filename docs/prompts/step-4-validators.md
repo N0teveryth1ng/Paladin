@@ -271,7 +271,7 @@ The loader rejects a rule when any counterpart pairing would be `invalid` in the
 
 - `direction: "out"` checks `(applies_to, counterpart)`;
 - `direction: "in"` checks `(counterpart, applies_to)`;
-- `direction: "either"` checks both.
+- `direction: "either"` checks both directions and rejects the rule only when **both** are `invalid`, because an edge in either direction satisfies the rule. This matters for `external_service_caller`: `external_service → scheduler` is invalid, but `scheduler → external_service` is allowed, so the rule remains satisfiable.
 
 This is tested. It is what keeps “invalid type pairing” and “missing required link” from telling the user opposite things.
 
@@ -342,7 +342,7 @@ This is tested. It is what keeps “invalid type pairing” and “missing requi
 3. No duplicate `(from, to)` pairing; no duplicate rule `id`; every pairing has a non-empty reason.
 4. Every severity is `invalid` or `judgment`; every direction is `in`, `out`, or `either`; every `min_connections >= 1`.
 5. Every component type appears at least once as a pairing source, a pairing target, an `applies_to`, or a counterpart.
-6. **Consistency:** for every required link and every counterpart type, the implied pairing is not `invalid`, checking both directions for `either`. The test fails with the rule id and the offending pair.
+6. **Consistency:** for every required link and every counterpart type, the implied pairing is not `invalid`. For `either`, the test fails only when both directions are `invalid`. The failure names the rule id and the offending pair.
 7. A temp rules file with an unknown type is rejected; a duplicate pair is rejected; a duplicate rule id is rejected; an unknown severity is rejected; `min_connections: 0` is rejected; an unknown direction is rejected; a required link with an invalid counterpart is rejected; a file without `rules_version` is rejected.
 8. A temp rules file that marks `client → api_gateway` invalid changes `validate_graph(small)`; the shipped rules do not. This proves the data-driven path. (`client → api_gateway` is used because it exists in the small fixture and is not a counterpart of any required link, so the temp file still passes the consistency check.)
 9. Two `load_rules()` calls compare equal and return immutable data.
