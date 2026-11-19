@@ -232,6 +232,9 @@ Human scores live at `runs/<model>/human_scores.json`:
   in the history; they are never overwritten or relabelled.
 - A harness bug found after scoring is handled the same way: fix, bump the
   version, rerun all models.
+- Adding a model later does not require rerunning the models already scored,
+  provided no shared setting, system prompt or evaluator changed. The new model
+  is run against the same frozen set and recorded as its own run.
 - No change may reference a specific evaluation prompt. Tuning is allowed only
   on the scratch set, before the first scored run.
 - Every calibration-time revision of `prompts/system/architecture-v1.md` is
