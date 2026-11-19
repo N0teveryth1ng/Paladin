@@ -38,7 +38,7 @@ def test_shipped_rules_load_with_version_and_default() -> None:
     rules = load_rules()
 
     assert isinstance(rules, RuleSet)
-    assert rules.rules_version == "1.0"
+    assert rules.rules_version == "1.1"
     assert rules.pairing_default == "allowed"
 
 
@@ -101,38 +101,44 @@ def test_every_component_type_is_referenced_somewhere() -> None:
 
 
 # 6 ---------------------------------------------------------------------
-def test_required_links_never_depend_on_an_invalid_pairing() -> None:
+def test_required_link_counterparts_match_the_pairing_matrix() -> None:
+    """counterpart_types must be exactly the allowed/judgment set.
+
+    This is both completeness (no usable type is omitted) and soundness (no
+    counterpart relies on an invalid pairing). For ``either``, one usable
+    direction is enough, because an edge in that direction satisfies the rule.
+    """
+
     rules = load_rules()
 
     for rule in rules.required_links:
-        for counterpart in rule.counterpart_types:
+        expected: set[ComponentType] = set()
+        for candidate in ComponentType:
             if rule.direction == "out":
-                pairs = [(rule.applies_to, counterpart)]
+                pairs = [(rule.applies_to, candidate)]
             elif rule.direction == "in":
-                pairs = [(counterpart, rule.applies_to)]
+                pairs = [(candidate, rule.applies_to)]
             else:
-                forward = (rule.applies_to, counterpart)
-                backward = (counterpart, rule.applies_to)
-                forward_rule = rules.pairing(*forward)
-                backward_rule = rules.pairing(*backward)
-                assert not (
-                    forward_rule is not None
-                    and forward_rule.severity is IssueSeverity.INVALID
-                    and backward_rule is not None
-                    and backward_rule.severity is IssueSeverity.INVALID
-                ), (
-                    f"rule {rule.id!r} depends on invalid pairings in both directions: "
-                    f"{forward[0].value} -> {forward[1].value} and "
-                    f"{backward[0].value} -> {backward[1].value}"
-                )
-                continue
+                pairs = [
+                    (rule.applies_to, candidate),
+                    (candidate, rule.applies_to),
+                ]
 
+            usable = False
             for pair in pairs:
                 pairing = rules.pairing(*pair)
-                assert pairing is None or pairing.severity is not IssueSeverity.INVALID, (
-                    f"rule {rule.id!r} depends on invalid pairing "
-                    f"{pair[0].value} -> {pair[1].value}"
-                )
+                if pairing is None or pairing.severity is not IssueSeverity.INVALID:
+                    usable = True
+                    break
+            if usable:
+                expected.add(candidate)
+
+        actual = set(rule.counterpart_types)
+        assert actual == expected, (
+            f"rule {rule.id!r} counterpart_types do not match the matrix: "
+            f"missing={sorted(item.value for item in expected - actual)}, "
+            f"extra={sorted(item.value for item in actual - expected)}"
+        )
 
 
 # 7 ---------------------------------------------------------------------
@@ -191,21 +197,30 @@ def test_loader_rejects_a_required_link_with_an_invalid_counterpart(
     tmp_path: Path,
 ) -> None:
     data = shipped_data()
-    data["required_links"].append(
-        {
-            "id": "bad_client_database_link",
-            "applies_to": "client",
-            "direction": "out",
-            "counterpart_types": ["database"],
-            "min_connections": 1,
-            "severity": "invalid",
-            "reason": "test rule",
-        }
+    rule = next(
+        item for item in data["required_links"] if item["id"] == "database_accessor"
     )
+    rule["counterpart_types"].append("cdn")  # cdn -> database is invalid
 
     with pytest.raises(RulesError) as excinfo:
         load_rules(write_rules(tmp_path, data))
-    assert "bad_client_database_link" in str(excinfo.value)
+    assert "database_accessor" in str(excinfo.value)
+    assert "cdn" in str(excinfo.value)
+
+
+def test_loader_rejects_a_required_link_missing_an_allowed_counterpart(
+    tmp_path: Path,
+) -> None:
+    data = shipped_data()
+    rule = next(
+        item for item in data["required_links"] if item["id"] == "database_accessor"
+    )
+    rule["counterpart_types"].remove("client")  # client -> database is judgment
+
+    with pytest.raises(RulesError) as excinfo:
+        load_rules(write_rules(tmp_path, data))
+    assert "database_accessor" in str(excinfo.value)
+    assert "client" in str(excinfo.value)
 
 
 def test_loader_rejects_a_missing_rules_version(tmp_path: Path) -> None:

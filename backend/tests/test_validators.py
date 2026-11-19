@@ -221,7 +221,14 @@ def test_dangling_target_reuses_the_existing_kind() -> None:
 # 6 ---------------------------------------------------------------------
 def test_invalid_pairing_is_reported() -> None:
     draft = small()
-    add_connection(draft, "cnx_client_db", "cmp_web", "cmp_db", "sync")
+    add_component(draft, "cmp_legacy_client", "client")
+    add_connection(
+        draft,
+        "cnx_db_legacy_client",
+        "cmp_db",
+        "cmp_legacy_client",
+        "sync",
+    )
 
     issues = validate_graph(draft)
 
@@ -229,6 +236,22 @@ def test_invalid_pairing_is_reported() -> None:
     issue = issues[0]
     assert issue.kind is IssueKind.INVALID_TYPE_PAIRING
     assert issue.severity is IssueSeverity.INVALID
+    assert issue.element_id == "cnx_db_legacy_client"
+    assert "database" in issue.message
+    assert "client" in issue.message
+
+
+# 6b --------------------------------------------------------------------
+def test_client_to_database_is_judgment() -> None:
+    draft = small()
+    add_connection(draft, "cnx_client_db", "cmp_web", "cmp_db", "sync")
+
+    issues = validate_graph(draft)
+
+    assert len(issues) == 1
+    issue = issues[0]
+    assert issue.kind is IssueKind.QUESTIONABLE_TYPE_PAIRING
+    assert issue.severity is IssueSeverity.JUDGMENT
     assert issue.element_id == "cnx_client_db"
     assert "client" in issue.message
     assert "database" in issue.message

@@ -1,9 +1,16 @@
 # Step 4 — Deterministic Graph Validators
 
-**Step prompt · v2 · 19 November 2026 · approved with changes; build proceeds**
+**Step prompt · v3 · 19 November 2026 · approved with two fixes; build updated**
 **Source of truth:** project document v1.2 §4.4, §5, §6.7, §8.7, §8.8; `docs/step-1-data-model.md` §6.7 and §9; `docs/prompts/step-3-harness.md` §3 and §5.5.
 
-> v2 is the build contract. It records the corrections made in review. No model is called, no scored run is made, and the validators are not wired into any pipeline stage.
+> v3 is the build contract. It records the two review fixes on top of v2. No model is called, no scored run is made, and the validators are not wired into any pipeline stage.
+
+### Changes from v2
+
+1. `client → database` is now `judgment`, with the reason “may access a managed backend-as-a-service directly”. The test that assumed it was invalid now uses a genuinely invalid cell.
+2. The “wrong in nearly all real designs” test was re-applied to every remaining invalid cell. Two more cells moved to `judgment`: `cache → object_storage` (managed cache backup/export to object storage) and `search_index → object_storage` (snapshot repository to object storage).
+3. The consistency rule is now completeness plus soundness. For each required link, `counterpart_types` must equal the set of types whose pairing with `applies_to`, in the rule's direction, is allowed or `judgment`. For `either`, one usable direction is enough. The loader rejects both a missing usable counterpart and a counterpart whose pairing is invalid.
+4. `rules_version` is `"1.1"`.
 
 ### Changes from v1
 
@@ -164,7 +171,7 @@ This section is the review surface. The implementation writes exactly these rule
 
 ```json
 {
-  "rules_version": "1.0",
+  "rules_version": "1.1",
   "pairing_default": "allowed",
   "pairings": [
     {"from": "client", "to": "database", "severity": "invalid",
@@ -179,7 +186,7 @@ This section is the review surface. The implementation writes exactly these rule
 }
 ```
 
-- `rules_version` is required and is `"1.0"`.
+- `rules_version` is required and is `"1.1"`.
 - `pairing_default: "allowed"` means an unlisted pair is allowed. The file is a sparse deny/warn matrix, not a 196-row allowlist.
 - `pairings` entries are unique by `(from, to)`. A duplicate, an unknown type, or an unknown severity fails the loader.
 - `required_links` entries are unique by `id`. `direction` is `in`, `out`, or `either`. `min_connections` is at least 1.
@@ -194,18 +201,18 @@ Column key: `C` client, `G` api_gateway, `L` load_balancer, `S` service, `W` wor
 
 | from \ to | C | G | L | S | W | D | K | Q | O | N | A | X | T | E |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| **client** | W | · | · | · | W | **I** | W | W | · | · | · | W | W | · |
+| **client** | W | · | · | · | W | W | W | W | · | · | · | W | W | · |
 | **api_gateway** | W | W | · | · | · | W | · | · | · | · | · | W | W | · |
 | **load_balancer** | **I** | W | W | · | · | W | W | W | W | W | W | · | W | W |
 | **service** | · | W | W | · | W | · | · | · | · | · | · | · | · | · |
 | **worker** | W | W | W | · | · | · | · | · | · | · | W | · | W | · |
 | **database** | **I** | **I** | **I** | W | W | · | W | · | · | **I** | **I** | · | W | W |
-| **cache** | **I** | **I** | **I** | W | W | W | · | W | **I** | **I** | **I** | **I** | **I** | **I** |
+| **cache** | **I** | **I** | **I** | W | W | W | · | W | W | **I** | **I** | **I** | **I** | **I** |
 | **message_queue** | **I** | **I** | **I** | · | · | W | W | · | W | **I** | **I** | W | **I** | W |
 | **object_storage** | · | **I** | **I** | · | · | W | **I** | · | · | W | **I** | **I** | **I** | W |
 | **cdn** | · | · | · | · | W | **I** | W | W | · | · | W | **I** | **I** | W |
 | **auth_provider** | · | W | W | · | W | W | W | W | W | W | · | **I** | **I** | · |
-| **search_index** | W | **I** | **I** | W | W | **I** | **I** | W | **I** | **I** | **I** | · | **I** | W |
+| **search_index** | W | **I** | **I** | W | W | **I** | **I** | W | W | **I** | **I** | · | **I** | W |
 | **scheduler** | **I** | W | W | · | · | W | W | · | W | **I** | **I** | **I** | · | · |
 | **external_service** | · | · | W | · | · | W | **I** | · | · | W | · | **I** | **I** | · |
 
@@ -225,14 +232,23 @@ Column key: `C` client, `G` api_gateway, `L` load_balancer, `S` service, `W` wor
 | `cache → database` | a cache may read through to a database |
 | `database → scheduler` | a database may trigger scheduled work through a job-state change |
 
-**Re-check of the remaining invalid cells.** Every remaining `I` is a caller/callee inversion with no standard connector pattern in the web-backend domain:
+**Changed from v2 — re-applying the “wrong in nearly all real designs” test:**
+
+| cell | why it is now a warning |
+|---|---|
+| `client → database` | a managed backend-as-a-service (for example Firebase or Supabase) is accessed directly by the client |
+| `cache → object_storage` | a managed cache may export backups to object storage |
+| `search_index → object_storage` | a search index may use object storage as a snapshot repository |
+
+Every remaining `I` was re-checked against the same test and kept. Every remaining `I` is a caller/callee inversion with no mainstream product pattern in the web-backend domain:
 
 - **Passive stores do not originate calls to edge or compute components.** `database`, `cache`, `search_index`, and `object_storage` do not call clients, gateways, load balancers, CDNs, auth providers, schedulers, or each other in a standard design. A store may be *called by* compute, or emit an event through a connector; the direct edge is the inversion that stays invalid.
 - **Edge components do not call clients.** `load_balancer → client` and `scheduler → client` are not how inbound traffic or scheduled work is delivered.
 - **A queue does not deliver directly to a client, gateway, load balancer, CDN, auth provider, or scheduler.** Delivery goes through a service or a purpose-built push component.
 - **An external service does not write directly to your cache, search index, or scheduler.** Ingestion goes through your compute or a connector owned by your system.
-- **`client → database` stays invalid.** A browser or mobile client bypassing the service layer to hold database credentials is wrong in nearly all web-backend designs; this is the canonical invalid cell and is pinned by a test.
-- **`cache → object_storage` stays invalid.** Cache fill is driven by the compute layer, not by the cache. A caching proxy is possible but is not a standard direct edge in this component vocabulary.
+- **`client → database` is `judgment`.** Direct database access is still wrong for a self-managed database, but a managed backend-as-a-service (Firebase, Supabase) is a mainstream pattern. It is reported for review, not rejected. The genuinely invalid `database → client` cell is pinned by a test instead.
+- **`cache → object_storage` is `judgment`.** Cache fill is driven by the compute layer, but a managed cache may export backups to object storage. The direct edge is unusual, not impossible.
+- **`search_index → object_storage` is `judgment`.** A search index may use object storage as a snapshot repository. Ingestion still normally goes through compute.
 
 The full-coverage fixture contains an async cycle (`queue → transcoder → queue`), no synchronous cycle, and no `I` or `W` cell. The small fixture contains no `I` or `W` cell. Both clean fixtures must therefore produce zero issues.
 
@@ -240,24 +256,26 @@ The full-coverage fixture contains an async cycle (`queue → transcoder → que
 
 `applies_to` is the component type that triggers the rule. `direction` is the direction of the required edge relative to that component. A rule passes when at least `min_connections` edges exist from/to any `counterpart_types` value. Same-type chaining and replication are included where the matrix allows them, so the two data-driven checks cannot contradict each other.
 
+`counterpart_types` is not a hand-picked subset. It is exactly the set of types whose pairing with `applies_to`, in the rule's direction, is allowed or `judgment`. For `either`, one usable direction is enough. The loader enforces this, and the table below is the shipped v1.1 data.
+
 | id | applies_to | dir | counterpart_types | severity | why |
 |---|---|---|---|---|---|
-| `api_gateway_backend` | api_gateway | out | service, worker, load_balancer, api_gateway | invalid | a gateway with no backend routes nowhere |
-| `load_balancer_backend` | load_balancer | out | service, worker, load_balancer | invalid | a load balancer with no backend balances nothing |
-| `database_accessor` | database | in | service, worker, database | invalid | a database must be read or written by application compute; replication counts as a link |
-| `cache_accessor` | cache | in | service, worker, api_gateway, cache | invalid | a cache with no reader or writer is dead weight |
-| `queue_producer` | message_queue | in | service, worker, api_gateway, scheduler, external_service, database, object_storage, message_queue | invalid | a queue with no producer never receives work |
-| `queue_consumer` | message_queue | out | service, worker, message_queue | judgment | a queue with no consumer never drains; flag for review, do not reject |
-| `object_storage_accessor` | object_storage | in | service, worker, cdn, api_gateway, client, external_service, object_storage | invalid | storage with no accessor is unused |
-| `cdn_origin` | cdn | out | service, api_gateway, load_balancer, object_storage, external_service, cdn | invalid | a CDN with no origin cannot serve |
-| `scheduler_target` | scheduler | out | service, worker, message_queue, external_service, scheduler | invalid | a scheduler with no target triggers nothing |
-| `worker_input` | worker | in | message_queue, service, scheduler, database, object_storage, external_service, worker | invalid | a worker with no input never runs |
-| `service_caller` | service | in | client, api_gateway, load_balancer, scheduler, worker, external_service, service, message_queue, cdn, object_storage, auth_provider | judgment | a service with no caller is unused; flag for review, do not reject |
-| `external_service_caller` | external_service | either | client, api_gateway, service, worker, scheduler, external_service | invalid | an external service with no caller is unused |
-| `auth_provider_used` | auth_provider | either | client, api_gateway, service, external_service, auth_provider | judgment | auth may be delegated outside the diagram; flag for review, do not reject |
-| `search_index_writer` | search_index | in | service, worker, database, search_index | judgment | an index may be populated by an unshown pipeline; flag for review, do not reject |
+| `api_gateway_backend` | api_gateway | out | all 14 | invalid | a gateway with no backend routes nowhere |
+| `load_balancer_backend` | load_balancer | out | all except client | invalid | a load balancer with no backend balances nothing |
+| `database_accessor` | database | in | all except cdn, search_index | invalid | a database must be read or written by application compute; replication counts as a link |
+| `cache_accessor` | cache | in | all except object_storage, search_index, external_service | invalid | a cache with no reader or writer is dead weight |
+| `queue_producer` | message_queue | in | all 14 | invalid | a queue with no producer never receives work |
+| `queue_consumer` | message_queue | out | service, worker, database, cache, message_queue, object_storage, search_index, external_service | judgment | a queue with no consumer never drains; flag for review, do not reject |
+| `object_storage_accessor` | object_storage | in | all 14 | invalid | storage with no accessor is unused |
+| `cdn_origin` | cdn | out | client, api_gateway, load_balancer, service, worker, cache, message_queue, object_storage, cdn, auth_provider, external_service | invalid | a CDN with no origin cannot serve |
+| `scheduler_target` | scheduler | out | api_gateway, load_balancer, service, worker, database, cache, message_queue, object_storage, scheduler, external_service | invalid | a scheduler with no target triggers nothing |
+| `worker_input` | worker | in | all 14 | invalid | a worker with no input never runs |
+| `service_caller` | service | in | all 14 | judgment | a service with no caller is unused; flag for review, do not reject |
+| `external_service_caller` | external_service | either | all except cache | invalid | an external service with no caller is unused |
+| `auth_provider_used` | auth_provider | either | all except search_index, scheduler | judgment | auth may be delegated outside the diagram; flag for review, do not reject |
+| `search_index_writer` | search_index | in | client, api_gateway, load_balancer, service, worker, database, message_queue, search_index | judgment | an index may be populated by an unshown pipeline; flag for review, do not reject |
 
-Changes from v1: `queue_consumer` and `service_caller` are `judgment`; `external_service_caller` is `either`. All other rules are unchanged.
+“All 14” means every `ComponentType`. The exact lists are in `rules.json`; the completeness test recomputes them from the matrix.
 
 Deliberately omitted:
 
@@ -267,13 +285,19 @@ Deliberately omitted:
 
 ### 6.4 Consistency invariant
 
-The loader rejects a rule when any counterpart pairing would be `invalid` in the matrix:
+The invariant has two halves: **soundness** (no listed counterpart relies on an invalid pairing) and **completeness** (no usable type is omitted). For every required-link rule, `counterpart_types` must be exactly the set of types whose pairing with `applies_to`, in the rule's direction, is allowed or `judgment`:
 
-- `direction: "out"` checks `(applies_to, counterpart)`;
-- `direction: "in"` checks `(counterpart, applies_to)`;
-- `direction: "either"` checks both directions and rejects the rule only when **both** are `invalid`, because an edge in either direction satisfies the rule. This matters for `external_service_caller`: `external_service → scheduler` is invalid, but `scheduler → external_service` is allowed, so the rule remains satisfiable.
+- `direction: "out"` — usable when `(applies_to, candidate)` is not `invalid`;
+- `direction: "in"` — usable when `(candidate, applies_to)` is not `invalid`;
+- `direction: "either"` — usable when at least one of the two directions is not `invalid`, because an edge in that direction satisfies the rule. This matters for `external_service_caller`: `external_service → scheduler` is invalid, but `scheduler → external_service` is allowed, so `scheduler` remains usable.
 
-This is tested. It is what keeps “invalid type pairing” and “missing required link” from telling the user opposite things.
+The loader recomputes that set and rejects the file when:
+
+- a usable counterpart is missing (`… is missing allowed or judgment counterparts: …`), or
+- a listed counterpart's pairing is `invalid` (`… lists counterparts whose pairing is invalid: …`), or
+- a counterpart is listed twice.
+
+This is tested. It is what keeps “invalid type pairing” and “missing required link” from telling the user opposite things, and it stops a rule from silently ignoring a type it could accept.
 
 ### 6.5 Check-to-issue mapping
 
@@ -317,8 +341,8 @@ This is tested. It is what keeps “invalid type pairing” and “missing requi
 4. Dangling connections reuse `dangling_connection_source` / `dangling_connection_target`; no duplicate endpoint logic exists in `validators.py`.
 5. `IssueSeverity` exists with `invalid` and `judgment`; `Issue.severity` defaults to `invalid`; every pre-existing `check_references()` finding still validates and is `invalid`.
 6. The type-pairing matrix and required-link rules exist only in `rules.json`; changing a temporary rules file changes `validate_graph` behaviour, proving the rules are data.
-7. The loader rejects an unknown component type, a duplicate pairing, a duplicate rule id, an unknown severity, `min_connections < 1`, an unknown direction, and a required link whose counterpart pairing is `invalid`.
-8. The shipped matrix marks `client → database` invalid and marks at least one arguable pairing (for example `client → cache`) as `judgment`; the eleven v1 invalid cells listed in §6.2 are `judgment`.
+7. The loader rejects an unknown component type, a duplicate pairing, a duplicate rule id, an unknown severity, `min_connections < 1`, an unknown direction, a required link whose counterpart pairing is `invalid`, and a required link that omits an allowed or judgment counterpart.
+8. The shipped matrix marks `database → client` invalid, marks `client → database` as `judgment` with the reason “may access a managed backend-as-a-service directly”, and marks at least one other arguable pairing (for example `client → cache`) as `judgment`; all fourteen cells listed in §6.2 as changed from v1 or v2 are `judgment`.
 9. A synchronous cycle of two or more components is reported once per SCC with severity `judgment`; a synchronous self-loop is `invalid`; an async-only cycle and a mixed cycle produce no `synchronous_cycle`.
 10. A 120-component, 300-connection clean graph validates with p95 < 500 ms over repeated runs, and a 120-node sync ring validates with p95 < 500 ms and exactly one `synchronous_cycle`.
 11. `app.validation` imports only `app.model`, the standard library and `networkx`; it does not import `app.eval` or `app.llm`.
@@ -328,7 +352,7 @@ This is tested. It is what keeps “invalid type pairing” and “missing requi
 15. `python -m pytest -q` is green, including all existing tests, with the new tests added.
 16. No file under `eval/`, `prompts/system/`, `backend/app/eval/`, `backend/app/llm/`, or `schema/` is modified; `eval/freeze.json` still has `scored_run_approved: false`.
 17. Both schema artifacts in `schema/` are byte-identical to their recorded SHA-256 values, proven by a test.
-18. `rules.json` contains `rules_version: "1.0"` and the loader rejects a file without it.
+18. `rules.json` contains `rules_version: "1.1"` and the loader rejects a file without it.
 19. The changes are committed and pushed to `origin/main`.
 
 ---
@@ -337,13 +361,13 @@ This is tested. It is what keeps “invalid type pairing” and “missing requi
 
 ### `backend/tests/test_graph_rules.py`
 
-1. `rules.json` loads; `rules_version == "1.0"`; `pairing_default == "allowed"`.
+1. `rules.json` loads; `rules_version == "1.1"`; `pairing_default == "allowed"`.
 2. Every `from`, `to`, `applies_to` and `counterpart_types` value is a real `ComponentType`.
 3. No duplicate `(from, to)` pairing; no duplicate rule `id`; every pairing has a non-empty reason.
 4. Every severity is `invalid` or `judgment`; every direction is `in`, `out`, or `either`; every `min_connections >= 1`.
 5. Every component type appears at least once as a pairing source, a pairing target, an `applies_to`, or a counterpart.
-6. **Consistency:** for every required link and every counterpart type, the implied pairing is not `invalid`. For `either`, the test fails only when both directions are `invalid`. The failure names the rule id and the offending pair.
-7. A temp rules file with an unknown type is rejected; a duplicate pair is rejected; a duplicate rule id is rejected; an unknown severity is rejected; `min_connections: 0` is rejected; an unknown direction is rejected; a required link with an invalid counterpart is rejected; a file without `rules_version` is rejected.
+6. **Consistency, exact set:** for every required link, the set of `counterpart_types` equals the set of types whose pairing with `applies_to`, in the rule's direction, is allowed or `judgment`. For `either`, a candidate is usable when either direction is usable. The failure names the rule id and the missing and extra types.
+7. A temp rules file with an unknown type is rejected; a duplicate pair is rejected; a duplicate rule id is rejected; an unknown severity is rejected; `min_connections: 0` is rejected; an unknown direction is rejected; a required link with an invalid counterpart is rejected; a required link missing an allowed counterpart is rejected; a file without `rules_version` is rejected.
 8. A temp rules file that marks `client → api_gateway` invalid changes `validate_graph(small)`; the shipped rules do not. This proves the data-driven path. (`client → api_gateway` is used because it exists in the small fixture and is not a counterpart of any required link, so the temp file still passes the consistency check.)
 9. Two `load_rules()` calls compare equal and return immutable data.
 
@@ -354,7 +378,8 @@ This is tested. It is what keeps “invalid type pairing” and “missing requi
 3. **Disconnected, split:** add an unconnected client → service pair to the small fixture so there are two connected groups and no isolated node; assert one `disconnected_graph`, severity `judgment`, and no `disconnected_component`.
 4. **Single component:** a one-component draft with zero connections returns `[]` (legal per step-1 §9).
 5. **Dangling source/target:** change one endpoint to a ghost id; assert the existing dangling kind, severity `invalid`, and the connection id.
-6. **Invalid pairing:** add `client → database` to the small fixture; assert `invalid_type_pairing`, severity `invalid`, connection id, and both type names in the message.
+6. **Invalid pairing:** add a client component and a `database → client` connection to the small fixture; assert `invalid_type_pairing`, severity `invalid`, connection id, and both type names in the message.
+6b. **`client → database` is judgment:** add `client → database` to the small fixture; assert `questionable_type_pairing`, severity `judgment`, and the managed-backend reason in the message.
 7. **Questionable pairing:** add `client → cache`; assert `questionable_type_pairing`, severity `judgment`.
 8. **Sync cycle, two components:** a two-service sync cycle returns one `synchronous_cycle`, severity `judgment`, and the SCC members.
 9. **Async cycle allowed:** the same two-service cycle as `async` returns no `synchronous_cycle`.
@@ -381,12 +406,12 @@ This is tested. It is what keeps “invalid type pairing” and “missing requi
 - **Separate subsystems are not always wrong.** Multiple connected groups may be a legitimate design (for example, an admin plane and a public plane). They are a `judgment` issue, not `invalid`. An isolated component in a multi-component graph is `invalid`.
 - **A single-component architecture is legal.** The disconnected check must not flag a one-component draft with zero connections. This is pinned by step-1 §9 and by test 4.
 - **Dangling edges create phantom connectivity.** Build the graph from connections whose endpoints both exist. A component connected only by dangling edges is isolated; it gets both the dangling issue and the disconnected issue. That is correct.
-- **Required links versus invalid pairings.** A required link must never be satisfiable only by an `invalid` pairing. The loader enforces this; without it, the two checks would contradict each other.
+- **Required links versus invalid pairings.** A required link must never be satisfiable only by an `invalid` pairing, and it must not omit a type it could legitimately accept. The loader enforces both halves; without them, the two checks would contradict each other or the rule would silently under-cover.
 - **Required links on isolated components.** They are suppressed because the disconnected check already reports the component. A component connected only by a questionable pairing still gets the missing-link issue.
 - **Cycle enumeration can explode.** Use SCCs, not `simple_cycles`. A 120-node sync ring must be linear and must produce one issue, not 120.
 - **Cycle severity is split.** A multi-node synchronous cycle is a judgment call: request/response loops exist in real designs. A synchronous self-loop is invalid: it is a single component calling itself with no intervening boundary. Async and mixed cycles are allowed.
-- **Over-marking the matrix.** Only pairings wrong in nearly all designs are `invalid`; everything arguable is `judgment`. The eleven cells listed in §6.2 were downgraded in review, and the rest were re-checked.
-- **`queue → cache` and `cache_accessor`.** The matrix now treats a queue-to-cache sink as a warning, but `cache_accessor` still accepts only service, worker, api_gateway and cache as accessors. A cache fed only by a queue would therefore still get a missing-link issue. The rule was kept as proposed in review; this interaction is reported for a later decision rather than changed silently.
+- **Over-marking the matrix.** Only pairings wrong in nearly all mainstream designs are `invalid`; everything arguable is `judgment`. The eleven v1 cells and the three v2 cells listed in §6.2 were downgraded in review, and every remaining cell was re-checked against the same test.
+- **`queue → cache` and `cache_accessor`.** The matrix treats a queue-to-cache sink as a warning. In v1.1 the completeness rule now makes `message_queue` a valid `cache_accessor` counterpart, so a cache fed only by a queue no longer produces a missing-link issue. This interaction is resolved by the invariant rather than left open.
 - **Rules derived from rubrics.** None. The rules come from general practice. The eval set is not read, imported, or parsed by this module or its tests.
 - **Accidental wiring.** The validator must not be imported by generation, retry, the harness, the runner, or the evaluator. Source scans pin this.
 - **Step-3 networkx rule.** Step 3 forbade `networkx` outside `evaluate.py`. Step 4 intentionally introduces it in `app.validation` only; `app.eval.evaluate` stays free of it.
@@ -403,16 +428,16 @@ This is tested. It is what keeps “invalid type pairing” and “missing requi
 2. **Dangling delegation — approved.** `validate_graph` calls `draft.check_references()` and returns all those issues first, rather than re-implementing endpoint checks. Group, requirement and assumption reference issues are included.
 3. **Disconnected semantics — approved.** An isolated component in a multi-component graph is `invalid`; more than one connected group with no isolated node is `judgment`; a single-component architecture is legal.
 4. **Cycle semantics — resolved.** A synchronous cycle of two or more components is `judgment`; a synchronous self-loop is `invalid`; async-only and mixed cycles are allowed. SCCs are used instead of enumerating simple cycles so a 120-node ring stays linear.
-5. **Type-pairing matrix — resolved.** The matrix in §6.2 applies the “wrong in nearly all real designs” test. The eleven cells listed as changed moved to `judgment`; the remaining invalid cells were re-checked and kept.
+5. **Type-pairing matrix — resolved.** The matrix in §6.2 applies the “wrong in nearly all mainstream designs” test. The eleven v1 cells moved to `judgment`; on review `client → database`, `cache → object_storage` and `search_index → object_storage` also moved to `judgment`; every remaining invalid cell was re-checked and kept. The matrix is 45 invalid and 75 judgment cells.
 6. **Required-link rules — resolved.** Fourteen rules. `queue_consumer` and `service_caller` are `judgment`; `external_service_caller` is `either`; the rest are as proposed. `client_entry` and `search_index_reader` remain omitted for the reasons given.
 7. **Isolated suppression — approved.** Missing-link rules skip components with degree 0, so the disconnected check is the single explanation for a fully isolated component.
-8. **Data file — approved.** `backend/app/validation/rules.json`, with `pairing_default: "allowed"`, `rules_version: "1.0"`, and only the `I`/`W` cells encoded. The loader validates it and rejects contradictions with the required-link rules.
+8. **Data file — approved.** `backend/app/validation/rules.json`, with `pairing_default: "allowed"`, `rules_version: "1.1"`, and only the `I`/`W` cells encoded. The loader validates it and enforces exact set equality between each rule's `counterpart_types` and the allowed/judgment set implied by the matrix.
 9. **Model touch — approved, with a schema guard.** `backend/app/model/enums.py` gains `IssueSeverity` and six `IssueKind` values; `backend/app/model/issues.py` gains the defaulted `severity` field; `backend/app/model/__init__.py` exports `IssueSeverity`; `docs/step-1-data-model.md` §6.7 gets a short note. Both schema artifacts must stay byte-identical, proven by the hash test in §5.5.
 10. **Dependency — approved.** `networkx` is added to `backend/pyproject.toml` and `app.validation` to the package list. `app/eval/evaluate.py` remains networkx-free.
 11. **Performance bar — approved.** p95 < 500 ms on 120 components / 300 connections, 100 iterations, with the actual median and p95 reported. The bar is deliberately loose so the test measures the algorithm, not the machine.
 12. **No wiring — approved.** The validators are not imported by generation, retry, the harness, the runner, the evaluator, the report, or the scratch runner. `eval/`, `prompts/system/`, `eval/freeze.json` and `backend/app/eval/` are untouched; `scored_run_approved` stays `false`.
 
-No decisions remain open. This v2 is the build contract.
+No decisions remain open. This v3 is the build contract.
 
 ---
 
@@ -423,7 +448,8 @@ Per acceptance criterion in §7: pass or fail with real evidence. Then:
 - the full `python -m pytest -v` output;
 - the exact `backend/app/validation/rules.json`;
 - the schema hash check: both computed SHA-256 values against the recorded constants;
-- the §6.2 matrix and §6.3 required-link table as implemented, with every cell changed from v1 listed;
+- the §6.2 matrix and §6.3 required-link table as implemented, with every cell changed from v1 or v2 listed and every counterpart added to each required-link rule listed by rule;
+- the new `rules.json` SHA-256, plus both schema hashes unchanged;
 - the two clean-fixture results;
 - one broken-variant result per check, showing kind, severity and `element_id`;
 - the sync/async cycle table, including the self-loop cases and the multi-node judgment case;

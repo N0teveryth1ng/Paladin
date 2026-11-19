@@ -73,6 +73,32 @@ def _is_invalid(pairings: dict[tuple[ComponentType, ComponentType], PairingRule]
     return rule is not None and rule.severity is IssueSeverity.INVALID
 
 
+def _expected_counterparts(
+    pairings: dict[tuple[ComponentType, ComponentType], PairingRule],
+    rule: RequiredLinkRule,
+) -> set[ComponentType]:
+    """Every type an edge in the rule's direction could legitimately use.
+
+    A pairing is usable when it is allowed (absent from the matrix) or a
+    ``judgment``. For ``either``, one usable direction is enough because an
+    edge in that direction satisfies the rule.
+    """
+
+    expected: set[ComponentType] = set()
+    for candidate in ComponentType:
+        if rule.direction == "out":
+            usable = not _is_invalid(pairings, (rule.applies_to, candidate))
+        elif rule.direction == "in":
+            usable = not _is_invalid(pairings, (candidate, rule.applies_to))
+        else:
+            forward = not _is_invalid(pairings, (rule.applies_to, candidate))
+            backward = not _is_invalid(pairings, (candidate, rule.applies_to))
+            usable = forward or backward
+        if usable:
+            expected.add(candidate)
+    return expected
+
+
 def _check_semantics(rules: RuleSet, path: Path) -> None:
     pairings: dict[tuple[ComponentType, ComponentType], PairingRule] = {}
     for rule in rules.pairings:
@@ -89,32 +115,26 @@ def _check_semantics(rules: RuleSet, path: Path) -> None:
             raise RulesError(f"{path}: duplicate required link id {rule.id!r}")
         seen_ids.add(rule.id)
 
-        for counterpart in rule.counterpart_types:
-            if rule.direction == "out":
-                pair = (rule.applies_to, counterpart)
-                if _is_invalid(pairings, pair):
-                    raise RulesError(
-                        f"{path}: rule {rule.id!r} requires invalid pairing "
-                        f"{pair[0].value} -> {pair[1].value}"
-                    )
-            elif rule.direction == "in":
-                pair = (counterpart, rule.applies_to)
-                if _is_invalid(pairings, pair):
-                    raise RulesError(
-                        f"{path}: rule {rule.id!r} requires invalid pairing "
-                        f"{pair[0].value} -> {pair[1].value}"
-                    )
-            else:
-                # "either" can be satisfied by an edge in either direction,
-                # so it is inconsistent only when both directions are invalid.
-                forward = (rule.applies_to, counterpart)
-                backward = (counterpart, rule.applies_to)
-                if _is_invalid(pairings, forward) and _is_invalid(pairings, backward):
-                    raise RulesError(
-                        f"{path}: rule {rule.id!r} requires an invalid pairing in "
-                        f"both directions: {forward[0].value} -> {forward[1].value} "
-                        f"and {backward[0].value} -> {backward[1].value}"
-                    )
+        actual = list(rule.counterpart_types)
+        if len(set(actual)) != len(actual):
+            raise RulesError(
+                f"{path}: rule {rule.id!r} lists a duplicate counterpart type"
+            )
+
+        expected = _expected_counterparts(pairings, rule)
+        missing = sorted(expected - set(actual), key=lambda item: item.value)
+        extra = sorted(set(actual) - expected, key=lambda item: item.value)
+
+        if missing:
+            raise RulesError(
+                f"{path}: rule {rule.id!r} is missing allowed or judgment "
+                f"counterparts: {', '.join(item.value for item in missing)}"
+            )
+        if extra:
+            raise RulesError(
+                f"{path}: rule {rule.id!r} lists counterparts whose pairing is "
+                f"invalid: {', '.join(item.value for item in extra)}"
+            )
 
 
 def load_rules(path: str | Path | None = None) -> RuleSet:

@@ -1,5 +1,5 @@
 {
-  "rules_version": "1.0",
+  "rules_version": "1.1",
   "pairing_default": "allowed",
   "pairings": [
     {
@@ -17,8 +17,8 @@
     {
       "from": "client",
       "to": "database",
-      "severity": "invalid",
-      "reason": "clients do not hold database credentials; data access goes through a service"
+      "severity": "judgment",
+      "reason": "may access a managed backend-as-a-service directly"
     },
     {
       "from": "client",
@@ -293,8 +293,8 @@
     {
       "from": "cache",
       "to": "object_storage",
-      "severity": "invalid",
-      "reason": "a cache does not originate fetches to object storage; the compute layer drives cache fill"
+      "severity": "judgment",
+      "reason": "a cache may export backups to object storage, but the compute layer normally drives cache fill"
     },
     {
       "from": "cache",
@@ -605,8 +605,8 @@
     {
       "from": "search_index",
       "to": "object_storage",
-      "severity": "invalid",
-      "reason": "a search index does not call object storage directly"
+      "severity": "judgment",
+      "reason": "a search index may snapshot to object storage, but it is unusual"
     },
     {
       "from": "search_index",
@@ -729,10 +729,20 @@
       "applies_to": "api_gateway",
       "direction": "out",
       "counterpart_types": [
+        "client",
+        "api_gateway",
+        "load_balancer",
         "service",
         "worker",
-        "load_balancer",
-        "api_gateway"
+        "database",
+        "cache",
+        "message_queue",
+        "object_storage",
+        "cdn",
+        "auth_provider",
+        "search_index",
+        "scheduler",
+        "external_service"
       ],
       "min_connections": 1,
       "severity": "invalid",
@@ -743,9 +753,19 @@
       "applies_to": "load_balancer",
       "direction": "out",
       "counterpart_types": [
+        "api_gateway",
+        "load_balancer",
         "service",
         "worker",
-        "load_balancer"
+        "database",
+        "cache",
+        "message_queue",
+        "object_storage",
+        "cdn",
+        "auth_provider",
+        "search_index",
+        "scheduler",
+        "external_service"
       ],
       "min_connections": 1,
       "severity": "invalid",
@@ -756,9 +776,18 @@
       "applies_to": "database",
       "direction": "in",
       "counterpart_types": [
+        "client",
+        "api_gateway",
+        "load_balancer",
         "service",
         "worker",
-        "database"
+        "database",
+        "cache",
+        "message_queue",
+        "object_storage",
+        "auth_provider",
+        "scheduler",
+        "external_service"
       ],
       "min_connections": 1,
       "severity": "invalid",
@@ -769,10 +798,17 @@
       "applies_to": "cache",
       "direction": "in",
       "counterpart_types": [
+        "client",
+        "api_gateway",
+        "load_balancer",
         "service",
         "worker",
-        "api_gateway",
-        "cache"
+        "database",
+        "cache",
+        "message_queue",
+        "cdn",
+        "auth_provider",
+        "scheduler"
       ],
       "min_connections": 1,
       "severity": "invalid",
@@ -783,14 +819,20 @@
       "applies_to": "message_queue",
       "direction": "in",
       "counterpart_types": [
+        "client",
+        "api_gateway",
+        "load_balancer",
         "service",
         "worker",
-        "api_gateway",
-        "scheduler",
-        "external_service",
         "database",
+        "cache",
+        "message_queue",
         "object_storage",
-        "message_queue"
+        "cdn",
+        "auth_provider",
+        "search_index",
+        "scheduler",
+        "external_service"
       ],
       "min_connections": 1,
       "severity": "invalid",
@@ -803,7 +845,12 @@
       "counterpart_types": [
         "service",
         "worker",
-        "message_queue"
+        "database",
+        "cache",
+        "message_queue",
+        "object_storage",
+        "search_index",
+        "external_service"
       ],
       "min_connections": 1,
       "severity": "judgment",
@@ -814,13 +861,20 @@
       "applies_to": "object_storage",
       "direction": "in",
       "counterpart_types": [
+        "client",
+        "api_gateway",
+        "load_balancer",
         "service",
         "worker",
+        "database",
+        "cache",
+        "message_queue",
+        "object_storage",
         "cdn",
-        "api_gateway",
-        "client",
-        "external_service",
-        "object_storage"
+        "auth_provider",
+        "search_index",
+        "scheduler",
+        "external_service"
       ],
       "min_connections": 1,
       "severity": "invalid",
@@ -831,12 +885,17 @@
       "applies_to": "cdn",
       "direction": "out",
       "counterpart_types": [
-        "service",
+        "client",
         "api_gateway",
         "load_balancer",
+        "service",
+        "worker",
+        "cache",
+        "message_queue",
         "object_storage",
-        "external_service",
-        "cdn"
+        "cdn",
+        "auth_provider",
+        "external_service"
       ],
       "min_connections": 1,
       "severity": "invalid",
@@ -847,11 +906,16 @@
       "applies_to": "scheduler",
       "direction": "out",
       "counterpart_types": [
+        "api_gateway",
+        "load_balancer",
         "service",
         "worker",
+        "database",
+        "cache",
         "message_queue",
-        "external_service",
-        "scheduler"
+        "object_storage",
+        "scheduler",
+        "external_service"
       ],
       "min_connections": 1,
       "severity": "invalid",
@@ -862,13 +926,20 @@
       "applies_to": "worker",
       "direction": "in",
       "counterpart_types": [
-        "message_queue",
+        "client",
+        "api_gateway",
+        "load_balancer",
         "service",
-        "scheduler",
+        "worker",
         "database",
+        "cache",
+        "message_queue",
         "object_storage",
-        "external_service",
-        "worker"
+        "cdn",
+        "auth_provider",
+        "search_index",
+        "scheduler",
+        "external_service"
       ],
       "min_connections": 1,
       "severity": "invalid",
@@ -882,14 +953,17 @@
         "client",
         "api_gateway",
         "load_balancer",
-        "scheduler",
-        "worker",
-        "external_service",
         "service",
+        "worker",
+        "database",
+        "cache",
         "message_queue",
-        "cdn",
         "object_storage",
-        "auth_provider"
+        "cdn",
+        "auth_provider",
+        "search_index",
+        "scheduler",
+        "external_service"
       ],
       "min_connections": 1,
       "severity": "judgment",
@@ -902,8 +976,15 @@
       "counterpart_types": [
         "client",
         "api_gateway",
+        "load_balancer",
         "service",
         "worker",
+        "database",
+        "message_queue",
+        "object_storage",
+        "cdn",
+        "auth_provider",
+        "search_index",
         "scheduler",
         "external_service"
       ],
@@ -918,9 +999,16 @@
       "counterpart_types": [
         "client",
         "api_gateway",
+        "load_balancer",
         "service",
-        "external_service",
-        "auth_provider"
+        "worker",
+        "database",
+        "cache",
+        "message_queue",
+        "object_storage",
+        "cdn",
+        "auth_provider",
+        "external_service"
       ],
       "min_connections": 1,
       "severity": "judgment",
@@ -931,9 +1019,13 @@
       "applies_to": "search_index",
       "direction": "in",
       "counterpart_types": [
+        "client",
+        "api_gateway",
+        "load_balancer",
         "service",
         "worker",
         "database",
+        "message_queue",
         "search_index"
       ],
       "min_connections": 1,
