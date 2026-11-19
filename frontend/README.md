@@ -2,13 +2,57 @@
 
 Read-only canvas that turns an `ArchitectureDraft` into a deterministic
 `LayoutResult` with elkjs and renders it with React Flow. It never calls a
-model, a provider, the Python validators, or the network at runtime.
+model, a provider, or the Python validators. Its only network target is the
+local generation API at `http://127.0.0.1:8000`, reached solely through
+`src/api/client.ts`.
 
 ## Requirements
 
 - Node.js 24 (developed on v24.16.0) and npm 10.8.2.
-- The repository's backend virtualenv, only for the one-way issue exporter
-  (`backend/.venv`). The app does not need it to run.
+- The repository's backend virtualenv, for the one-way issue exporter and for
+  the local generation API (`backend/.venv`).
+
+## Local generation
+
+Generation is served by a **local** FastAPI app bound to `127.0.0.1:8000`.
+It refuses to start unless `eval/freeze.json` contains a non-empty
+`selected_model`; there is no fallback model, no UI picker and no environment
+override. With no selected model, `/api/health` reports
+`"model": "no model selected"` with HTTP 503 and the run endpoints return 503.
+
+Start the backend from the repository root with the backend virtualenv:
+
+```bash
+cd backend
+.venv/Scripts/activate        # Windows PowerShell
+python -m app.api             # uvicorn on 127.0.0.1:8000 only
+```
+
+The module entry runs the startup guard first. The equivalent raw uvicorn
+command, after that guard has passed, is
+`uvicorn app.api.main:app --host 127.0.0.1 --port 8000`; never bind another
+host.
+
+Then start the frontend in a second terminal. Both Vite servers bind to
+`127.0.0.1` explicitly so the browser origin is one of the two CORS-allowed
+origins (`http://127.0.0.1:5173` and `http://127.0.0.1:4173`):
+
+```bash
+cd frontend
+npm run dev        # http://127.0.0.1:5173
+# or, after a build:
+npm run preview    # http://127.0.0.1:4173
+```
+
+Type a prompt into the **Prompt** box and press **Generate**. The canvas locks
+for the whole run; a progress line shows elapsed time and the server maximum
+(`max 25:00`, derived from the frozen settings). There is no cancel button.
+A successful run atomically replaces the diagram, the validator issue artifact
+and the layout. A failure, timeout or lost connection leaves the previous
+diagram untouched and shows an error card. On HTTP 429 no retry is made and the
+message names the 00:00 UTC daily reset. Blocking flags are delivered with the
+diagram and stay visible in the “Unresolved blocking flag” panel above the
+canvas.
 
 ## Install
 
@@ -61,6 +105,17 @@ Playwright's Chromium must be installed once:
 npx playwright install chromium
 ```
 
+Step 6 adds five 1600 × 1000 screenshots in `../docs/screenshots/step-6/`:
+`prompt-idle.png`, `run-running.png`, `run-success-issues.png`,
+`run-blocking-flag.png` and `run-error-429.png`. They are captured by
+`e2e/step6-screenshots.spec.ts` against a separately-running fake-injected
+backend on `127.0.0.1:8000`; the browser never stubs `fetch`. That launcher is a
+test-only backend fixture and is not part of the runtime app:
+
+```bash
+npx playwright test e2e/step6-screenshots.spec.ts
+```
+
 ## URL parameters
 
 | parameter | values | default |
@@ -72,7 +127,8 @@ npx playwright install chromium
 | `zoom` | `0 < zoom <= 4`, used with `focus` | fit-to-view |
 
 Unknown values fall back to the default. The toolbar also switches fixture and
-theme without editing the URL.
+theme without editing the URL. After a successful live run the picker shows
+“Live run”; choosing a fixture discards the live entry in memory only.
 
 ## Layout
 
@@ -133,7 +189,10 @@ node --import tsx scripts/layout-hash.mjs small_architecture
 ## Source boundaries
 
 The runtime under `src/**` (excluding `src/test/**` and `src/fixtures/**`) is
-scanned by `src/test/dependencies.test.ts`. It contains no `fetch(`,
-`XMLHttpRequest`, HTTP client, model SDK, `localhost`, `validate_graph`,
-`app.validation`, or `child_process`. Only `src/test/layout.test.ts` uses
-`child_process`, for the required two-process determinism proof.
+scanned by `src/test/dependencies.test.ts`. Network calls and the loopback
+address are allowed only in `src/api/client.ts`, and only to the single
+configured origin `http://127.0.0.1:8000`. Every other prohibition is retained
+everywhere: no `validate_graph`, `app.validation`, `child_process`, provider or
+model SDK, key name, `openrouter`, or non-loopback host. Only
+`src/test/layout.test.ts` uses `child_process`, for the required two-process
+determinism proof.

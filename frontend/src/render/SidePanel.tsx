@@ -1,4 +1,4 @@
-import type { FixtureEntry, ThemeName } from '../app/modes';
+import type { Entry, ThemeName } from '../app/modes';
 import type { LayoutResult } from '../layout/layoutTypes';
 import { issuesFor } from '../types/issues';
 import { AdjustmentsPanel } from './AdjustmentsPanel';
@@ -19,7 +19,7 @@ export function SidePanel({
   onSelect,
   theme,
 }: {
-  entry: FixtureEntry;
+  entry: Entry;
   result: LayoutResult;
   selection: Selection;
   onSelect: (selection: Selection) => void;
@@ -161,7 +161,7 @@ function SelectedDetails({
   selection,
   onSelect,
 }: {
-  entry: FixtureEntry;
+  entry: Entry;
   result: LayoutResult;
   selection: Selection;
   onSelect: (selection: Selection) => void;

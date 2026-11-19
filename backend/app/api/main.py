@@ -1,0 +1,243 @@
+"""The local FastAPI application: loopback bind, narrow CORS, no fake paths."""
+
+from __future__ import annotations
+
+import json
+from contextlib import asynccontextmanager
+from pathlib import Path
+from typing import Any, Callable
+
+from fastapi import Depends, FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from app.api.config import (
+    FreezeError,
+    RUN_MARGIN_S,
+    StartupBundle,
+    derive_max_run_seconds,
+    load_freeze,
+    startup_check,
+)
+from app.api.models import (
+    ErrorDetail,
+    HealthResponse,
+    RunAccepted,
+    RunRequest,
+    RunResult,
+    RunStatus,
+)
+from app.api.runs import Clock, RunInProgress, RunRegistry
+from app.eval import constants
+from app.llm.system_prompt import SYSTEM_PROMPT_VERSION
+from app.validation.rules import load_rules
+
+ALLOWED_ORIGINS = (
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:4173",
+)
+MAX_BODY_BYTES = 16 * 1024
+
+NO_MODEL_MESSAGE = "freeze.json has no selected_model; no fallback model is used"
+
+_UNSET: Any = object()
+
+
+def _health_defaults(freeze_path: str | Path | None) -> tuple[str, str, int]:
+    """Versions and derived max time, available even with no selected model."""
+
+    try:
+        max_seconds = derive_max_run_seconds(load_freeze(freeze_path))
+    except (FreezeError, KeyError, TypeError, ValueError):
+        shared = constants.SHARED_SETTINGS
+        max_seconds = (
+            int(str(shared["MAX_ATTEMPTS"]))
+            * (int(str(shared["TIMEOUT_RETRIES"])) + 1)
+            * int(str(shared["TIMEOUT_S"]))
+            + RUN_MARGIN_S
+        )
+    return SYSTEM_PROMPT_VERSION, load_rules().rules_version, max_seconds
+
+
+def _error_body(code: str, message: str) -> dict[str, Any]:
+    return {"error": {"code": code, "message": message}}
+
+
+def _error_response(status_code: int, code: str, message: str) -> JSONResponse:
+    return JSONResponse(status_code=status_code, content=_error_body(code, message))
+
+
+def get_client_factory(request: Request) -> Callable[[], Any]:
+    """The single injectable dependency that supplies a generation client.
+
+    Production resolves credentials lazily from the frozen model entry. Tests
+    replace this dependency (or pass ``client_factory`` to ``create_app``) so
+    no real client is ever constructed.
+    """
+
+    injected = getattr(request.app.state, "client_factory", None)
+    if injected is not None:
+        return injected
+
+    def factory() -> Any:
+        from app.llm.client import ChatClient
+        from app.llm.settings import load_model_settings
+
+        bundle: StartupBundle | None = request.app.state.bundle
+        if bundle is None:
+            raise RuntimeError(NO_MODEL_MESSAGE)
+        settings = load_model_settings(bundle.freeze["models"][bundle.selected_model])
+        return ChatClient(
+            base_url=settings.base_url,
+            api_key=settings.api_key,
+            model=settings.model,
+            timeout_s=constants.TIMEOUT_S,
+        )
+
+    return factory
+
+
+def create_app(
+    *,
+    bundle: Any = _UNSET,
+    freeze_path: str | Path | None = None,
+    clock: Clock | None = None,
+    client_factory: Callable[[], Any] | None = None,
+) -> FastAPI:
+    """Build the app. A missing/invalid selected model yields a no-model app."""
+
+    startup_error: str | None = None
+    if bundle is _UNSET:
+        try:
+            bundle = startup_check(freeze_path)
+        except FreezeError as error:
+            startup_error = str(error)
+            bundle = None
+    elif bundle is None:
+        startup_error = NO_MODEL_MESSAGE
+
+    selected = bundle if isinstance(bundle, StartupBundle) else None
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        app.state.registry.start_watchdog()
+        yield
+        app.state.registry.stop_watchdog()
+
+    app = FastAPI(title="Paladin local API", lifespan=lifespan)
+    app.state.bundle = bundle
+    app.state.startup_error = startup_error
+    app.state.registry = RunRegistry(bundle, clock=clock)
+    if selected is not None:
+        app.state.health_meta = (
+            selected.system_prompt_version,
+            selected.rules_version,
+            selected.max_run_seconds,
+        )
+    else:
+        app.state.health_meta = _health_defaults(freeze_path)
+    if client_factory is not None:
+        app.state.client_factory = client_factory
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=list(ALLOWED_ORIGINS),
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Content-Type"],
+    )
+
+    # Declared after CORS so this is the outermost layer: every response,
+    # including CORS preflights and error responses, gets no-store.
+    @app.middleware("http")
+    async def _security_middleware(request: Request, call_next):
+        declared = request.headers.get("content-length")
+        oversized = declared is not None and declared.isdigit() and int(declared) > MAX_BODY_BYTES
+        if not oversized:
+            oversized = len(await request.body()) > MAX_BODY_BYTES
+        if oversized:
+            response: JSONResponse = _error_response(
+                400, "invalid_request", "request body exceeds 16 KB"
+            )
+        else:
+            response = await call_next(request)
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
+    @app.exception_handler(RequestValidationError)
+    async def _validation_error(request: Request, exc: RequestValidationError):
+        return _error_response(400, "invalid_request", "invalid request")
+
+    @app.get("/api/health")
+    def health():
+        prompt_version, rules_version, max_seconds = app.state.health_meta
+        if selected is None:
+            return JSONResponse(
+                status_code=503,
+                content=HealthResponse(
+                    status="unavailable",
+                    model="no model selected",
+                    message=NO_MODEL_MESSAGE,
+                    system_prompt_version=prompt_version,
+                    rules_version=rules_version,
+                    max_run_seconds=max_seconds,
+                ).model_dump(mode="json"),
+            )
+        return HealthResponse(
+            status="ok",
+            model=selected.selected_model,
+            system_prompt_version=selected.system_prompt_version,
+            rules_version=selected.rules_version,
+            max_run_seconds=selected.max_run_seconds,
+        )
+
+    @app.post("/api/runs", status_code=202)
+    async def create_run(
+        request: Request,
+        client_factory_dependency: Callable[[], Any] = Depends(get_client_factory),
+    ):
+        if selected is None:
+            return _error_response(503, "no_model_selected", NO_MODEL_MESSAGE)
+        try:
+            payload = RunRequest.model_validate(json.loads(await request.body()))
+        except ValueError:
+            return _error_response(
+                400, "invalid_request", "prompt must be a non-empty string"
+            )
+        try:
+            snapshot = request.app.state.registry.create(
+                payload.prompt, client_factory_dependency
+            )
+        except RunInProgress:
+            return _error_response(
+                409, "run_in_progress", "a run is already in progress"
+            )
+        return RunAccepted(
+            run_id=snapshot["run_id"],
+            state="running",
+            started_at=snapshot["started_at"],
+            max_run_seconds=snapshot["max_run_seconds"],
+        )
+
+    @app.get("/api/runs/{run_id}")
+    def get_run(run_id: str, request: Request):
+        if selected is None:
+            return _error_response(503, "no_model_selected", NO_MODEL_MESSAGE)
+        snapshot = request.app.state.registry.get(run_id)
+        if snapshot is None:
+            return _error_response(404, "not_found", "run not found")
+        return RunStatus(
+            run_id=snapshot["run_id"],
+            state=snapshot["state"],
+            elapsed_ms=snapshot["elapsed_ms"],
+            max_run_seconds=snapshot["max_run_seconds"],
+            result=RunResult.model_validate(snapshot["result"])
+            if snapshot["result"] is not None
+            else None,
+            error=ErrorDetail.model_validate(snapshot["error"])
+            if snapshot["error"] is not None
+            else None,
+        )
+
+    return app

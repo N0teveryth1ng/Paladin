@@ -99,20 +99,19 @@ describe('dependency and source policy', () => {
     expect(forbidden.filter((name) => names.has(name))).toEqual([]);
   });
 
-  it('keeps runtime source free of network, model, validator and process access', async () => {
+  it('keeps network calls in the local client only and retains every source ban', async () => {
     const files = (await walk(resolve(FRONTEND, 'src'))).filter(
       (file) =>
         /\.(ts|tsx)$/.test(file) &&
         !file.includes(`${join('src', 'test')}`) &&
         !file.includes(`${join('src', 'fixtures')}`),
     );
+    const clientPath = resolve(FRONTEND, 'src', 'api', 'client.ts');
+    expect(files).toContain(clientPath);
 
-    const forbidden = [
-      'fetch(',
-      'XMLHttpRequest',
-      'axios',
-      'localhost',
-      '127.0.0.1',
+    const allowedOrigin = 'http://127.0.0.1:8000';
+    const networkTokens = ['fetch(', 'XMLHttpRequest', 'WebSocket', 'axios'];
+    const sharedBans = [
       'validate_graph',
       'app.validation',
       'child_process',
@@ -120,15 +119,59 @@ describe('dependency and source policy', () => {
       'anthropic',
       'openrouter',
       'generative-ai',
+      'localhost',
+      '0.0.0.0',
     ];
+    const httpImport = /(?:from|import)\s*['"](?:axios|node-fetch|undici|got|superagent|http|https)['"]/;
+    const keyName = /api[_-]?key/i;
+    const urlLiteral = /https?:\/\/[^\s'"`)]+/g;
+    const otherOrigin = /https?:\/\/(?!127\.0\.0\.1:8000(?:[^\d]|$))[^\s'"`)]+/g;
 
     const offenders: string[] = [];
     for (const file of files) {
       const text = await readFile(file, 'utf8');
-      for (const token of forbidden) {
-        if (text.includes(token)) {
-          offenders.push(`${file}: ${token}`);
+      const label = file.slice(FRONTEND.length + 1);
+      const isClient = file === clientPath;
+
+      if (!isClient) {
+        for (const token of networkTokens) {
+          if (text.includes(token)) {
+            offenders.push(`${label}: ${token}`);
+          }
         }
+        if (httpImport.test(text)) {
+          offenders.push(`${label}: HTTP client import`);
+        }
+        if (text.includes('127.0.0.1')) {
+          offenders.push(`${label}: 127.0.0.1`);
+        }
+        if ((text.match(urlLiteral) ?? []).length > 0) {
+          offenders.push(`${label}: URL literal`);
+        }
+      } else {
+        if (!text.includes(allowedOrigin)) {
+          offenders.push(`${label}: missing configured local origin`);
+        }
+        for (const url of text.match(urlLiteral) ?? []) {
+          if (!url.startsWith(allowedOrigin)) {
+            offenders.push(`${label}: disallowed target ${url}`);
+          }
+        }
+        for (const url of text.match(otherOrigin) ?? []) {
+          offenders.push(`${label}: other host ${url}`);
+        }
+        if (text.includes('import.meta.env') || text.includes('process.env')) {
+          offenders.push(`${label}: env-supplied URL`);
+        }
+      }
+
+      for (const token of sharedBans) {
+        if (text.includes(token)) {
+          offenders.push(`${label}: ${token}`);
+        }
+      }
+      if (keyName.test(text)) {
+        offenders.push(`${label}: key name`);
       }
     }
 

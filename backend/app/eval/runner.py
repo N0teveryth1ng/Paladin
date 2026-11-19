@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import urlsplit
 
+from app.api.config import build_generation_config, resolve_reasoning_transform
 from app.eval import constants
 from app.eval.evaluate import deterministic_gate
 from app.eval.models import EvalPrompt, EvalSet
@@ -260,21 +261,8 @@ def run_scored(
     eval_set = EvalSet.model_validate(_load_json(eval_set_path))
     schema = _load_json(schema_path)
     model_entry = freeze["models"][model]
-    transform_name = freeze.get("reasoning_transform")
-    reasoning_transform = (
-        REASONING_TRANSFORMS[transform_name] if transform_name is not None else None
-    )
-
-    config = GenerationConfig(
-        temperature=freeze["shared_settings"]["TEMPERATURE"],
-        max_tokens=freeze["max_tokens"],
-        timeout_s=freeze["shared_settings"]["TIMEOUT_S"],
-        max_attempts=freeze["shared_settings"]["MAX_ATTEMPTS"],
-        response_mode=model_entry["response_mode"],
-        system_prompt=system_prompt,
-        schema=schema,
-        reasoning=model_entry.get("reasoning"),
-    )
+    reasoning_transform = resolve_reasoning_transform(freeze)
+    config = build_generation_config(freeze, model_entry, system_prompt, schema)
 
     model_dir = out_dir / model
     written: list[Path] = []

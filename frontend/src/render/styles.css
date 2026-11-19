@@ -819,3 +819,190 @@ body {
   stroke: var(--accent);
   stroke-width: 2.4;
 }
+
+/* ---------- step 6: prompt, progress, errors and blocking flags ---------- */
+
+.canvas-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.generation-bar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex: 0 0 auto;
+  padding: 10px 18px;
+  background: var(--panel-alt);
+  border-bottom: 1px solid var(--border);
+}
+
+.prompt-box {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.prompt-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding-bottom: 12px;
+}
+
+.prompt-input {
+  width: 460px;
+  height: 42px;
+  padding: 8px 10px;
+  resize: none;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+  line-height: 1.4;
+}
+
+.prompt-input:focus-visible,
+.generate-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.prompt-input:disabled,
+.generate-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.generate-button {
+  height: 42px;
+  padding: 0 18px;
+  background: var(--accent);
+  color: #ffffff;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.run-status {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 42px;
+  font-size: 12px;
+}
+
+.run-state {
+  font-weight: 650;
+}
+
+.run-idle .run-state {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.run-elapsed,
+.run-maximum {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 12px;
+}
+
+.run-maximum {
+  color: var(--muted);
+}
+
+.progress-track {
+  width: 180px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.progress-indeterminate {
+  width: 40%;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  animation: paladin-indeterminate 1.2s ease-in-out infinite;
+}
+
+@keyframes paladin-indeterminate {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(260%);
+  }
+}
+
+.run-error.error-card {
+  margin: 0;
+  padding: 8px 14px;
+  max-width: 720px;
+}
+
+.run-error h2 {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.run-error p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.run-error.error-rate-limited,
+.run-error.error-timeout {
+  border-color: var(--judgment);
+  border-left-width: 4px;
+}
+
+.run-error.error-other {
+  border-color: var(--invalid);
+  border-left-width: 4px;
+}
+
+.blocking-flags {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--judgment) 12%, var(--panel));
+  border-bottom: 2px solid var(--judgment);
+}
+
+.blocking-flag {
+  padding: 8px 12px;
+  background: var(--panel);
+  border-left: 4px solid var(--judgment);
+  border-radius: 6px;
+}
+
+.blocking-flag h2 {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--judgment);
+  letter-spacing: 0.01em;
+}
+
+.blocking-description {
+  margin: 0 0 4px;
+  line-height: 1.45;
+}
+
+.blocking-refs {
+  margin: 0;
+  color: var(--muted);
+}

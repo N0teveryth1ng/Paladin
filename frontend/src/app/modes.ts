@@ -13,7 +13,7 @@ import brokenIssues from '../fixtures/issues/broken_architecture.issues.json';
 export type FixtureName = 'small' | 'full' | 'large' | 'broken';
 export type ThemeName = 'light' | 'dark';
 
-export interface FixtureEntry {
+export interface FixtureRecord {
   name: FixtureName;
   label: string;
   file: string;
@@ -21,7 +21,23 @@ export interface FixtureEntry {
   issues: IssuesArtifact;
 }
 
-export const FIXTURES: Record<FixtureName, FixtureEntry> = {
+/** A successfully generated result, held in memory only. */
+export interface LiveEntry {
+  name: 'live';
+  label: string;
+  file: string;
+  draft: ArchitectureDraft;
+  issues: IssuesArtifact;
+}
+
+/**
+ * Every panel and the toolbar accept either a committed fixture or a live
+ * result. FIXTURES and parseMode still know only the four fixture names.
+ */
+export type Entry = FixtureRecord | LiveEntry;
+export type FixtureEntry = Entry;
+
+export const FIXTURES: Record<FixtureName, FixtureRecord> = {
   small: {
     name: 'small',
     label: 'Small · URL shortener',

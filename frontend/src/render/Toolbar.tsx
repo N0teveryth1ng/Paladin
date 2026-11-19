@@ -1,4 +1,4 @@
-import type { FixtureEntry, ThemeName } from '../app/modes';
+import type { FixtureEntry, FixtureName, ThemeName } from '../app/modes';
 import { FIXTURES, FIXTURE_NAMES } from '../app/modes';
 
 export function Toolbar({
@@ -12,7 +12,7 @@ export function Toolbar({
   entry: FixtureEntry;
   theme: ThemeName;
   locked: boolean;
-  onFixture: (name: FixtureEntry['name']) => void;
+  onFixture: (name: FixtureName) => void;
   onTheme: () => void;
   onFit: () => void;
 }) {
@@ -27,14 +27,20 @@ export function Toolbar({
         <span>Fixture</span>
         <select
           value={entry.name}
-          onChange={(event) => onFixture(event.target.value as FixtureEntry['name'])}
+          onChange={(event) => onFixture(event.target.value as FixtureName)}
           data-testid="fixture-select"
+          disabled={locked}
         >
           {FIXTURE_NAMES.map((name) => (
             <option key={name} value={name}>
               {FIXTURES[name].label}
             </option>
           ))}
+          {entry.name === 'live' ? (
+            <option value="live" disabled>
+              Live run
+            </option>
+          ) : null}
         </select>
       </label>
 

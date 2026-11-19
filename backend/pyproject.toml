@@ -8,14 +8,18 @@ version = "0.1.0"
 description = "AI-native system design whiteboard - architecture graph model"
 requires-python = ">=3.11"
 dependencies = [
-    "networkx>=3,<4",
-    "pydantic>=2.11,<3",
+    "networkx==3.6.1",
+    "pydantic==2.14.3",
+    "fastapi==0.162.0",
+    "uvicorn==0.54.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8",
-    "jsonschema>=4.22",
+    "pytest==9.2.0",
+    "jsonschema==4.26.0",
+    "httpx==0.28.1",
+    "pip-audit==2.10.1",
 ]
 
 [tool.pytest.ini_options]
@@ -23,4 +27,4 @@ pythonpath = ["."]
 testpaths = ["tests"]
 
 [tool.setuptools]
-packages = ["app", "app.eval", "app.llm", "app.model", "app.validation"]
+packages = ["app", "app.api", "app.eval", "app.llm", "app.model", "app.validation"]
