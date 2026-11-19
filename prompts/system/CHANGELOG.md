@@ -9,6 +9,13 @@ evidence and never appear in this log.
 A revision is only made when a scratch run shows a defect. Tuning to make an
 eval prompt pass is not allowed.
 
+## Scratch call log
+
+Every scratch call is attributed to a model slug and a date, so a free model
+that changes mid-evaluation is detectable. There is one entry per invocation;
+every call in an invocation carries that invocation's date and slug. `calls`
+counts provider requests, including schema retries and truncation reruns.
+
 ## 1.0 — 19 November 2026
 
 Baseline, before calibration. No revision yet.

@@ -198,6 +198,10 @@ Human scores live at `runs/<model>/human_scores.json`:
 - A timeout is retried once per run. A second timeout ends the run as
   `timeout_failed`, which counts as a failed run and is not schema-valid on the
   first attempt.
+- A response that reaches the token cap before returning any content
+  (`finish_reason: "length"`, `content: null`) is recorded as `truncated`, not as
+  a transport error. In scratch it reruns at a higher cap; in a scored run it
+  counts as a failed run and is not schema-valid on the first attempt.
 - A model with fewer than 45 counted runs is also `INCOMPLETE`.
 
 ### Human sheet

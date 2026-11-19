@@ -147,7 +147,13 @@ def run_scratch(
 
         runs: list[dict[str, Any]] = []
         stop_after_record = False
-        for cap in _caps():
+        caps = _caps()
+        if not force and existing is not None and existing.get("truncated"):
+            # Resume the ladder above the cap that already truncated, so a
+            # resumed invocation does not repeat a cap it has already paid for.
+            last_cap = int(existing.get("cap_used") or 0)
+            caps = [cap for cap in caps if cap > last_cap] or [caps[-1]]
+        for cap in caps:
             config = GenerationConfig(
                 temperature=constants.TEMPERATURE,
                 max_tokens=cap,

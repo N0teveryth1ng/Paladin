@@ -14,6 +14,7 @@ from app.llm.client import (
     LLMTimeoutError,
     RateLimitedError,
     TransportError,
+    TruncatedError,
 )
 from app.llm.generate import (
     BLOCKING_FLAG_RULE_TEXT,
@@ -199,6 +200,23 @@ def test_length_finish_reason_is_kept_on_the_attempt() -> None:
     assert result.attempts[0].finish_reason == "length"
     assert result.attempts[0].to_record()["finish_reason"] == "length"
     assert result.attempts[1].finish_reason == "stop"
+
+
+def test_null_content_truncation_stops_without_schema_retries() -> None:
+    truncated = TruncatedError(
+        "provider stopped at the token cap before returning content",
+        finish_reason="length",
+        usage={"completion_tokens": 4096},
+        latency_ms=3.0,
+    )
+    client = StubClient([truncated])
+    result = generate(client, "Design something.", config())
+
+    assert result.status == "truncated"
+    assert len(client.calls) == 1
+    assert result.attempts[0].outcome == "truncated"
+    assert result.attempts[0].finish_reason == "length"
+    assert result.attempts[0].usage["completion_tokens"] == 4096
 
 
 def test_schema_in_prompt_mode_puts_the_schema_in_the_system_message() -> None:

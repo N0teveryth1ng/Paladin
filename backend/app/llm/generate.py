@@ -15,7 +15,12 @@ from jsonschema import Draft202012Validator
 from pydantic import ValidationError
 
 from app.eval import constants
-from app.llm.client import LLMTimeoutError, RateLimitedError, TransportError
+from app.llm.client import (
+    LLMTimeoutError,
+    RateLimitedError,
+    TransportError,
+    TruncatedError,
+)
 from app.model.architecture import ArchitectureDraft
 
 #: The only text a retry may carry about the blocking-flag rule.
@@ -222,6 +227,21 @@ def generate(
                 Attempt(index=index, outcome="rate_limited", error_kind="rate_limited")
             )
             return GenerationResult("rate_limited", None, attempts)
+        except TruncatedError as error:
+            # No content to validate: return at once so scratch can raise the cap
+            # instead of burning schema attempts on an empty response.
+            attempts.append(
+                Attempt(
+                    index=index,
+                    outcome="truncated",
+                    error_kind="length",
+                    error_text_redacted=_redact(str(error)),
+                    latency_ms=error.latency_ms,
+                    usage=dict(error.usage),
+                    finish_reason=error.finish_reason,
+                )
+            )
+            return GenerationResult("truncated", None, attempts)
         except TransportError as error:
             attempts.append(
                 Attempt(

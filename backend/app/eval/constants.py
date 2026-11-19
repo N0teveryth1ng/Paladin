@@ -50,6 +50,8 @@ SHARED_SETTINGS = {
 ALL_VALUES = {**THRESHOLDS, **SHARED_SETTINGS}
 
 #: Run statuses that are real results. Everything else is infrastructure.
-TERMINAL_STATUSES = frozenset({"schema_valid", "schema_invalid", "timeout_failed"})
+TERMINAL_STATUSES = frozenset(
+    {"schema_valid", "schema_invalid", "timeout_failed", "truncated"}
+)
 #: Infrastructure failures: excluded from every count and retried later.
 INFRASTRUCTURE_STATUSES = frozenset({"rate_limited", "transport_error"})

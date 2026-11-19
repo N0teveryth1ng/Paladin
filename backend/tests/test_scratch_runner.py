@@ -9,7 +9,7 @@ from typing import Any, Callable
 import pytest
 
 from app.llm.budget import BudgetExhausted
-from app.llm.client import Completion, RateLimitedError
+from app.llm.client import Completion, RateLimitedError, TruncatedError
 from app.llm.scratch_runner import (
     SCRATCH_MAX_TOKENS_CEILING,
     SCRATCH_START_MAX_TOKENS,
@@ -81,6 +81,52 @@ def test_truncated_output_is_rerun_at_a_higher_cap_before_measurement(
         assert record["measurement_usable"] is True
         assert record["finish_reasons"] == ["stop"]
         assert record["attempts"][0]["finish_reason"] == "stop"
+
+
+def test_null_content_truncation_reruns_at_a_higher_cap(tmp_path: Path) -> None:
+    def decide(cap: int) -> Completion:
+        if cap < SCRATCH_START_MAX_TOKENS * 2:
+            raise TruncatedError(
+                "provider stopped at the token cap before returning content",
+                finish_reason="length",
+                usage={"completion_tokens": cap},
+                latency_ms=1.0,
+            )
+        return completion(VALID, "stop")
+
+    client = CapStubClient(decide)
+    run_scratch(model="model-a", mode="json_schema", client=client, out_dir=tmp_path)
+
+    for record in records(tmp_path, "json_schema"):
+        assert record["caps_tried"] == [
+            SCRATCH_START_MAX_TOKENS,
+            SCRATCH_START_MAX_TOKENS * 2,
+        ]
+        assert record["runs"][0]["final_status"] == "truncated"
+        assert record["runs"][0]["finish_reasons"] == ["length"]
+        assert record["measurement_usable"] is True
+        assert record["finish_reasons"] == ["stop"]
+
+
+def test_resume_skips_a_cap_that_already_truncated(tmp_path: Path) -> None:
+    target = tmp_path / "model-a" / "json_schema"
+    target.mkdir(parents=True)
+    (target / "sc_01.json").write_text(
+        json.dumps(
+            {
+                "final_status": "truncated",
+                "truncated": True,
+                "cap_used": SCRATCH_START_MAX_TOKENS,
+                "measurement_usable": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    client = CapStubClient(lambda cap: completion(VALID, "stop"))
+    run_scratch(model="model-a", mode="json_schema", client=client, out_dir=tmp_path)
+
+    assert client.caps[0] == SCRATCH_START_MAX_TOKENS * 2
 
 
 def test_truncation_at_the_ceiling_is_not_used_for_measurement(

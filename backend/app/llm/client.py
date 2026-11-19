@@ -34,6 +34,29 @@ class TransportError(LLMError):
     """Any other transport or protocol failure."""
 
 
+class TruncatedError(LLMError):
+    """The provider hit the token cap before returning any content.
+
+    A reasoning model can spend the whole ``max_tokens`` budget on reasoning and
+    return ``content: null`` with ``finish_reason: "length"``. This is a
+    truncation, not a transport failure, and it must be rerun with a higher cap
+    before its token count is used.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        finish_reason: str | None,
+        usage: dict[str, Any],
+        latency_ms: float,
+    ):
+        super().__init__(message)
+        self.finish_reason = finish_reason
+        self.usage = usage
+        self.latency_ms = latency_ms
+
+
 @dataclass(frozen=True)
 class Completion:
     text: str
@@ -130,6 +153,14 @@ class ChatClient:
         message = choices[0].get("message") or {}
         content = message.get("content")
         if not isinstance(content, str):
+            finish_reason = choices[0].get("finish_reason")
+            if finish_reason == "length":
+                raise TruncatedError(
+                    "provider stopped at the token cap before returning content",
+                    finish_reason=finish_reason,
+                    usage=data.get("usage") or {},
+                    latency_ms=latency_ms,
+                )
             raise TransportError("provider response has no message.content")
 
         return Completion(
