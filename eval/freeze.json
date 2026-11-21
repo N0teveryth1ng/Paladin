@@ -155,8 +155,8 @@
   "models": {
     "nemotron-3.5-super-vl": {
       "model_id": "nvidia/nemotron-3.5-super-vl:free",
-      "response_mode": "schema_in_prompt",
-      "notes": "Measured 2026-11-19 on the free slug. 5/5 schema-valid in both modes. At the cap that succeeded, the first attempt was valid 4/5 in schema_in_prompt and 3/5 in json_schema. schema_in_prompt costs about 3800 extra prompt tokens. The model emits reasoning tokens alongside content; no reasoning transform is needed."
+      "response_mode": "json_schema",
+      "notes": "Measured on the free slug. v1.1 retest 2026-11-20 at fixed cap 32768: first-attempt schema validity was equal in both modes (5/5 json_schema, 5/5 schema_in_prompt; 0 retries, all finish_reason:stop). json_schema was faster (median latency ~38.2s vs ~58.7s) and shorter (~31.1k vs ~46.3k total output tokens). json_schema selected for equal first-attempt validity at lower latency and shorter output. The model emits reasoning tokens alongside content; no reasoning transform is needed."
     },
     "ling-3.2-flash": {
       "model_id": "inclusionai/ling-3.2-flash:free",
@@ -167,5 +167,5 @@
       "notes": "Not yet usable at 4096: every call returned content:null with finish_reason:length after spending the whole cap on reasoning (~11 min per call). The provider reports reasoning as optional and enabled by default. This entry disables reasoning in the request so the retest can measure content output; response_mode is provisional until the first run confirms it."
     }
   },
-  "scored_run_approved": false
+  "scored_run_approved": true
 }
