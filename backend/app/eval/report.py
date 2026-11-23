@@ -16,6 +16,13 @@ from typing import Any
 
 from app.eval import constants
 from app.eval.models import EvalPrompt, EvalSet
+from app.eval.runner import (
+    DEFAULT_EVAL_SET_VERSION,
+    EVAL_SET_PATHS,
+    expected_eval_set_hash,
+    expected_system_prompt_hash,
+    resolve_eval_set_path,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_EVAL_SET = REPO_ROOT / "eval" / "eval_set.json"
@@ -228,10 +235,12 @@ def _model_dirs(runs_dir: Path) -> list[Path]:
 def _record_paths(model_dir: Path) -> list[Path]:
     """Run records only. ``run-N.architecture.json`` is payload, not a record."""
 
+    paths = {
+        *model_dir.glob("ev_*/run-*.json"),
+        *model_dir.glob("ev2_*/run-*.json"),
+    }
     return sorted(
-        path
-        for path in model_dir.glob("ev_*/run-*.json")
-        if not path.name.endswith(".architecture.json")
+        path for path in paths if not path.name.endswith(".architecture.json")
     )
 
 
@@ -507,6 +516,8 @@ def render_human_sheet(
         "",
         "Score only the first gate-passing run of each prompt. The model names are",
         "in `human_sheet_key.json`; this sheet deliberately does not show them.",
+        "For every human item, pass means the statement is true of the design;",
+        "must_not statements are written as desired properties.",
         "",
     ]
 
@@ -558,8 +569,18 @@ def generate_report(
     runs_dir: Path = DEFAULT_OUT,
     freeze_path: Path = DEFAULT_FREEZE,
     eval_set_path: Path = DEFAULT_EVAL_SET,
+    eval_set_version: str = DEFAULT_EVAL_SET_VERSION,
 ) -> str:
+    if eval_set_version not in EVAL_SET_PATHS:
+        raise ValueError(f"unknown eval set version: {eval_set_version!r}")
+    if eval_set_path == DEFAULT_EVAL_SET and eval_set_version != "1.0":
+        eval_set_path = resolve_eval_set_path(eval_set_version)
     eval_set = EvalSet.model_validate(_load_json(eval_set_path))
+    if eval_set.eval_set_version != eval_set_version:
+        raise ValueError(
+            f"eval set version mismatch: file={eval_set.eval_set_version!r} "
+            f"requested={eval_set_version!r}"
+        )
     freeze = _load_json(freeze_path)
 
     analyses: list[ModelAnalysis] = []
@@ -572,12 +593,19 @@ def generate_report(
     lines = [
         "# Paladin evaluation report",
         "",
-        f"Eval set SHA-256: {freeze.get('eval_set_sha256')}",
-        f"System prompt: {freeze.get('system_prompt_version')} "
-        f"({freeze.get('system_prompt_sha256')})",
-        f"Models: {len(analyses)}",
-        "",
+        f"Eval set SHA-256: {expected_eval_set_hash(freeze, eval_set_version)}",
     ]
+    if eval_set_version != "1.0":
+        lines.append(f"Eval set version: {eval_set_version}")
+        lines.append(
+            f"System prompt: v1.2 ({expected_system_prompt_hash(freeze, eval_set_version)})"
+        )
+    else:
+        lines.append(
+            f"System prompt: {freeze.get('system_prompt_version')} "
+            f"({freeze.get('system_prompt_sha256')})"
+        )
+    lines.extend([f"Models: {len(analyses)}", ""])
 
     if not analyses:
         lines.append("No run records found.")
@@ -585,22 +613,31 @@ def generate_report(
         lines.append(_render_model(analysis))
         lines.append("")
 
+    report_dir = runs_dir if eval_set_version == "1.0" else runs_dir / "v2"
+    report_dir.mkdir(parents=True, exist_ok=True)
+
     sheet, key = render_human_sheet(runs_dir, analyses, eval_set)
-    (runs_dir / "human_sheet.md").write_text(sheet, encoding="utf-8", newline="\n")
-    (runs_dir / "human_sheet_key.json").write_text(
+    (report_dir / "human_sheet.md").write_text(sheet, encoding="utf-8", newline="\n")
+    (report_dir / "human_sheet_key.json").write_text(
         json.dumps(key, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
         newline="\n",
     )
 
     text = "\n".join(lines).rstrip() + "\n"
-    (runs_dir / "report.md").write_text(text, encoding="utf-8", newline="\n")
+    (report_dir / "report.md").write_text(text, encoding="utf-8", newline="\n")
     return text
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Compute the mechanical report.")
     parser.add_argument("--out", default=str(DEFAULT_OUT))
+    parser.add_argument(
+        "--eval-set-version",
+        choices=sorted(EVAL_SET_PATHS),
+        default=DEFAULT_EVAL_SET_VERSION,
+        help="Frozen evaluation set version (default: 1.0).",
+    )
     args = parser.parse_args(argv)
 
     runs_dir = Path(args.out)
@@ -608,7 +645,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"no run directory: {runs_dir}", file=sys.stderr)
         return 1
 
-    print(generate_report(runs_dir))
+    print(generate_report(runs_dir, eval_set_version=args.eval_set_version))
     return 0
 
 

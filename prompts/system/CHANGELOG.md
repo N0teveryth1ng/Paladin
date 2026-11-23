@@ -99,6 +99,38 @@ Baseline, before calibration. No revision yet.
   incomplete ling retest (429) is excluded from this verdict and remains
   unresolved. No scored run was started and no model was frozen.
 
+## Proposed v1.2 — 21 November 2026 (approved, not frozen)
+
+Status: **proposed**. Prompt file: `prompts/system/architecture-v1.2.md`.
+SHA-256: `EE6E94BF49E16AD22D6EE0191D3C0F50D0FC2DA7D956ABD4458C4BAAF1CE3D2D`
+(draft digest, recorded for the §12 review; it is not a freeze).
+The default system prompt remains v1.1 (`architecture-v1.md`); this entry does
+not change the active hash or the v1.0 freeze.
+
+- Derived from: the **scored v1.0 run** of nemotron-3.5-super-vl, not from
+  scratch. This is a deliberate exception to the scratch-only evidence rule
+  above, approved by the product owner in step 7 v2.
+- Evidence: 13 class-(c) failed-item instances — ev_03 r04 (2), ev_08 x02/x03
+  (6), ev_12 run-3 x03 (1), ev_13 run-3 x01 (1), ev_14 r01 (3) — showed no
+  rule requiring components to be justified by stated requirements and no
+  `client` vs `service` definition. Five class-(a) instances — ev_15 run-1 r04,
+  ev_13 run-1 r01/r02/r03, ev_09 r10 — violated instructions v1.1 already
+  contains and are reinforced, not introduced.
+- Change: adds a `Minimal, justified structure` section covering functional and
+  non-functional requirements (scale, availability, latency, durability,
+  security) and stated assumptions about unstated quantities or definitions;
+  defines `client` and `service`; requires a blocking contradiction flag when
+  stated requirements cannot all hold; and requires a complete design even when
+  a flag is present.
+- Held-out status: **v1.0 is no longer held-out for v1.2**. Its scored results
+  are the evidence for the change and may never be reported as a v1.2 result.
+  v1.2 is evaluated only on the new held-out set `eval/eval_set_v2.json`, once
+  per model, under the single-shot protocol.
+- Scratch evidence: none yet. A 5-call structural regression check on the
+  scratch prompts is planned on a day different from the v2 scored run.
+- Before/after scratch result: pending; the check has not been run. No provider
+  call was made to produce this entry.
+
 <!--
 Format for a calibration revision:
 

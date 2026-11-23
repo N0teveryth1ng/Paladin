@@ -17,6 +17,11 @@ from app.llm.scratch_runner import (
     load_scratch_prompts,
     run_scratch,
 )
+from app.llm.system_prompt import (
+    SYSTEM_PROMPT_SHA256,
+    load_system_prompt,
+    load_system_prompt_version,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 VALID = (
@@ -25,6 +30,7 @@ VALID = (
 INVALID_JSON = (
     REPO_ROOT / "backend" / "tests" / "fixtures" / "fake_llm" / "invalid_json.txt"
 ).read_text(encoding="utf-8")
+V12_SHA256 = "EE6E94BF49E16AD22D6EE0191D3C0F50D0FC2DA7D956ABD4458C4BAAF1CE3D2D"
 
 
 class CapStubClient:
@@ -36,11 +42,13 @@ class CapStubClient:
         self.decide = decide
         self.caps: list[int] = []
         self.kwargs: list[dict[str, Any]] = []
+        self.messages: list[list[dict[str, str]]] = []
 
     def complete(self, messages: list[dict[str, str]], **kwargs: Any) -> Completion:
         cap = int(kwargs["max_tokens"])
         self.caps.append(cap)
         self.kwargs.append(kwargs)
+        self.messages.append(messages)
         return self.decide(cap)
 
 
@@ -53,10 +61,15 @@ def completion(text: str, finish_reason: str) -> Completion:
     )
 
 
-def records(out_dir: Path, mode: str) -> list[dict[str, Any]]:
+def records(
+    out_dir: Path, mode: str, version: str | None = None
+) -> list[dict[str, Any]]:
+    target = out_dir / "model-a" / mode
+    if version is not None:
+        target = target / f"prompt-{version}"
     return [
         json.loads(path.read_text(encoding="utf-8"))
-        for path in sorted((out_dir / "model-a" / mode).glob("sc_*.json"))
+        for path in sorted(target.glob("sc_*.json"))
     ]
 
 
@@ -340,3 +353,86 @@ def test_rate_limit_stops_the_scratch_run_and_resumes(tmp_path: Path) -> None:
 
     assert len(records(tmp_path, "json_schema")) == len(load_scratch_prompts())
     assert len(resumed.caps) == len(load_scratch_prompts())
+
+
+def _system_messages(client: CapStubClient) -> list[str]:
+    return [
+        message["content"]
+        for messages in client.messages
+        for message in messages
+        if message["role"] == "system"
+    ]
+
+
+def test_default_scratch_run_uses_v11_and_keeps_the_record_path(tmp_path: Path) -> None:
+    client = CapStubClient(lambda cap: completion(VALID, "stop"))
+    run_scratch(model="model-a", mode="json_schema", client=client, out_dir=tmp_path)
+
+    assert client.messages
+    assert _system_messages(client) == [load_system_prompt()] * len(client.messages)
+    for record in records(tmp_path, "json_schema"):
+        assert record["system_prompt_version"] == "1.1"
+        assert record["system_prompt_sha256"] == SYSTEM_PROMPT_SHA256
+    assert (tmp_path / "model-a" / "json_schema" / "sc_01.json").is_file()
+    assert not (tmp_path / "model-a" / "json_schema" / "prompt-1.1").exists()
+
+
+def test_requested_v12_uses_its_prompt_and_versioned_path(tmp_path: Path) -> None:
+    client = CapStubClient(lambda cap: completion(VALID, "stop"))
+    run_scratch(
+        model="model-a",
+        mode="json_schema",
+        client=client,
+        out_dir=tmp_path,
+        system_prompt_version="1.2",
+    )
+
+    assert client.messages
+    assert _system_messages(client) == [load_system_prompt_version("1.2")] * len(
+        client.messages
+    )
+    for record in records(tmp_path, "json_schema", version="1.2"):
+        assert record["system_prompt_version"] == "1.2"
+        assert record["system_prompt_sha256"] == V12_SHA256
+    assert (
+        tmp_path / "model-a" / "json_schema" / "prompt-1.2" / "sc_01.json"
+    ).is_file()
+
+
+def test_unknown_system_prompt_version_is_rejected(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="unknown system prompt version"):
+        run_scratch(
+            model="model-a",
+            mode="json_schema",
+            client=CapStubClient(lambda cap: completion(VALID, "stop")),
+            out_dir=tmp_path,
+            system_prompt_version="9.9",
+        )
+
+
+def test_settled_record_from_another_version_is_not_skipped(tmp_path: Path) -> None:
+    target = tmp_path / "model-a" / "json_schema" / "prompt-1.2"
+    target.mkdir(parents=True)
+    (target / "sc_01.json").write_text(
+        json.dumps(
+            {
+                "system_prompt_version": "1.1",
+                "measurement_usable": True,
+                "final_status": "schema_valid",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    client = CapStubClient(lambda cap: completion(VALID, "stop"))
+    written = run_scratch(
+        model="model-a",
+        mode="json_schema",
+        client=client,
+        out_dir=tmp_path,
+        system_prompt_version="1.2",
+    )
+
+    assert len(written) == len(load_scratch_prompts())
+    first = json.loads((target / "sc_01.json").read_text(encoding="utf-8"))
+    assert first["system_prompt_version"] == "1.2"

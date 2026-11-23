@@ -9,6 +9,11 @@ token count may be used for the ``max_tokens`` measurement. With
 ``fixed_max_tokens`` there is no ladder: one call per prompt, and a ``length``
 finish at that cap is recorded as a truncation failure.
 
+The system-prompt version defaults to the active v1.1 and is recorded, with its
+digest, in every scratch record. A non-default version writes to a
+``prompt-<version>`` subdirectory so it cannot settle or overwrite a v1.1
+record.
+
 A 429 stops the whole scratch invocation; it is never retried. Completed
 records are skipped on the next invocation, so a stop-and-resume costs only the
 unfinished prompts.
@@ -38,7 +43,12 @@ from app.llm.settings import (
     SettingsError,
     load_model_settings,
 )
-from app.llm.system_prompt import load_system_prompt
+from app.llm.system_prompt import (
+    SYSTEM_PROMPT_VERSION,
+    SYSTEM_PROMPT_VERSIONS,
+    load_system_prompt_version,
+    system_prompt_sha256,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRATCH_PROMPTS_PATH = REPO_ROOT / "scratch" / "scratch_prompts.json"
@@ -97,15 +107,22 @@ def _run_payload(cap: int, result: GenerationResult) -> dict[str, Any]:
     }
 
 
-def _settled(record: dict[str, Any]) -> bool:
+def _settled(
+    record: dict[str, Any], expected_version: str = SYSTEM_PROMPT_VERSION
+) -> bool:
     """True when rerunning the prompt cannot add usable evidence.
 
     ``rate_limited`` and ``transport_error`` are the only statuses worth
     resuming. A schema-invalid result, a failed timeout, or truncation at the
     ceiling is already the answer for that prompt. A fixed-cap record is never
-    rerun at a higher cap: its cap is the experiment.
+    rerun at a higher cap: its cap is the experiment. A record written under a
+    different system-prompt version is never settled: it is not evidence for
+    the requested version. Records without a version predate versioning and are
+    treated as the default v1.1.
     """
 
+    if record.get("system_prompt_version", SYSTEM_PROMPT_VERSION) != expected_version:
+        return False
     if record.get("measurement_usable"):
         return True
     if record.get("final_status") in {"schema_invalid", "timeout_failed"}:
@@ -147,6 +164,7 @@ def run_scratch(
     force: bool = False,
     fixed_max_tokens: int | None = None,
     reasoning: dict[str, Any] | None = None,
+    system_prompt_version: str = SYSTEM_PROMPT_VERSION,
 ) -> list[Path]:
     if mode not in RESPONSE_MODES:
         raise ValueError(f"unknown response mode: {mode!r}")
@@ -160,17 +178,26 @@ def run_scratch(
 
     prompts = load_scratch_prompts(prompts_path)
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
-    system_prompt = load_system_prompt()
+    system_prompt = load_system_prompt_version(system_prompt_version)
+    system_prompt_digest = system_prompt_sha256(system_prompt)
     budgeted = client if max_calls is None else BudgetedClient(client, max_calls)
 
     target = out_dir / model / mode
+    if system_prompt_version != SYSTEM_PROMPT_VERSION:
+        # A non-default prompt writes to its own subtree so a settled v1.1
+        # record cannot skip it (or be overwritten by it).
+        target = target / f"prompt-{system_prompt_version}"
     target.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
 
     for prompt in prompts:
         path = target / f"{prompt['id']}.json"
         existing = _existing_record(path)
-        if not force and existing is not None and _settled(existing):
+        if (
+            not force
+            and existing is not None
+            and _settled(existing, system_prompt_version)
+        ):
             continue
 
         runs: list[dict[str, Any]] = []
@@ -240,6 +267,8 @@ def run_scratch(
             "model": model,
             "model_id": model_id or model,
             "mode": mode,
+            "system_prompt_version": system_prompt_version,
+            "system_prompt_sha256": system_prompt_digest,
             "prompt_id": prompt["id"],
             "kind": prompt.get("kind"),
             "cap_used": final["cap"],
@@ -317,6 +346,16 @@ def main(argv: list[str] | None = None) -> int:
         help="Send reasoning: {enabled: false} on every request.",
     )
     parser.add_argument("--force", action="store_true", help="Rerun settled records.")
+    parser.add_argument(
+        "--system-prompt-version",
+        default=SYSTEM_PROMPT_VERSION,
+        choices=list(SYSTEM_PROMPT_VERSIONS),
+        help=(
+            "System prompt version to use "
+            f"(default {SYSTEM_PROMPT_VERSION}); non-default versions write to "
+            "a prompt-<version> subdirectory."
+        ),
+    )
     args = parser.parse_args(argv)
 
     entry = {
@@ -343,6 +382,7 @@ def main(argv: list[str] | None = None) -> int:
             force=args.force,
             fixed_max_tokens=args.fixed_max_tokens,
             reasoning=reasoning,
+            system_prompt_version=args.system_prompt_version,
         )
     except SettingsError as error:
         print(f"settings error: {error}", file=sys.stderr)

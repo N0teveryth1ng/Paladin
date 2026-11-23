@@ -380,6 +380,19 @@ def test_human_sheet_renders_the_architecture_without_the_model_name(
     assert key == {"Model A": "secret-model-name"}
 
 
+def test_human_sheet_header_states_the_scoring_convention(tmp_path: Path) -> None:
+    build_model(tmp_path, "model-a")
+    report_for(tmp_path)
+
+    sheet = (tmp_path / "human_sheet.md").read_text(encoding="utf-8")
+
+    assert (
+        "For every human item, pass means the statement is true of the design;"
+        in sheet
+    )
+    assert "must_not statements are written as desired properties." in sheet
+
+
 def test_constants_match_the_readme_block() -> None:
     readme = (REPO_ROOT / "eval" / "README.md").read_text(encoding="utf-8")
     start = readme.index("<!-- constants:begin -->")

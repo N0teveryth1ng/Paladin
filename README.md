@@ -36,6 +36,15 @@ Nothing outside this pipeline is in scope until it passes its evaluation.
 | 4 | Deterministic validators (networkx) | not started |
 | 5 | Layout and render (elkjs + React Flow) | not started |
 
+## Evaluation versions
+
+`eval/eval_set.json` (v1.0, SHA-256 `280E2E41…C024DC`) remains frozen history
+with system prompt v1.1. `eval/eval_set_v2.json` (v2.0, SHA-256 `BD713F…E2770E`)
+is the new held-out set paired with the approved v1.2 draft
+`prompts/system/architecture-v1.2.md`. Both are chosen with
+`--eval-set-version` (default `1.0`); no file is swapped and no threshold
+changes. See `eval/README.md` for the protocol and hashes.
+
 ## Layout
 
 ```

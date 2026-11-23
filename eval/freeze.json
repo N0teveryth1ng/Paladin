@@ -1,7 +1,28 @@
 {
   "eval_set_sha256": "280E2E4145A2034BC73C213D59374BF94779666D3A25E407F5F60BB1F9C024DC",
+  "eval_set_version": "1.0",
+  "eval_sets": {
+    "1.0": {
+      "path": "eval/eval_set.json",
+      "sha256": "280E2E4145A2034BC73C213D59374BF94779666D3A25E407F5F60BB1F9C024DC"
+    },
+    "2.0": {
+      "path": "eval/eval_set_v2.json",
+      "sha256": "BD713F574A3C1EDFD6E450B38EF055B0AEEB18350CA62B1DB77DCC87F1E2770E"
+    }
+  },
   "system_prompt_version": "1.1",
   "system_prompt_sha256": "21A2D1F12A14EC4FFB3139E997F4F3A9D07F425A4156B1B1003870FFBA12D961",
+  "system_prompts": {
+    "1.1": {
+      "path": "prompts/system/architecture-v1.md",
+      "sha256": "21A2D1F12A14EC4FFB3139E997F4F3A9D07F425A4156B1B1003870FFBA12D961"
+    },
+    "1.2": {
+      "path": "prompts/system/architecture-v1.2.md",
+      "sha256": "EE6E94BF49E16AD22D6EE0191D3C0F50D0FC2DA7D956ABD4458C4BAAF1CE3D2D"
+    }
+  },
   "thresholds": {
     "RUNS_PER_PROMPT": 3,
     "GATE_RUNS_REQUIRED": 2,
@@ -167,5 +188,5 @@
       "notes": "Not yet usable at 4096: every call returned content:null with finish_reason:length after spending the whole cap on reasoning (~11 min per call). The provider reports reasoning as optional and enabled by default. This entry disables reasoning in the request so the retest can measure content output; response_mode is provisional until the first run confirms it."
     }
   },
-  "scored_run_approved": true
+  "scored_run_approved": false
 }

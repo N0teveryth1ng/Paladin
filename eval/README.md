@@ -8,8 +8,9 @@ their rubrics. It is versioned (`eval_set_version: "1.0"`) and validated by
 
 | Path | Purpose |
 |---|---|
-| `eval/eval_set.json` | The 15 prompts, rubrics, blocking-flag expectations and expected assumptions. |
-| `eval/README.md` | This protocol: gate, pass rules, set bar, human scoring, change control, frozen hash. |
+| `eval/eval_set.json` | The v1.0 set: 15 prompts, rubrics, blocking-flag expectations and expected assumptions. |
+| `eval/eval_set_v2.json` | The new held-out v2.0 set, version `2.0`, ids `ev2_01` … `ev2_15`. |
+| `eval/README.md` | This protocol: gate, pass rules, set bar, human scoring, change control, frozen hashes. |
 | `eval/CHANGELOG.md` | Every change after the set is frozen. |
 | `eval/freeze.json` | The frozen harness: eval-set hash, system-prompt hash, thresholds, shared settings, measurements and approval flag. |
 | `backend/app/eval/models.py` | Pydantic contract for the set. |
@@ -18,10 +19,36 @@ their rubrics. It is versioned (`eval_set_version: "1.0"`) and validated by
 | `backend/app/eval/evaluate.py` | Predicate evaluation and the deterministic gate. |
 | `backend/app/eval/runner.py` | The frozen scored runner. Refuses on drift, missing approval, unmeasured tokens or an unknown model. |
 | `backend/app/eval/report.py` | Mechanical report, human-score ingestion and the human sheet. |
-| `prompts/system/architecture-v1.md` | The versioned generation system prompt. |
+| `prompts/system/architecture-v1.md` | The active generation system prompt, v1.1. |
+| `prompts/system/architecture-v1.2.md` | The approved v1.2 draft used only with eval set v2.0; not the active prompt. |
 | `scratch/scratch_prompts.json` | 5 non-eval prompts used only to choose transport settings and prompt wording. |
 | `backend/tests/test_eval_set.py` | Set-level validation and the prompt leak guard. |
 | `backend/tests/test_predicates.py` | Grammar acceptance and rejection tests. |
+
+## Evaluation set versions
+
+Two frozen sets coexist. A version selector — never a file swap — chooses one.
+
+| Version | File | SHA-256 | System prompt | Status |
+|---|---|---|---|---|
+| 1.0 | `eval/eval_set.json` | `280E2E4145A2034BC73C213D59374BF94779666D3A25E407F5F60BB1F9C024DC` | v1.1 (`prompts/system/architecture-v1.md`) | frozen history; never re-scored |
+| 2.0 | `eval/eval_set_v2.json` | `BD713F574A3C1EDFD6E450B38EF055B0AEEB18350CA62B1DB77DCC87F1E2770E` | v1.2 (`prompts/system/architecture-v1.2.md`) | new held-out set; single-shot, not yet frozen as active |
+
+`--eval-set-version 1.0` is the default and preserves every v1.0 command,
+hash check, run-record shape and report path. `--eval-set-version 2.0` validates
+the v2 hash from the `eval_sets` block of `eval/freeze.json` and the v1.2 prompt
+hash from its `system_prompts` block. Pass bar, thresholds and shared settings
+are identical for both versions. v1.0 is no longer held-out for v1.2, and v1.2
+results are never reported on the v1.0 set.
+
+- Runner: `python -m app.eval.runner --model <name> --eval-set-version 2.0`.
+- Report: `python -m app.eval.report --eval-set-version 2.0` writes
+  `runs/v2/report.md`, `runs/v2/human_sheet.md` and
+  `runs/v2/human_sheet_key.json`. The v1.0 paths remain `runs/report.md`,
+  `runs/human_sheet.md` and `runs/human_sheet_key.json`.
+- Adding a version never edits the v1.0 hash, the v1.0 prompt or the v1.0 run
+  records; `scored_run_approved` and `selected_model` are set only by the product
+  owner.
 
 ## Predicate grammar
 
@@ -214,6 +241,7 @@ Human scores live at `runs/<model>/human_scores.json`:
   assumptions.
 - The sheet never shows a model name. Labels are `Model A`, `Model B`, …
 - The key file maps each label to its model name.
+- Scoring convention: For every human item, pass means the statement is true of the design; must_not statements are written as desired properties.
 
 ## Change control
 

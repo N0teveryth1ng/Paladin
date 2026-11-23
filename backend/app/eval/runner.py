@@ -28,10 +28,19 @@ from app.llm.generate import (
     generate,
     validate_reasoning,
 )
-from app.llm.system_prompt import load_system_prompt, system_prompt_sha256
+from app.llm.system_prompt import (
+    load_system_prompt,
+    load_system_prompt_version,
+    system_prompt_sha256,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_EVAL_SET = REPO_ROOT / "eval" / "eval_set.json"
+DEFAULT_EVAL_SET_V2 = REPO_ROOT / "eval" / "eval_set_v2.json"
+DEFAULT_EVAL_SET_VERSION = "1.0"
+EVAL_SET_PATHS = {"1.0": DEFAULT_EVAL_SET, "2.0": DEFAULT_EVAL_SET_V2}
+#: v2.0 is scored only with the v1.2 system prompt. v1.0 stays on v1.1.
+SYSTEM_PROMPT_VERSION_BY_EVAL_SET = {"1.0": "1.1", "2.0": "1.2"}
 DEFAULT_FREEZE = REPO_ROOT / "eval" / "freeze.json"
 DEFAULT_SCHEMA = REPO_ROOT / "schema" / "architecture.generation.schema.json"
 DEFAULT_OUT = REPO_ROOT / "runs"
@@ -60,6 +69,50 @@ def _load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def resolve_eval_set_path(eval_set_version: str = DEFAULT_EVAL_SET_VERSION) -> Path:
+    """Select a frozen eval set by version. The default is always v1.0."""
+
+    try:
+        return EVAL_SET_PATHS[eval_set_version]
+    except KeyError:
+        raise RefusalError(
+            f"unknown eval set version: {eval_set_version!r}"
+        ) from None
+
+
+def expected_eval_set_hash(
+    freeze: dict[str, Any], eval_set_version: str = DEFAULT_EVAL_SET_VERSION
+) -> str | None:
+    """The hash for a version. v1.0 keeps the original top-level field."""
+
+    if eval_set_version == "1.0":
+        return freeze.get("eval_set_sha256")
+    block = (freeze.get("eval_sets") or {}).get(eval_set_version)
+    if not isinstance(block, dict) or not isinstance(block.get("sha256"), str):
+        raise RefusalError(
+            f"freeze.json has no sha256 for eval set version {eval_set_version!r}"
+        )
+    return block["sha256"]
+
+
+def expected_system_prompt_hash(
+    freeze: dict[str, Any], eval_set_version: str = DEFAULT_EVAL_SET_VERSION
+) -> str | None:
+    """The system-prompt hash paired with an eval set version."""
+
+    if eval_set_version == "1.0":
+        return freeze.get("system_prompt_sha256")
+    prompt_version = SYSTEM_PROMPT_VERSION_BY_EVAL_SET.get(eval_set_version)
+    if prompt_version is None:
+        raise RefusalError(f"unknown eval set version: {eval_set_version!r}")
+    block = (freeze.get("system_prompts") or {}).get(prompt_version)
+    if not isinstance(block, dict) or not isinstance(block.get("sha256"), str):
+        raise RefusalError(
+            f"freeze.json has no sha256 for system prompt {prompt_version!r}"
+        )
+    return block["sha256"]
+
+
 def _max_measurement(freeze: dict[str, Any]) -> int | None:
     measurements = freeze.get("max_tokens_measurements") or []
     values = [
@@ -71,12 +124,17 @@ def _max_measurement(freeze: dict[str, Any]) -> int | None:
 
 
 def check_preconditions(
-    freeze: dict[str, Any], eval_set_path: Path, model: str
+    freeze: dict[str, Any],
+    eval_set_path: Path,
+    model: str,
+    eval_set_version: str = DEFAULT_EVAL_SET_VERSION,
 ) -> None:
     """Every refusal happens here, before anything is written."""
 
+    if eval_set_version not in EVAL_SET_PATHS:
+        raise RefusalError(f"unknown eval set version: {eval_set_version!r}")
     actual_hash = sha256_file(eval_set_path)
-    expected_hash = freeze.get("eval_set_sha256")
+    expected_hash = expected_eval_set_hash(freeze, eval_set_version)
     if actual_hash != expected_hash:
         raise RefusalError(
             "eval set hash mismatch: "
@@ -174,19 +232,20 @@ def _build_record(
     started_at: str,
     finished_at: str,
     architecture_path: str | None,
+    eval_set_version: str = DEFAULT_EVAL_SET_VERSION,
 ) -> dict[str, Any]:
     shared = freeze["shared_settings"]
     model_entry = freeze["models"][model]
 
-    return {
+    record: dict[str, Any] = {
         "run_id": f"{model}/{prompt.id}/run-{run_index}",
         "model": model,
         "base_url_host": urlsplit(base_url).netloc or base_url,
-        "eval_set_sha256": freeze["eval_set_sha256"],
+        "eval_set_sha256": expected_eval_set_hash(freeze, eval_set_version),
         "prompt_id": prompt.id,
         "prompt_sha256": sha256_text(prompt.prompt),
-        "system_prompt_version": freeze["system_prompt_version"],
-        "system_prompt_sha256": freeze["system_prompt_sha256"],
+        "system_prompt_version": SYSTEM_PROMPT_VERSION_BY_EVAL_SET[eval_set_version],
+        "system_prompt_sha256": expected_system_prompt_hash(freeze, eval_set_version),
         "settings": {
             "temperature": shared["TEMPERATURE"],
             "max_tokens": freeze["max_tokens"],
@@ -204,11 +263,18 @@ def _build_record(
         "architecture_path": architecture_path,
         "gate": _gate_payload(prompt, result),
     }
+    if eval_set_version != "1.0":
+        record["eval_set_version"] = eval_set_version
+    return record
 
 
 def _write_index(model_dir: Path, model: str, eval_set_sha256: str) -> None:
     entries = []
-    for path in sorted(model_dir.glob("ev_*/run-*.json")):
+    record_paths = {
+        *model_dir.glob("ev_*/run-*.json"),
+        *model_dir.glob("ev2_*/run-*.json"),
+    }
+    for path in sorted(record_paths):
         try:
             record = _load_json(path)
         except (OSError, json.JSONDecodeError):
@@ -239,6 +305,7 @@ def run_scored(
     freeze_path: Path = DEFAULT_FREEZE,
     eval_set_path: Path = DEFAULT_EVAL_SET,
     schema_path: Path = DEFAULT_SCHEMA,
+    eval_set_version: str = DEFAULT_EVAL_SET_VERSION,
     only_prompt: str | None = None,
     force: bool = False,
     max_calls: int | None = SCORED_MAX_CALLS_PER_MODEL,
@@ -246,19 +313,40 @@ def run_scored(
 ) -> list[Path]:
     """Run the frozen protocol. Returns the record paths written this call."""
 
+    if eval_set_version not in EVAL_SET_PATHS:
+        raise RefusalError(f"unknown eval set version: {eval_set_version!r}")
+    if eval_set_path == DEFAULT_EVAL_SET and eval_set_version != "1.0":
+        eval_set_path = resolve_eval_set_path(eval_set_version)
     freeze = _load_json(freeze_path)
-    check_preconditions(freeze, eval_set_path, model)
+    check_preconditions(freeze, eval_set_path, model, eval_set_version)
+    eval_set_sha256 = expected_eval_set_hash(freeze, eval_set_version)
     budgeted = client if max_calls is None else BudgetedClient(client, max_calls)
 
-    system_prompt = load_system_prompt()
+    if eval_set_version == "1.0":
+        system_prompt = load_system_prompt()
+        expected_prompt_hash = freeze.get("system_prompt_sha256")
+    else:
+        prompt_version = SYSTEM_PROMPT_VERSION_BY_EVAL_SET[eval_set_version]
+        system_prompt = load_system_prompt_version(prompt_version)
+        block = (freeze.get("system_prompts") or {}).get(prompt_version)
+        if not isinstance(block, dict) or not isinstance(block.get("sha256"), str):
+            raise RefusalError(
+                f"freeze.json has no sha256 for system prompt {prompt_version!r}"
+            )
+        expected_prompt_hash = block["sha256"]
     actual_prompt_hash = system_prompt_sha256(system_prompt)
-    if actual_prompt_hash != freeze.get("system_prompt_sha256"):
+    if actual_prompt_hash != expected_prompt_hash:
         raise RefusalError(
             "system prompt hash mismatch: "
-            f"freeze={freeze.get('system_prompt_sha256')} actual={actual_prompt_hash}"
+            f"freeze={expected_prompt_hash} actual={actual_prompt_hash}"
         )
 
     eval_set = EvalSet.model_validate(_load_json(eval_set_path))
+    if eval_set.eval_set_version != eval_set_version:
+        raise RefusalError(
+            f"eval set version mismatch: file={eval_set.eval_set_version!r} "
+            f"requested={eval_set_version!r}"
+        )
     schema = _load_json(schema_path)
     model_entry = freeze["models"][model]
     reasoning_transform = resolve_reasoning_transform(freeze)
@@ -317,6 +405,7 @@ def run_scored(
                 started_at=started_at,
                 finished_at=finished_at,
                 architecture_path=relative_architecture,
+                eval_set_version=eval_set_version,
             )
             record_path.write_text(
                 _canonical_json(record), encoding="utf-8", newline="\n"
@@ -327,12 +416,12 @@ def run_scored(
                 stopped = True
                 break
 
-        _write_index(model_dir, model, freeze["eval_set_sha256"])
+        _write_index(model_dir, model, eval_set_sha256)
         if stopped:
             break
 
     if model_dir.exists():
-        _write_index(model_dir, model, freeze["eval_set_sha256"])
+        _write_index(model_dir, model, eval_set_sha256)
     return written
 
 
@@ -342,6 +431,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--prompt", default=None)
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--out", default=str(DEFAULT_OUT))
+    parser.add_argument(
+        "--eval-set-version",
+        choices=sorted(EVAL_SET_PATHS),
+        default=DEFAULT_EVAL_SET_VERSION,
+        help="Frozen evaluation set version (default: 1.0).",
+    )
     parser.add_argument(
         "--max-calls",
         type=int,
@@ -360,7 +455,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         # Refuse on frozen-harness problems before asking for credentials.
         freeze = _load_json(DEFAULT_FREEZE)
-        check_preconditions(freeze, DEFAULT_EVAL_SET, args.model)
+        eval_set_path = resolve_eval_set_path(args.eval_set_version)
+        check_preconditions(freeze, eval_set_path, args.model, args.eval_set_version)
         settings = load_model_settings(freeze["models"][args.model])
         client = ChatClient(
             base_url=settings.base_url,
@@ -372,6 +468,8 @@ def main(argv: list[str] | None = None) -> int:
             model=args.model,
             client=client,
             out_dir=Path(args.out),
+            eval_set_path=eval_set_path,
+            eval_set_version=args.eval_set_version,
             only_prompt=args.prompt,
             force=args.force,
             max_calls=args.max_calls,

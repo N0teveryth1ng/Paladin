@@ -132,11 +132,15 @@ All four statements are about the generation contract in the abstract. None ment
 
 **Disclosure:** the author of this draft has seen the v1.0 diagnosis, including its failing item ids, graph evidence and classification. That knowledge is used only for the *general* rubric-design lessons in §6.3 and §8. It is not used to generate v2 prompt concepts or rubric items.
 
+**Revision disclosure (STEP 7 REVIEW):** items 3 to 6 of the review were added after reviewer feedback that referred to the v1 failure patterns. They are structural checks — over-engineering exclusions, direct client-to-database prohibitions, a substring correction, and domain-specific deterministic items — and each is justified from the corresponding v2 prompt text alone; v2 independence is limited accordingly.
+
+**Prompt-text disclosure (STEP 7 REVISION REVIEW):** the replacement `ev2_13` prompt text came **verbatim from reviewer input in the STEP 7 REVISION REVIEW**; it was not authored independently for v2. This is a **disclosed exception** to the authoring-independence and domain-separation claims of this section: meeting-room booking already appears in `scratch/scratch_prompts.json` (`sc_03`), although the `ev2_13` text is about a multi-country company under partition rather than the single-office scratch scenario, and an 8-word shingle check against all v1.0 and scratch prompts found **no overlap**. The `blocking_flag_expected: "required"` expectation and the deterministic structure were retained unchanged under the supplied text. No model output was inspected while making this substitution.
+
 Steps taken, and required while authoring v2:
 
 1. **No output inspection.** While authoring v2, do not open `runs/`, any run record, the diagnosis output, or any model output. No v2 item is written by reading what a model did in v1.
 2. **Practice-only sources.** v2 prompts and rubrics are derived from the prompt texts themselves and general system-design practice — minimal sufficient structure, ownership of durable state, sync/async boundaries, correctness under retries, and explicit handling of conflicting or vague requirements.
-3. **Domain-source restriction.** The only source files consulted for domain exclusion are `eval/eval_set.json` (v1.0 prompt titles/text) and `scratch/scratch_prompts.json`; all 15 v2 domains are new to both.
+3. **Domain-source restriction.** The only source files consulted for domain exclusion are `eval/eval_set.json` (v1.0 prompt titles/text) and `scratch/scratch_prompts.json`; 14 v2 domains are new to both, with the disclosed `ev2_13` meeting-room booking exception above.
 4. **No predicate copied from a failure instance.** Predicates are selected from the existing grammar to express the prompt's stated outcome; no predicate is chosen because it would have caught a specific v1 run. The three v1 defect lessons are recorded as abstract rules (§6.3, §8), not as item templates, and no v1 item id or graph detail is reproduced in v2.
 5. **Numeric limits restricted.** `component_count` is used only on the vague adversarial prompt ev2_14, with a justification written from that prompt's text. No other v2 prompt carries a numeric component limit; no limit is copied from, adjusted to, or derived from v1 results.
 6. **Single-pass authoring.** All 15 prompts and rubrics are written in one pass, then reviewed against their own prompt texts only — never against v1 results, model outputs or the diagnosis. Any revision must be justified from the v2 prompt text.
@@ -158,7 +162,7 @@ v1.0 domains (excluded): marketing site, URL shortener, email sender, admin sign
 
 Scratch domains (excluded): large-file sharing, sensor telemetry, meeting-room booking, field-inspection offline app, vague internal ops tool.
 
-All 15 v2.0 domains below are new to both sets.
+The `ev2_13` meeting-room booking domain is a **disclosed exception** (§6.0): its prompt text was supplied verbatim by the reviewer and reuses that scratch domain, though an 8-word shingle check against all v1.0 and scratch prompts found no textual overlap. The **other 14** v2.0 domains are new to both sets.
 
 ### 6.3 Rubric lessons built into v2.0
 
@@ -230,10 +234,10 @@ Prompt: "Design live score delivery for a sports league. Several independent fee
 Blocking flag: forbidden. Deterministic: fan and feed boundaries, owned backend, durable event store, durable snapshot/history store; `path_exists` from fan boundary to the event store; `no_reference_issues()`; correction and replay correctness assigned to human items.
 Human: technology realism; corrections propagate to all readers; replay uses recorded historical state rather than current state.
 
-**ev2_13 — adversarial (contradiction) — Retention vs erasure**
-Prompt: "Design an archive for a regulated business. Every record must be retained permanently for audit. The same records must be erased completely within thirty days when a person withdraws consent. Deliver a design."
-Blocking flag: required. Deterministic: a `contradiction` flag with `severity: blocking`; a complete design present — a backend component, a durable store, and a path between them — even though the flag is set; `no_reference_issues()`.
-Human: technology realism; the design does not silently drop either requirement; the blocking flag names both conflicting requirements.
+**ev2_13 — adversarial (contradiction) — Global meeting-room booking with partition tolerance**
+Prompt: "Design a meeting-room booking system for a company with offices in three countries. Every office must always see exactly the same, latest bookings. Every office must also keep accepting new bookings while its link to the other offices is down. Deliver a design."
+Blocking flag: required. The prompt text was supplied verbatim by the reviewer in the STEP 7 REVISION REVIEW (disclosed exception, §6.0); `blocking_flag_expected: "required"` and the deterministic structure were retained. Deterministic: the contradiction blocking flag (`flag_present(kind=contradiction, severity=blocking)`); a complete design — an owned backend (`component_exists(type=service)`), a durable store and a path between them (`path_exists(from_type=client, to_type=database)`); `no_reference_issues()`; `no_connection(from_type=client, to_type=database)` in `must_include`; positive `component_exists(type=cdn)` and `component_exists(type=search_index)` exclusions in `must_not_include`.
+Human: technology realism; neither stated requirement is silently dropped; the blocking flag names both conflicting requirements.
 
 **ev2_14 — adversarial (vague) — Loyalty "thing"**
 Prompt: "Design our new customer loyalty thing. It should be engaging, modern, and work at scale. We have not decided what the benefit is or who runs it. Make reasonable assumptions and give us something we can discuss."

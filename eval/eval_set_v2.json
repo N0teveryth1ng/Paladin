@@ -1,0 +1,1085 @@
+{
+  "eval_set_version": "2.0",
+  "prompts": [
+    {
+      "id": "ev2_01",
+      "title": "Public library loan desk",
+      "category": "simple",
+      "adversarial_kind": null,
+      "prompt": "Design the system for a single public library's loan desk. Librarians check books out to registered members, record returns, and see due dates. A member may have at most five books on loan. The library has one branch and modest traffic.",
+      "expected_requirements": [
+        "Librarians can check books out and record returns.",
+        "Members and librarians can see due dates.",
+        "A member may not hold more than five books at once.",
+        "The design stays small for one branch and modest traffic."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A member-facing entry point exists for library staff to record loans and returns.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=client)"
+        },
+        {
+          "id": "r02",
+          "statement": "An owned backend enforces the five-book limit.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r03",
+          "statement": "Loan records are durable and reachable from the member-facing entry point.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r04",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r05",
+          "statement": "The graph is structurally valid.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r06",
+          "statement": "No boundary component connects directly to durable state.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x03",
+          "statement": "The five-book limit is not left to the member-facing entry point.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "x04",
+          "statement": "A cache is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cache)"
+        },
+        {
+          "id": "x05",
+          "statement": "A CDN is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [
+        "Modest traffic means one branch with a single loan desk."
+      ],
+      "notes": "Three stated operations — check out, return, list due dates — fix the minimum structure; no numeric component cap is used. Exclusions: Only one branch and modest traffic are stated, so no read-heavy load justifies caching. No static or media delivery is described; the loan desk handles records, not content delivery."
+    },
+    {
+      "id": "ev2_02",
+      "title": "Dental clinic appointment booking",
+      "category": "simple",
+      "adversarial_kind": null,
+      "prompt": "Design appointment booking for one dental clinic. Patients pick a slot with a dentist; two patients must never be given the same dentist and slot. Reception staff can see and adjust the schedule. Assume one location and a few dentists.",
+      "expected_requirements": [
+        "Patients can pick a slot with a dentist.",
+        "Two patients can never hold the same dentist and slot.",
+        "Reception staff can see and adjust the schedule.",
+        "The design fits one location and a few dentists."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "An owned backend owns the appointment schedule.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r02",
+          "statement": "The schedule is durable and reachable from a booking boundary.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r03",
+          "statement": "The graph is structurally valid.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r04",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r05",
+          "statement": "No boundary component connects directly to durable state.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x02",
+          "statement": "The no-double-booking rule is not left to the patient interface.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "x03",
+          "statement": "A load balancer is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=load_balancer)"
+        },
+        {
+          "id": "x04",
+          "statement": "A CDN is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "A single owned scheduler and a durable schedule are the minimum for the three stated operations; no numeric component cap is used. Exclusions: One location and a few dentists state no scale or availability need for traffic distribution. No static or media delivery is described; only schedule state is booked and viewed."
+    },
+    {
+      "id": "ev2_03",
+      "title": "Paywalled article access for a small newspaper",
+      "category": "simple",
+      "adversarial_kind": null,
+      "prompt": "Design access to articles for a small newspaper. Subscribers can read articles; non-subscribers can see titles only. Subscription status is checked on each read. The publisher has one site and a small readership.",
+      "expected_requirements": [
+        "Subscribers can read articles.",
+        "Non-subscribers see titles only.",
+        "Subscription status is checked on each read.",
+        "The design stays minimal for one site and a small readership."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "An owned backend enforces entitlement on each read.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r02",
+          "statement": "Articles and subscription status are durable and reachable from a reader boundary.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r03",
+          "statement": "The graph is structurally valid.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r04",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r05",
+          "statement": "No boundary component connects directly to durable state.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x02",
+          "statement": "Entitlement is not inferred from the reader interface.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "x03",
+          "statement": "A message queue is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=message_queue)"
+        },
+        {
+          "id": "x04",
+          "statement": "A load balancer is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=load_balancer)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "Minimal structure follows from two durable states and one check; no numeric component cap is used. Exclusions: Status is checked on each read and no bursty or deferred work is stated. One site and a small readership state no scale need for traffic distribution."
+    },
+    {
+      "id": "ev2_04",
+      "title": "Campus parking permit renewal",
+      "category": "simple",
+      "adversarial_kind": null,
+      "prompt": "Design permit renewal for a university campus. A staff member uploads proof of eligibility, the system records it, and a permit is issued. Each permit has an expiry date. Assume one campus.",
+      "expected_requirements": [
+        "Staff can upload proof of eligibility.",
+        "The decision is recorded and a permit is issued.",
+        "Each permit has an expiry date.",
+        "The design does not introduce unstated needs."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "An owned backend records the decision and issues permits.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r02",
+          "statement": "Permit records are durable and reachable from a staff boundary.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r03",
+          "statement": "A durable place holds the uploaded proof.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r04",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r05",
+          "statement": "The graph is structurally valid.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r06",
+          "statement": "No boundary component connects directly to durable state.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x02",
+          "statement": "Expiry is not tracked only in the staff interface.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "x03",
+          "statement": "A load balancer is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=load_balancer)"
+        },
+        {
+          "id": "x04",
+          "statement": "A CDN is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [
+        "One campus means a single issuing office."
+      ],
+      "notes": "The three stated operations (upload proof, record decision, issue permit) define the minimum; no numeric component cap is used. Exclusions: One campus is assumed, with no stated scale or availability need. Proof of eligibility is uploaded and recorded, not delivered as static or media content."
+    },
+    {
+      "id": "ev2_05",
+      "title": "University course registration with prerequisites and waitlists",
+      "category": "medium",
+      "adversarial_kind": null,
+      "prompt": "Design course registration for a university. Students enrol in sections with limited seats. A student who lacks a prerequisite cannot enrol. When a section is full, the student joins a waitlist and is enrolled automatically when a seat opens. Registration is bursty at term start. Assume tens of thousands of students.",
+      "expected_requirements": [
+        "Students enrol in sections with limited seats.",
+        "Prerequisites are enforced before enrolment.",
+        "A full section puts the student on a waitlist.",
+        "Waitlisted students are enrolled automatically when a seat opens."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "An owned backend enforces prerequisites and seat limits.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r02",
+          "statement": "Enrolment and waitlist state are durable and reachable from a student boundary.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r03",
+          "statement": "Automatic waitlist promotion is represented.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r04",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r05",
+          "statement": "The graph is structurally valid.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r06",
+          "statement": "No boundary component connects directly to durable state.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x03",
+          "statement": "Waitlist promotion does not overfill a section.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "x04",
+          "statement": "A CDN is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x05",
+          "statement": "An object store is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=object_storage)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "Bursty term-start traffic is a stated non-functional need; no fixed edge is required for the hand-off, and no numeric component cap is used. Exclusions: No static or media delivery is described; enrolment and waitlist state are the stated data. Seats, prerequisites and waitlists are structured records; no files or blobs are stated."
+    },
+    {
+      "id": "ev2_06",
+      "title": "Prescription refill with pharmacist review",
+      "category": "medium",
+      "adversarial_kind": null,
+      "prompt": "Design prescription refill requests for a pharmacy chain. A patient requests a refill. A pharmacist must approve it before a label is printed. Requests that need clarification are held and shown to the pharmacist. Refill history must be available to the pharmacist. Assume many pharmacies and modest per-pharmacy volume.",
+      "expected_requirements": [
+        "Patients can request a refill.",
+        "A pharmacist approves before a label is printed.",
+        "Clarification requests are held and visible to the pharmacist.",
+        "Refill history is available to the pharmacist."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "An owned backend owns the refill workflow.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r02",
+          "statement": "Request and refill history are durable and reachable from a review boundary.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r03",
+          "statement": "The graph is structurally valid.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r04",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r05",
+          "statement": "No boundary component connects directly to durable state.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x02",
+          "statement": "No label is printed before pharmacist approval.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "x03",
+          "statement": "A CDN is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x04",
+          "statement": "A search index is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=search_index)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "The approval gate and held-request state are stated requirements; plausible supporting components are not forbidden, and no numeric cap is used. Exclusions: No static or media delivery is described; a printed label is an outcome, not content delivery. History must be available to the pharmacist; no full-text or lookup search is stated."
+    },
+    {
+      "id": "ev2_07",
+      "title": "Freight shipment tracking across carriers",
+      "category": "medium",
+      "adversarial_kind": null,
+      "prompt": "Design shipment tracking for a freight broker. Shipments pass through several legs run by different carriers. Carriers post milestone events; customers query current status. Events may arrive late or out of order, and a later milestone must not be overwritten by an earlier one. Assume hundreds of shipments per day.",
+      "expected_requirements": [
+        "Carriers can post milestone events.",
+        "Customers can query current status.",
+        "Late or out-of-order events do not overwrite a later milestone.",
+        "The design handles hundreds of shipments per day."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "An owned backend accepts milestone events.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r02",
+          "statement": "Milestone events are durable and reachable from a status-query boundary.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r03",
+          "statement": "The graph is structurally valid.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r04",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r05",
+          "statement": "No boundary component connects directly to durable state.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x02",
+          "statement": "Customers cannot write milestone events directly.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "x03",
+          "statement": "An earlier milestone does not overwrite a later one.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "x04",
+          "statement": "A CDN is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x05",
+          "statement": "An object store is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=object_storage)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "Ordering correctness is an outcome, not a type-pair; it is assigned to human items. No numeric component cap is used. Exclusions: Status is queried by shipment milestone, not delivered as static or media content. Milestones are structured events with ordering rules; no files or blobs are stated."
+    },
+    {
+      "id": "ev2_08",
+      "title": "Multi-site retail stock transfer",
+      "category": "medium",
+      "adversarial_kind": null,
+      "prompt": "Design stock transfers between stores of a retail chain. A store requests a transfer; the receiving store reserves the item before dispatch, and the sending store decrements stock when the transfer is confirmed. Two transfers must not claim the same unit. Inventory counts must be durable. Assume dozens of stores.",
+      "expected_requirements": [
+        "A store can request a transfer.",
+        "The receiving store reserves the item before dispatch.",
+        "The sending store decrements stock on confirmation.",
+        "Two transfers cannot claim the same unit and counts are durable."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "An owned backend coordinates reservations and confirmation.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r02",
+          "statement": "Inventory counts and reservation state are durable and reachable from a store boundary.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r03",
+          "statement": "The graph is structurally valid.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r04",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r05",
+          "statement": "No boundary component connects directly to durable state.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x02",
+          "statement": "Two transfers cannot claim the same unit.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "x03",
+          "statement": "A CDN is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x04",
+          "statement": "A search index is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=search_index)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "Reservation and decrement are stated outcomes; no fixed edge or numeric component cap is used. Exclusions: No static or media delivery is described; only transfer and inventory state is stated. Counts and reservations are durable structured state; no product search is stated."
+    },
+    {
+      "id": "ev2_09",
+      "title": "Concert ticket sales with seat holds",
+      "category": "complex",
+      "adversarial_kind": null,
+      "prompt": "Design ticket sales for a single concert. Many buyers try to select seats at once. A selected seat is held for a short window; if the buyer does not pay in time the hold expires and the seat becomes available again. A seat must never be sold twice. Sales last for one launch window with very high initial traffic.",
+      "expected_requirements": [
+        "Buyers can select and hold seats.",
+        "Unpaid holds expire and release the seat.",
+        "A seat is never sold twice.",
+        "The design handles very high initial launch traffic."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "An owned backend enforces holds and single-sale rules.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r02",
+          "statement": "Seat and hold state are durable and reachable from a buyer boundary.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r04",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r05",
+          "statement": "The expiry path reaches durable seat state.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r07",
+          "statement": "The graph is structurally valid.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r08",
+          "statement": "No boundary component connects directly to durable state.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "A seat is never sold twice.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "x02",
+          "statement": "A search index is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=search_index)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "High launch traffic is a stated non-functional need. The expiry requirement is a path to durable state, not a specific direct edge; no numeric cap is used. Domain-specific items are outcome or stated-detail checks from the prompt text; none fixes a single topology. Human items judge the durable expiry path and the no-double-sale property. Exclusions: No full-text or lookup search is stated."
+    },
+    {
+      "id": "ev2_10",
+      "title": "National identity record lookup with audit trail",
+      "category": "complex",
+      "adversarial_kind": null,
+      "prompt": "Design a lookup system for national identity records. Authorised officials query a record by identifier. Every query and every result is written to an append-only audit log. Officials must not be able to edit or delete audit entries. Assume a large country and strict residency rules for the data.",
+      "expected_requirements": [
+        "Authorised officials can query a record by identifier.",
+        "Every query and result is written to an append-only audit log.",
+        "Officials cannot edit or delete audit entries.",
+        "Data stays within strict residency rules at national scale."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "An owned backend enforces authorisation.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r02",
+          "statement": "Records and audit entries are durable and reachable from an official boundary.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r04",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r05",
+          "statement": "Authorisation is represented as an explicit boundary.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r06",
+          "statement": "The owned backend can reach durable record and audit storage.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=service, to_type=database)"
+        },
+        {
+          "id": "r07",
+          "statement": "The graph is structurally valid.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r08",
+          "statement": "No boundary component connects directly to durable state.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x03",
+          "statement": "Audit entries cannot be edited or deleted by officials.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "x04",
+          "statement": "A CDN is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x05",
+          "statement": "A search index is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=search_index)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "Security and residency are stated non-functional needs that can justify components; append-only semantics and the authorisation boundary are judged by human items. No numeric cap is used. Domain-specific items are outcome or stated-detail checks from the prompt text; none fixes a single topology. Exclusions: No static or media delivery is described. No full-text or lookup search is stated."
+    },
+    {
+      "id": "ev2_11",
+      "title": "Cross-border remittance with reconciliation",
+      "category": "complex",
+      "adversarial_kind": null,
+      "prompt": "Design a remittance system that sends money between countries. A sender funds a transfer; a recipient receives it in local currency. Each transfer must be recorded exactly once in a durable ledger, and settlement must be reconciled daily. Regulatory checks must pass before funds move. Assume moderate volume and multiple currencies.",
+      "expected_requirements": [
+        "Senders can fund a transfer and recipients receive local currency.",
+        "Each transfer is recorded exactly once in a durable ledger.",
+        "Settlement is reconciled daily.",
+        "Regulatory checks pass before funds move."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "An owned backend coordinates transfer and reconciliation.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r02",
+          "statement": "The ledger and reconciliation state are durable and reachable from a sender boundary.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r03",
+          "statement": "The graph is structurally valid.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r04",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r05",
+          "statement": "The owned backend reaches the external settlement counterparty.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=service, to_type=external_service)"
+        },
+        {
+          "id": "r07",
+          "statement": "No boundary component connects directly to durable state.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x02",
+          "statement": "Regulatory checks are not bypassed before funds move.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "x03",
+          "statement": "A CDN is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x04",
+          "statement": "An object store is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=object_storage)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "Regulatory checks before funds move are judged by a human item; no numeric component cap is used. Domain-specific items are outcome or stated-detail checks from the prompt text; none fixes a single topology. Exclusions: No static or media delivery is described. The stated data is structured state, not files or blobs."
+    },
+    {
+      "id": "ev2_12",
+      "title": "Live sports score aggregation with corrections",
+      "category": "complex",
+      "adversarial_kind": null,
+      "prompt": "Design live score delivery for a sports league. Several independent feeds report events; some events arrive late or are corrected. Fans see near-live scores. A correction must be reflected everywhere, and a replay of a match must show the state as it was known at the time. Assume many concurrent fans and a few dozen matches.",
+      "expected_requirements": [
+        "Independent feeds report score events.",
+        "Fans see near-live scores.",
+        "Corrections are reflected everywhere.",
+        "Replay shows the state as it was known at the time."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "An owned backend aggregates feed events.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r02",
+          "statement": "Events and snapshots are durable and reachable from a fan boundary.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r04",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r05",
+          "statement": "Feed events reach durable storage from the external feed boundary.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r07",
+          "statement": "The graph is structurally valid.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r08",
+          "statement": "No boundary component connects directly to durable state.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "A search index is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=search_index)"
+        },
+        {
+          "id": "x02",
+          "statement": "Replay uses recorded historical state, not current state.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "Near-live delivery and many concurrent fans are stated non-functional needs; replay correctness is judged by a human item. No numeric cap is used. Domain-specific items are outcome or stated-detail checks from the prompt text; none fixes a single topology. Exclusions: No full-text or lookup search is stated."
+    },
+    {
+      "id": "ev2_13",
+      "title": "Global meeting-room booking with partition tolerance",
+      "category": "adversarial",
+      "adversarial_kind": "contradiction",
+      "prompt": "Design a meeting-room booking system for a company with offices in three countries. Every office must always see exactly the same, latest bookings. Every office must also keep accepting new bookings while its link to the other offices is down. Deliver a design.",
+      "expected_requirements": [
+        "Every office sees the same latest bookings.",
+        "Every office keeps accepting new bookings while its link to other offices is down.",
+        "The stated consistency and offline-availability requirements conflict, and a blocking flag names them.",
+        "A complete design is still delivered despite the conflict."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "The impossible combination is flagged as blocking.",
+          "check": "deterministic",
+          "predicate": "flag_present(kind=contradiction, severity=blocking)"
+        },
+        {
+          "id": "r02",
+          "statement": "A complete design is delivered with durable state.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r03",
+          "statement": "An owned backend is present.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r04",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r05",
+          "statement": "The graph is structurally valid.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r06",
+          "statement": "No boundary component connects directly to durable state.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x02",
+          "statement": "Neither stated requirement is silently dropped.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "x03",
+          "statement": "A CDN is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x04",
+          "statement": "A search index is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=search_index)"
+        }
+      ],
+      "blocking_flag_expected": "required",
+      "expected_assumptions": [],
+      "notes": "Exactly the same latest bookings across offices and continued booking acceptance during a link outage cannot both hold; the design must still be complete. Exclusions: No static or media delivery is described. No full-text or lookup search is stated."
+    },
+    {
+      "id": "ev2_14",
+      "title": "Loyalty thing",
+      "category": "adversarial",
+      "adversarial_kind": "vague",
+      "prompt": "Design our new customer loyalty thing. It should be engaging, modern, and work at scale. We have not decided what the benefit is or who runs it. Make reasonable assumptions and give us something we can discuss.",
+      "expected_requirements": [
+        "A customer-facing concept is proposed.",
+        "Assumptions about benefit, ownership and scale are stated.",
+        "Something discussable is produced."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "The design stays small enough to discuss.",
+          "check": "deterministic",
+          "predicate": "component_count(lte=7)"
+        },
+        {
+          "id": "r02",
+          "statement": "The concept has durable state reachable from a customer boundary.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r03",
+          "statement": "At least one assumption is visible.",
+          "check": "deterministic",
+          "predicate": "assumption_present(text~=\"scal\")"
+        },
+        {
+          "id": "r04",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r05",
+          "statement": "The graph is structurally valid.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r06",
+          "statement": "No boundary component connects directly to durable state.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x02",
+          "statement": "Invented product benefits are not presented as facts.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "x04",
+          "statement": "A search index is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=search_index)"
+        }
+      ],
+      "blocking_flag_expected": "optional",
+      "expected_assumptions": [
+        "The benefit is a points-based discount.",
+        "The programme is run by the marketing team.",
+        "Scale means tens of thousands of members."
+      ],
+      "notes": "component_count(lte=7) is justified from the prompt text alone: with benefit and operator undefined, the defensible minimum is one customer boundary, one owned backend, one durable store and at most four supporting edges. This limit is not derived from any v1 result or model output. Exclusions: No full-text or lookup search is stated."
+    },
+    {
+      "id": "ev2_15",
+      "title": "Offline live inventory",
+      "category": "adversarial",
+      "adversarial_kind": "impossible",
+      "prompt": "Design an inventory view for field staff. Staff must see the current, live stock level while offline, with no local copy of stock data and no delay in updates. Deliver a design.",
+      "expected_requirements": [
+        "Staff see stock levels while offline.",
+        "Stock levels are current and live with no update delay.",
+        "No local copy of stock data is kept."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "The impossible combination is flagged as blocking.",
+          "check": "deterministic",
+          "predicate": "flag_present(kind=contradiction, severity=blocking)"
+        },
+        {
+          "id": "r02",
+          "statement": "A complete design is delivered with durable state.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r03",
+          "statement": "An owned backend is present.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r04",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r05",
+          "statement": "The graph is structurally valid.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r06",
+          "statement": "No boundary component connects directly to durable state.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x02",
+          "statement": "The design does not pretend live accuracy is achievable under the stated offline constraint.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "x03",
+          "statement": "A CDN is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x04",
+          "statement": "A search index is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=search_index)"
+        }
+      ],
+      "blocking_flag_expected": "required",
+      "expected_assumptions": [],
+      "notes": "Live accuracy while offline with no local copy and no delay cannot all hold; the design must still be complete. Exclusions: No static or media delivery is described. No full-text or lookup search is stated."
+    }
+  ]
+}
