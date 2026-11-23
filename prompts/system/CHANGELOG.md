@@ -25,7 +25,7 @@ counts provider requests, including schema retries and truncation reruns.
 | 2026-11-20 | `nvidia/nemotron-3.5-super-vl:free` | `json_schema` | 5 | v1.1 retest. Fixed cap 32768, 16-call cap. 5/5 schema-valid on the first attempt, 0 retries, all `finish_reason: stop`. |
 | 2026-11-20 | `nvidia/nemotron-3.5-super-vl:free` | `schema_in_prompt` | 5 | v1.1 retest. Fixed cap 32768, 16-call cap. 5/5 schema-valid on the first attempt, 0 retries, all `finish_reason: stop`. |
 | 2026-11-20 | `inclusionai/ling-3.2-flash:free` | `json_schema` | 1 | v1.1 retest (`--reasoning-disabled`). Fixed cap 32768, 16-call cap. First call returned HTTP 429 (`rate_limited`) with no usage data, so reasoning-token verification was not possible. Stop-and-resume: no retry and no further ling call. |
-| 2026-11-23 | `nvidia/nemotron-3.5-super-vl:free` | `json_schema` | 8 | v1.2 scratch check. Fixed max_tokens 32768, max 1 retry per prompt, 10-call cap. 5/5 schema-valid; first attempt 3/5; sc_04/sc_05 retries were group-level assumption-coupling validation errors; all `finish_reason: stop`, no 429. Runner stored metrics but not drafts. |
+| 2026-11-23 | `nvidia/nemotron-3.5-super-vl:free` | `json_schema` | 7 | v1.2 scratch check. Fixed max_tokens 32768, max 1 retry per prompt, 10-call cap. 5/5 schema-valid; first attempt 3/5; sc_04/sc_05 retries were group-level assumption-coupling validation errors; all `finish_reason: stop`, no 429. Runner stored metrics but not drafts. |
 | 2026-11-23 | `nvidia/nemotron-3.5-super-vl:free` | `json_schema` | 5 | v1.2 capture-only rerun. Fixed max_tokens 32768, max 1 retry per prompt, 10-call cap. 5/5 schema-valid on the first attempt, 0 retries, all `finish_reason: stop`, no 429; drafts captured. |
 
 The provider's `GET /api/v1/key` reported 42 free-model requests used on
@@ -41,8 +41,8 @@ on the ling 429 (`used` stayed 10). Only scratch prompts were used; no eval-set
 prompt was run.
 
 The 2026-11-23 v1.2 scratch check ran as two separate scratch-only invocations
-against `LLM_API_KEY` only: 8 calls in the sanctioned invocation (metrics stored,
-drafts not stored by the runner) and 5 in the authorized capture-only rerun, 13
+against `LLM_API_KEY` only: 7 calls in the sanctioned invocation (metrics stored,
+drafts not stored by the runner) and 5 in the authorized capture-only rerun, 12
 calls total, each with fixed max_tokens 32768, at most 1 retry per prompt and a
 10-call cap. A redacted `GET /api/v1/key` before the first invocation reported
 `free_model_daily_requests` limit 50 / used 0 / remaining 50. No 429 occurred,
@@ -138,8 +138,8 @@ not change the active hash or the v1.0 freeze.
   v1.2 is evaluated only on the new held-out set `eval/eval_set_v2.json`, once
   per model, under the single-shot protocol.
 - Scratch evidence: 2026-11-23 structural regression check on all five scratch
-  prompts (`sc_01`–`sc_05`, `json_schema`, nemotron-3.5-super-vl): 8 calls in the
-  sanctioned invocation plus 5 in the authorized capture-only rerun, 13 total.
+  prompts (`sc_01`–`sc_05`, `json_schema`, nemotron-3.5-super-vl): 7 calls in the
+  sanctioned invocation plus 5 in the authorized capture-only rerun, 12 total.
   sc_01 (6 components), sc_02 (7; load balancer and cache defensible from the
   stated scale and live-view needs) and sc_03 (3) had 0 flags and no unrequested
   components. sc_04 (7) raised the required blocking contradiction flag while
@@ -151,8 +151,8 @@ not change the active hash or the v1.0 freeze.
 - Before/after scratch result: no structural regression versus v1.1 — clean
   prompts stayed clean, the contradictory prompt raised the required blocking
   flag with a full design, and the vague prompt raised a warning. The only
-  degradation was validation-level: the first invocation needed 3 group-level
-  assumption-coupling retries (a known v1.1-era error kind, not a new error kind);
+  degradation was validation-level: the first invocation needed 2 group-level
+  assumption-coupling retries (one each on sc_04 and sc_05; a known v1.1-era error kind, not a new error kind);
   the capture rerun had 0 retries and 5/5 first-attempt schema-valid calls. v1.2
   wording was unchanged, the active prompt remains v1.1, no `selected_model` was
   set and `scored_run_approved` remains false.
