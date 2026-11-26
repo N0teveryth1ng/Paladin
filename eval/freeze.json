@@ -12,7 +12,7 @@
     },
     "3.0": {
       "path": "eval/eval_set_v3.json",
-      "sha256": "549FBB152C0AC0D34EC4A07D0A865A57DC903740744B78CBA29CCE66F577A53E"
+      "sha256": "7B46B89744C7CE26BFBFF616546D7A5EDCAF1ABE29B6D4ADB876BD69ACB66141"
     }
   },
   "system_prompt_version": "1.1",

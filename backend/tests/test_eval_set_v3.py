@@ -214,7 +214,7 @@ def test_eval_set_is_byte_stable(eval_set: EvalSet, raw_bytes: bytes) -> None:
     ) + "\n"
     assert redumped.encode("utf-8") == raw_bytes
     assert hashlib.sha256(raw_bytes).hexdigest().upper() == (
-        "549FBB152C0AC0D34EC4A07D0A865A57DC903740744B78CBA29CCE66F577A53E"
+        "7B46B89744C7CE26BFBFF616546D7A5EDCAF1ABE29B6D4ADB876BD69ACB66141"
     )
 
 

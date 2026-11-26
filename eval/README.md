@@ -35,7 +35,7 @@ Frozen sets coexist. A version selector — never a file swap — chooses one.
 |---|---|---|---|---|
 | 1.0 | `eval/eval_set.json` | `280E2E4145A2034BC73C213D59374BF94779666D3A25E407F5F60BB1F9C024DC` | v1.1 (`prompts/system/architecture-v1.md`) | frozen history; never re-scored |
 | 2.0 | `eval/eval_set_v2.json` | `BD713F574A3C1EDFD6E450B38EF055B0AEEB18350CA62B1DB77DCC87F1E2770E` | v1.2 (`prompts/system/architecture-v1.2.md`) | scored, mechanical FAIL; held-out history, not active |
-| 3.0 | `eval/eval_set_v3.json` | `549FBB152C0AC0D34EC4A07D0A865A57DC903740744B78CBA29CCE66F577A53E` | v1.3 (`prompts/system/architecture-v1.3.md`) | held-out draft; single-shot, not yet frozen/scored |
+| 3.0 | `eval/eval_set_v3.json` | `7B46B89744C7CE26BFBFF616546D7A5EDCAF1ABE29B6D4ADB876BD69ACB66141` | v1.3 (`prompts/system/architecture-v1.3.md`) | held-out draft; single-shot, not yet frozen/scored |
 
 `--eval-set-version 1.0` is the default and preserves every v1.0 command,
 hash check, run-record shape and report path. `--eval-set-version 2.0` and

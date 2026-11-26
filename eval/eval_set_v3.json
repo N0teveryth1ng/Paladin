@@ -329,15 +329,15 @@
       "must_include": [
         {
           "id": "r01",
-          "statement": "An external e-signature provider boundary exists.",
+          "statement": "An owned service boundary exists.",
           "check": "deterministic",
-          "predicate": "component_exists(type=external_service)"
+          "predicate": "component_exists(type=service)"
         },
         {
           "id": "r02",
-          "statement": "Contract or signature state reaches durable storage.",
+          "statement": "Contract and signature state reach durable storage from a service.",
           "check": "deterministic",
-          "predicate": "path_exists(from_type=client, to_type=database)"
+          "predicate": "path_exists(from_type=service, to_type=database)"
         },
         {
           "id": "r_ref",
@@ -465,15 +465,15 @@
       "must_include": [
         {
           "id": "r01",
-          "statement": "An external notification or provider boundary exists.",
+          "statement": "An owned service boundary exists.",
           "check": "deterministic",
-          "predicate": "component_exists(type=external_service)"
+          "predicate": "component_exists(type=service)"
         },
         {
           "id": "r02",
-          "statement": "Notice or delivery state reaches durable storage.",
+          "statement": "Notice and delivery state reach durable storage from a service.",
           "check": "deterministic",
-          "predicate": "path_exists(from_type=client, to_type=database)"
+          "predicate": "path_exists(from_type=service, to_type=database)"
         },
         {
           "id": "r_ref",
@@ -952,9 +952,9 @@
         },
         {
           "id": "r02",
-          "statement": "An evacuee-facing client boundary exists.",
+          "statement": "An owned service boundary exists.",
           "check": "deterministic",
-          "predicate": "component_exists(type=client)"
+          "predicate": "component_exists(type=service)"
         },
         {
           "id": "r_ref",
