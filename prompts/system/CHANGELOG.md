@@ -27,6 +27,7 @@ counts provider requests, including schema retries and truncation reruns.
 | 2026-11-20 | `inclusionai/ling-3.2-flash:free` | `json_schema` | 1 | v1.1 retest (`--reasoning-disabled`). Fixed cap 32768, 16-call cap. First call returned HTTP 429 (`rate_limited`) with no usage data, so reasoning-token verification was not possible. Stop-and-resume: no retry and no further ling call. |
 | 2026-11-23 | `nvidia/nemotron-3.5-super-vl:free` | `json_schema` | 7 | v1.2 scratch check. Fixed max_tokens 32768, max 1 retry per prompt, 10-call cap. 5/5 schema-valid; first attempt 3/5; sc_04/sc_05 retries were group-level assumption-coupling validation errors; all `finish_reason: stop`, no 429. Runner stored metrics but not drafts. |
 | 2026-11-23 | `nvidia/nemotron-3.5-super-vl:free` | `json_schema` | 5 | v1.2 capture-only rerun. Fixed max_tokens 32768, max 1 retry per prompt, 10-call cap. 5/5 schema-valid on the first attempt, 0 retries, all `finish_reason: stop`, no 429; drafts captured. |
+| 2026-11-26 | `nvidia/nemotron-3.5-super-vl:free` | `json_schema` | 11 | v1.3 scratch check (system prompt v1.3). Fixed max_tokens 32768, call cap 10 (5 prompts + at most 1 retry/prompt). 6 official calls: 4/5 schema-valid first attempt, 0 retries, sc_04 transport_error on retry (2 calls, no usable draft). 5 additional capture-only calls captured drafts for sc_01/02/03/05. No 429. |
 
 The provider's `GET /api/v1/key` reported 42 free-model requests used on
 2026-11-19 (limit 50) after the original calls. A 429 is stop-and-resume and was
@@ -141,8 +142,7 @@ The default system prompt remains v1.1 (`architecture-v1.md`); this entry does n
 - Held-out status: v1.0 and v2.0 remain historical scored sets; neither is held-out
   for v1.3. v1.3 is to be evaluated only on a new held-out v3.0 set, once per model,
   under the single-shot protocol.
-- Scratch evidence: pending — 5-call v1.3 scratch check on `scratch/scratch_prompts.json`
-  only, different day from any v3 scored run, before v3 scored run approval.
+- Scratch evidence (2026-11-26, `nvidia/nemotron-3.5-super-vl:free`, `json_schema`, system prompt v1.3, fixed max_tokens 32768, call cap 10, 11 calls total: 6 official + 5 capture-only draft capture): 4/5 schema-valid on first attempt in official run (sc_01-03,05); sc_04 `transport_error` on retry after a schema-invalid/stop first attempt, no usable draft. No 429. Clean prompts sc_01/sc_02/sc_03 had 0 flags and included service + durable store. sc_05 (vague) raised 1 underspecified warning (not blocking), included service + durable store; assumptions array was empty (0) despite vague/unstated quantities/choices. sc_01/sc_02/sc_03 assumptions arrays empty. No structural regression observed on captured drafts; v1.3 did not reliably induce assumption-array entries for sc_05's unstated quantities/choices. No v1.3 wording or eval file changed.
 
 <!--
 Format for a calibration revision:
