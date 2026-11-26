@@ -10,7 +10,7 @@ their rubrics. It is versioned (`eval_set_version: "1.0"`) and validated by
 |---|---|
 | `eval/eval_set.json` | The v1.0 set: 15 prompts, rubrics, blocking-flag expectations and expected assumptions. |
 | `eval/eval_set_v2.json` | The held-out v2.0 set, version `2.0`, ids `ev2_01` … `ev2_15`. |
-| `eval/eval_set_v3.json` | The held-out v3.0 set, version `3.0`, ids `ev3_01` … `ev3_15`; single-shot, not yet frozen/scored. |
+| `eval/eval_set_v3.json` | The held-out v3.0 set, version `3.0`, ids `ev3_01` … `ev3_15`; frozen as versioned pair with v1.3, not active. |
 | `eval/README.md` | This protocol: gate, pass rules, set bar, human scoring, change control, frozen hashes. |
 | `eval/CHANGELOG.md` | Every change after the set is frozen. |
 | `eval/freeze.json` | The frozen harness: eval-set hash, system-prompt hash, thresholds, shared settings, measurements and approval flag. |
@@ -35,7 +35,7 @@ Frozen sets coexist. A version selector — never a file swap — chooses one.
 |---|---|---|---|---|
 | 1.0 | `eval/eval_set.json` | `280E2E4145A2034BC73C213D59374BF94779666D3A25E407F5F60BB1F9C024DC` | v1.1 (`prompts/system/architecture-v1.md`) | frozen history; never re-scored |
 | 2.0 | `eval/eval_set_v2.json` | `BD713F574A3C1EDFD6E450B38EF055B0AEEB18350CA62B1DB77DCC87F1E2770E` | v1.2 (`prompts/system/architecture-v1.2.md`) | scored, mechanical FAIL; held-out history, not active |
-| 3.0 | `eval/eval_set_v3.json` | `7B46B89744C7CE26BFBFF616546D7A5EDCAF1ABE29B6D4ADB876BD69ACB66141` | v1.3 (`prompts/system/architecture-v1.3.md`) | held-out draft; single-shot, not yet frozen/scored |
+| 3.0 | `eval/eval_set_v3.json` | `7B46B89744C7CE26BFBFF616546D7A5EDCAF1ABE29B6D4ADB876BD69ACB66141` | v1.3 (`prompts/system/architecture-v1.3.md`) | frozen as versioned pair with v1.3; not active; no scored run approved |
 
 `--eval-set-version 1.0` is the default and preserves every v1.0 command,
 hash check, run-record shape and report path. `--eval-set-version 2.0` and

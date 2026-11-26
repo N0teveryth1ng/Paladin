@@ -55,9 +55,9 @@ Status: **scored, failed**. v2.0 remained held-out/draft; it was not frozen as t
 - **Human scoring:** incomplete; no verdict beyond the mechanical FAIL.
 - **Disposition:** v2.0 is not selected and not frozen active. `scored_run_approved` and `selected_model` were not set. Any further prompt/rubric tuning requires a new held-out v3 set; v2 items/thresholds are unchanged.
 
-## 3.0 — 26 November 2026 — held-out set v3.0, **draft, not active / not frozen**
+## 3.0 — 26 November 2026 — held-out set v3.0, **frozen as versioned pair, not active**
 
-Status: **draft, not active and not frozen**. SHA-256 `7B46B89744C7CE26BFBFF616546D7A5EDCAF1ABE29B6D4ADB876BD69ACB66141`. `eval_set_version: "3.0"`, ids `ev3_01` … `ev3_15`. The hash is recorded only in the versioned `eval_sets["3.0"]` block of `eval/freeze.json`; the active selector and top-level `eval_set_sha256` still point to v1.0, which remains frozen and unedited. v3.0 is paired with system prompt v1.3 (`A87CC5555D2BBF668FCDAB5EC112DDDFA2CC59D05AF8FA738BA5B29142E41CDB`) and is not scored until separately approved.
+Status: **frozen as a versioned pair with system prompt v1.3; not active**. SHA-256 `7B46B89744C7CE26BFBFF616546D7A5EDCAF1ABE29B6D4ADB876BD69ACB66141`. `eval_set_version: "3.0"`, ids `ev3_01` … `ev3_15`. The hash is recorded only in the versioned `eval_sets["3.0"]` block of `eval/freeze.json`; the active selector and top-level `eval_set_sha256` still point to v1.0, which remains frozen and unedited. v3.0 is paired with system prompt v1.3 (`A87CC5555D2BBF668FCDAB5EC112DDDFA2CC59D05AF8FA738BA5B29142E41CDB`) and is not scored until separately approved.
 
 - 15 new prompts: 4 simple, 4 medium, 4 complex, 3 adversarial (1 contradiction, 1 vague, 1 impossible); same pass bar, thresholds, and shared settings as v1.0/v2.0.
 - Derived from scored v2 failures under the Step 8 owner-approved evidence exception. v2 rubric/thresholds/settings/evaluators were not changed; v1.0/v2.0 remain historical scored sets and are not held-out for v1.3.

@@ -110,13 +110,11 @@ Baseline, before calibration. No revision yet.
   incomplete ling retest (429) is excluded from this verdict and remains
   unresolved. No scored run was started and no model was frozen.
 
-## Proposed v1.3 — 26 November 2026 (approved, not frozen)
+## v1.3 — 26 November 2026 (frozen as versioned pair, not active)
 
-Status: **proposed**. Prompt file: `prompts/system/architecture-v1.3.md`.
-SHA-256: `A87CC5555D2BBF668FCDAB5EC112DDDFA2CC59D05AF8FA738BA5B29142E41CDB`
-(draft digest; it is not a freeze). The default system prompt remains v1.1
-(`architecture-v1.md`); this entry does not change the active hash or the v1.0
-freeze.
+Status: **frozen as a versioned pair with eval set v3.0; not active**. Prompt file: `prompts/system/architecture-v1.3.md`.
+SHA-256: `A87CC5555D2BBF668FCDAB5EC112DDDFA2CC59D05AF8FA738BA5B29142E41CDB`.
+The default system prompt remains v1.1 (`architecture-v1.md`); this entry does not change the active hash or the v1.0 freeze.
 
 - Derived from: **scored v2 failures** on `nemotron-3.5-super-vl` (eval set v2.0
   `BD713F57...E2770E`, prompt v1.2 `EE6E94BF...3D2D`, 2026-11-26, 45 runs). This
