@@ -177,6 +177,10 @@ The author of this draft has seen v1 and v2 scored outcomes, including ev2_14's 
 | 6 | Runner/report version plumbing? | **Yes** — additive version support only; no default change. |
 | 7 | Next execution gate? | **Yes** — after review approval, implement v1.3 prompt file + tests/docs, author v3 eval set + tests/docs, run 5-call v1.3 scratch check on a different day, then request approval for single-shot v3 scored run. |
 
+## 6.1 Reviewer-feedback rubric edits (26 November 2026, unfrozen draft)
+
+The following rubric edits were applied after reviewer feedback while v3.0 remains unfrozen: ev3_05 r01/r02 switched to `component_exists(type=service)` and `path_exists(from_type=service, to_type=database)`; ev3_13 x01 replaced `component_exists(type=object_storage)` with `component_exists(type=cdn)` and r02 switched `component_exists(type=client)` to `component_exists(type=service)`; ev3_12 x02 replaced `component_exists(type=external_service)` with `component_exists(type=auth_provider)`, justified in notes because no authentication requirement is stated; ev3_14 x01 replaced deterministic CDN exclusion with human must_not item "Any scalability component is justified by an assumption recorded in the assumptions array." (human items remain ≤3, atomic); ev3_15 r01 statement set to "A blocking contradiction flag is present."; ev3_07 x01 statement set to "No external service is present although no requirement justifies one." These edits followed reviewer feedback.
+
 ## 7. Non-actions
 
 - No v2 edit.

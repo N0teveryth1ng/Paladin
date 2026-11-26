@@ -14,6 +14,7 @@ from app.eval.report import generate_report
 from app.eval.runner import (
     DEFAULT_EVAL_SET,
     DEFAULT_EVAL_SET_V2,
+    DEFAULT_EVAL_SET_V3,
     EVAL_SET_PATHS,
     RefusalError,
     check_preconditions,
@@ -40,7 +41,9 @@ VALID = (
 
 V1_EVAL_SHA = "280E2E4145A2034BC73C213D59374BF94779666D3A25E407F5F60BB1F9C024DC"
 V2_EVAL_SHA = "BD713F574A3C1EDFD6E450B38EF055B0AEEB18350CA62B1DB77DCC87F1E2770E"
+V3_EVAL_SHA = "549FBB152C0AC0D34EC4A07D0A865A57DC903740744B78CBA29CCE66F577A53E"
 V12_SHA = "EE6E94BF49E16AD22D6EE0191D3C0F50D0FC2DA7D956ABD4458C4BAAF1CE3D2D"
+V13_SHA = "A87CC5555D2BBF668FCDAB5EC112DDDFA2CC59D05AF8FA738BA5B29142E41CDB"
 MODEL = "nemotron-3.5-super-vl"
 
 V1_RECORD_FIELDS = {
@@ -135,14 +138,21 @@ def test_freeze_carries_both_version_blocks_without_editing_v1_fields() -> None:
     assert freeze["eval_sets"] == {
         "1.0": {"path": "eval/eval_set.json", "sha256": V1_EVAL_SHA},
         "2.0": {"path": "eval/eval_set_v2.json", "sha256": V2_EVAL_SHA},
+        "3.0": {"path": "eval/eval_set_v3.json", "sha256": V3_EVAL_SHA},
     }
     assert freeze["system_prompts"]["1.1"]["sha256"] == SYSTEM_PROMPT_SHA256
     assert freeze["system_prompts"]["1.2"] == {
         "path": "prompts/system/architecture-v1.2.md",
         "sha256": V12_SHA,
     }
+    assert freeze["system_prompts"]["1.3"] == {
+        "path": "prompts/system/architecture-v1.3.md",
+        "sha256": V13_SHA,
+    }
     assert sha256_file(DEFAULT_EVAL_SET_V2) == V2_EVAL_SHA
+    assert sha256_file(DEFAULT_EVAL_SET_V3) == V3_EVAL_SHA
     assert system_prompt_sha256(load_system_prompt_version("1.2")) == V12_SHA
+    assert system_prompt_sha256(load_system_prompt_version("1.3")) == V13_SHA
 
 
 # 2 ---------------------------------------------------------------------
@@ -152,13 +162,20 @@ def test_version_helpers_select_the_right_path_and_hash() -> None:
     assert resolve_eval_set_path() == DEFAULT_EVAL_SET
     assert resolve_eval_set_path("1.0") == DEFAULT_EVAL_SET
     assert resolve_eval_set_path("2.0") == DEFAULT_EVAL_SET_V2
-    assert EVAL_SET_PATHS == {"1.0": DEFAULT_EVAL_SET, "2.0": DEFAULT_EVAL_SET_V2}
+    assert resolve_eval_set_path("3.0") == DEFAULT_EVAL_SET_V3
+    assert EVAL_SET_PATHS == {
+        "1.0": DEFAULT_EVAL_SET,
+        "2.0": DEFAULT_EVAL_SET_V2,
+        "3.0": DEFAULT_EVAL_SET_V3,
+    }
 
     assert expected_eval_set_hash(freeze) == V1_EVAL_SHA
     assert expected_eval_set_hash(freeze, "1.0") == V1_EVAL_SHA
     assert expected_eval_set_hash(freeze, "2.0") == V2_EVAL_SHA
+    assert expected_eval_set_hash(freeze, "3.0") == V3_EVAL_SHA
     assert expected_system_prompt_hash(freeze) == SYSTEM_PROMPT_SHA256
     assert expected_system_prompt_hash(freeze, "2.0") == V12_SHA
+    assert expected_system_prompt_hash(freeze, "3.0") == V13_SHA
 
     with pytest.raises(RefusalError, match="unknown eval set version"):
         resolve_eval_set_path("9.9")
@@ -268,3 +285,53 @@ def test_v2_eval_set_shape_is_visible_to_the_shared_models() -> None:
     assert eval_set.eval_set_version == "2.0"
     assert len(eval_set.prompts) == 15
     assert all(prompt.id.startswith("ev2_") for prompt in eval_set.prompts)
+
+
+# 8 ---------------------------------------------------------------------
+def test_v3_runner_uses_v1_3_prompt_and_writes_v3_records(tmp_path: Path) -> None:
+    client, paths = _run(tmp_path, "3.0", only_prompt="ev3_01")
+
+    assert len(paths) == constants.RUNS_PER_PROMPT
+    assert client.calls == constants.RUNS_PER_PROMPT
+    for path, record in zip(paths, _records(paths)):
+        assert path.parent.name == "ev3_01"
+        assert record["prompt_id"] == "ev3_01"
+        assert record["eval_set_sha256"] == V3_EVAL_SHA
+        assert record["system_prompt_version"] == "1.3"
+        assert record["system_prompt_sha256"] == V13_SHA
+    assert client.system_contents
+    assert all(text == load_system_prompt_version("1.3") for text in client.system_contents)
+
+
+# 9 ---------------------------------------------------------------------
+def test_v3_report_paths_and_headers_are_separated(tmp_path: Path) -> None:
+    _run(tmp_path, "1.0", out_dir_name="v1-runs", only_prompt="ev_01")
+    _run(tmp_path, "3.0", out_dir_name="v3-runs", only_prompt="ev3_01")
+
+    v1_runs = tmp_path / "v1-runs"
+    v3_runs = tmp_path / "v3-runs"
+    v1_text = generate_report(v1_runs, eval_set_version="1.0")
+    v3_text = generate_report(v3_runs, eval_set_version="3.0")
+
+    assert (v1_runs / "report.md").read_text(encoding="utf-8") == v1_text
+    assert (v3_runs / "v3" / "report.md").read_text(encoding="utf-8") == v3_text
+    assert not (v3_runs / "report.md").exists()
+    assert not (v3_runs / "v3" / "v3").exists()
+
+    assert f"Eval set SHA-256: {V3_EVAL_SHA}" in v3_text
+    assert "Eval set version: 3.0" in v3_text
+    assert f"System prompt: v1.3 ({V13_SHA})" in v3_text
+
+    before = (v1_runs / "report.md").read_bytes()
+    generate_report(v3_runs, eval_set_version="3.0")
+    assert (v1_runs / "report.md").read_bytes() == before
+
+
+# 10 --------------------------------------------------------------------
+def test_v3_eval_set_shape_is_visible_to_the_shared_models() -> None:
+    payload = json.loads(DEFAULT_EVAL_SET_V3.read_text(encoding="utf-8"))
+    eval_set = EvalSet.model_validate(payload)
+
+    assert eval_set.eval_set_version == "3.0"
+    assert len(eval_set.prompts) == 15
+    assert all(prompt.id.startswith("ev3_") for prompt in eval_set.prompts)

@@ -34,9 +34,11 @@ def _shingles(text: str) -> set[tuple[str, ...]]:
 
 def _eval_prompt_texts() -> list[tuple[str, str]]:
     texts: list[tuple[str, str]] = []
-    for name in ("eval_set.json", "eval_set_v2.json"):
+    for name in ("eval_set.json", "eval_set_v2.json", "eval_set_v3.json"):
         payload = json.loads((REPO_ROOT / "eval" / name).read_text(encoding="utf-8"))
         texts.extend((entry["id"], entry["prompt"]) for entry in payload["prompts"])
+    scratch = json.loads((REPO_ROOT / "scratch" / "scratch_prompts.json").read_text(encoding="utf-8"))
+    texts.extend((entry["id"], entry["prompt"]) for entry in scratch)
     return texts
 
 
@@ -44,7 +46,7 @@ def find_leaks(text: str) -> list[str]:
     leaks: list[str] = []
     if "technology~=" in text:
         leaks.append("contains a technology~= predicate")
-    if re.search(r"\bev_\d{2}\b|\bev2_\d{2}\b", text):
+    if re.search(r"\bev_\d{2}\b|\bev2_\d{2}\b|\bev3_\d{2}\b", text):
         leaks.append("contains an eval prompt id")
     text_shingles = _shingles(text)
     for prompt_id, prompt_text in _eval_prompt_texts():

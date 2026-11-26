@@ -37,10 +37,15 @@ from app.llm.system_prompt import (
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_EVAL_SET = REPO_ROOT / "eval" / "eval_set.json"
 DEFAULT_EVAL_SET_V2 = REPO_ROOT / "eval" / "eval_set_v2.json"
+DEFAULT_EVAL_SET_V3 = REPO_ROOT / "eval" / "eval_set_v3.json"
 DEFAULT_EVAL_SET_VERSION = "1.0"
-EVAL_SET_PATHS = {"1.0": DEFAULT_EVAL_SET, "2.0": DEFAULT_EVAL_SET_V2}
-#: v2.0 is scored only with the v1.2 system prompt. v1.0 stays on v1.1.
-SYSTEM_PROMPT_VERSION_BY_EVAL_SET = {"1.0": "1.1", "2.0": "1.2"}
+EVAL_SET_PATHS = {
+    "1.0": DEFAULT_EVAL_SET,
+    "2.0": DEFAULT_EVAL_SET_V2,
+    "3.0": DEFAULT_EVAL_SET_V3,
+}
+#: Each eval set is scored with its paired system prompt version.
+SYSTEM_PROMPT_VERSION_BY_EVAL_SET = {"1.0": "1.1", "2.0": "1.2", "3.0": "1.3"}
 DEFAULT_FREEZE = REPO_ROOT / "eval" / "freeze.json"
 DEFAULT_SCHEMA = REPO_ROOT / "schema" / "architecture.generation.schema.json"
 DEFAULT_OUT = REPO_ROOT / "runs"
@@ -273,6 +278,7 @@ def _write_index(model_dir: Path, model: str, eval_set_sha256: str) -> None:
     record_paths = {
         *model_dir.glob("ev_*/run-*.json"),
         *model_dir.glob("ev2_*/run-*.json"),
+        *model_dir.glob("ev3_*/run-*.json"),
     }
     for path in sorted(record_paths):
         try:

@@ -110,6 +110,54 @@ Baseline, before calibration. No revision yet.
   incomplete ling retest (429) is excluded from this verdict and remains
   unresolved. No scored run was started and no model was frozen.
 
+## Proposed v1.3 — 26 November 2026 (approved, not frozen)
+
+Status: **proposed**. Prompt file: `prompts/system/architecture-v1.3.md`.
+SHA-256: `A87CC5555D2BBF668FCDAB5EC112DDDFA2CC59D05AF8FA738BA5B29142E41CDB`
+(draft digest; it is not a freeze). The default system prompt remains v1.1
+(`architecture-v1.md`); this entry does not change the active hash or the v1.0
+freeze.
+
+- Derived from: **scored v2 failures** on `nemotron-3.5-super-vl` (eval set v2.0
+  `BD713F57...E2770E`, prompt v1.2 `EE6E94BF...3D2D`, 2026-11-26, 45 runs). This
+  follows the same scored-failure evidence exception as v1.2, approved by the
+  product owner in step 8.
+- Evidence: `ev2_14` failed the deterministic gate in 3/3 runs (`r01 component_count(lte=7)`,
+  `r03 assumption_present(text~="scal")`; optional blocking flag skipped). In all
+  three runs the model over-engineered a vague prompt with generic scale/modernity
+  components (10-11 components) and expressed scale/unstated-choice uncertainty in
+  flags/rationales/component rationales, but left the top-level `assumptions` array
+  empty, missing the deterministic assumption predicate. The mechanical verdict was
+  FAIL (adversarial 2/3; gate 14/15; first-attempt schema-valid 42/45; blocking
+  flags correct in both directions). v2 rubric/thresholds/settings/evaluators were
+  not changed.
+- Change: adds one rule in `## Assumptions and traceability` requiring assumptions
+  about unstated quantities, definitions, or choices to be recorded in the top-level
+  `assumptions` array (not only in flags or rationales); for vague prompts, state the
+  assumed quantity (scale, users, budget) as an assumption entry and justify any
+  scalability component against that stated assumption; do not add generic scalability
+  or modernity components that no stated requirement or stated assumption needs.
+  `## Minimal, justified structure` gets a one-line cross-reference. The "do not omit
+  a necessary component" rule remains unchanged. The wording is generic and names no
+  eval id, domain, or v2 artifact.
+- Held-out status: v1.0 and v2.0 remain historical scored sets; neither is held-out
+  for v1.3. v1.3 is to be evaluated only on a new held-out v3.0 set, once per model,
+  under the single-shot protocol.
+- Scratch evidence: pending — 5-call v1.3 scratch check on `scratch/scratch_prompts.json`
+  only, different day from any v3 scored run, before v3 scored run approval.
+
+<!--
+Format for a calibration revision:
+
+## <version> — <date>
+
+- Prompt: `prompts/system/architecture-v1.md`
+- SHA-256: `<sha256 of the prompt after the change>`
+- Scratch evidence: `<scratch prompt id(s)> and the observed defect`
+- Change: `<what changed and why>`
+- Before/after scratch result: `<before: observed result> -> <after: observed result>`
+-->
+
 ## Proposed v1.2 — 21 November 2026 (approved, not frozen)
 
 Status: **proposed**. Prompt file: `prompts/system/architecture-v1.2.md`.
@@ -166,14 +214,3 @@ not change the active hash or the v1.0 freeze.
   verdict FAIL. No prompt/rubric/threshold/setting/evaluator change made; v2 not
   selected/frozen active; `scored_run_approved` and `selected_model` not set.
 
-<!--
-Format for a calibration revision:
-
-## <version> — <date>
-
-- Prompt: `prompts/system/architecture-v1.md`
-- SHA-256: `<sha256 of the prompt after the change>`
-- Scratch evidence: `<scratch prompt id(s)> and the observed defect`
-- Change: `<what changed and why>`
-- Before/after scratch result: `<before: observed result> -> <after: observed result>`
--->

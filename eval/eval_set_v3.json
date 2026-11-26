@@ -1,0 +1,1003 @@
+{
+  "eval_set_version": "3.0",
+  "prompts": [
+    {
+      "id": "ev3_01",
+      "title": "Municipal pothole reporting",
+      "category": "simple",
+      "adversarial_kind": null,
+      "prompt": "Design a system for residents of one city to report potholes. A resident submits a location, photo, and description; city staff can view reports and mark them repaired. Reports must remain durable after submission. Assume one city and modest volume.",
+      "expected_requirements": [
+        "Residents can submit a pothole report with location, photo, and description.",
+        "City staff can view reports and mark them repaired.",
+        "Reports remain durable after submission."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A resident-facing client boundary exists.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=client)"
+        },
+        {
+          "id": "r02",
+          "statement": "Submitted reports reach durable storage.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_ref",
+          "statement": "The design has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r_noclidb",
+          "statement": "No client connects directly to a database.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_tech",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The design does not introduce a message queue not required by the prompt.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=message_queue)"
+        },
+        {
+          "id": "x02",
+          "statement": "Report status changes are reflected in durable records, not only in client state.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "x01 justified from prompt text alone: one city, modest volume, synchronous submission/review; no async decoupling requirement stated."
+    },
+    {
+      "id": "ev3_02",
+      "title": "School club attendance register",
+      "category": "simple",
+      "adversarial_kind": null,
+      "prompt": "Design an attendance register for after-school clubs at one school. A teacher records which students attended a session; staff can review past attendance by club and date. Attendance records must be durable. Assume one school and a small number of clubs.",
+      "expected_requirements": [
+        "Teachers can record attendance for a session.",
+        "Staff can review past attendance by club and date.",
+        "Attendance records are durable."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A teacher or staff-facing client boundary exists.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=client)"
+        },
+        {
+          "id": "r02",
+          "statement": "Attendance records reach durable storage.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_ref",
+          "statement": "The design has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r_noclidb",
+          "statement": "No client connects directly to a database.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_tech",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The design does not introduce object storage not required by the prompt.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=object_storage)"
+        },
+        {
+          "id": "x02",
+          "statement": "Attendance review by club and date is supported by durable stored records.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "x01 justified from prompt text alone: attendance records are structured session data; no files or binary objects are stated."
+    },
+    {
+      "id": "ev3_03",
+      "title": "Pet vaccination reminder service",
+      "category": "simple",
+      "adversarial_kind": null,
+      "prompt": "Design a service for a veterinary clinic to remind owners about upcoming pet vaccinations. Staff record pets, vaccine dates, and due dates; the system sends a reminder before a due date. Reminder schedules and vaccination records must be durable. Assume one clinic.",
+      "expected_requirements": [
+        "Staff can record pets, vaccine dates, and due dates.",
+        "The system sends reminders before due dates.",
+        "Reminder schedules and vaccination records are durable."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A staff-facing client boundary exists.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=client)"
+        },
+        {
+          "id": "r02",
+          "statement": "Vaccination and schedule records reach durable storage.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_ref",
+          "statement": "The design has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r_noclidb",
+          "statement": "No client connects directly to a database.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_tech",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The design does not introduce a CDN not required by the prompt.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x02",
+          "statement": "Reminder delivery is driven by durable schedule or due-date state, not only by an ad hoc client action.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "x01 justified from prompt text alone: one clinic, staff-entered records and reminders; no static asset delivery or global edge requirement stated."
+    },
+    {
+      "id": "ev3_04",
+      "title": "Cooking club recipe sharing",
+      "category": "simple",
+      "adversarial_kind": null,
+      "prompt": "Design a recipe sharing site for a local cooking club. Members can post recipes with ingredients and steps, and browse recipes posted by others. Recipes must remain durable after posting. Assume one club and modest usage.",
+      "expected_requirements": [
+        "Members can post recipes with ingredients and steps.",
+        "Members can browse recipes posted by others.",
+        "Recipes remain durable after posting."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A member-facing client boundary exists.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=client)"
+        },
+        {
+          "id": "r02",
+          "statement": "Posted recipes reach durable storage.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_ref",
+          "statement": "The design has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r_noclidb",
+          "statement": "No client connects directly to a database.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_tech",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The design does not introduce a message queue not required by the prompt.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=message_queue)"
+        },
+        {
+          "id": "x02",
+          "statement": "Browsing reads durable recipe records, not only content present in the submitting client.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "x01 justified from prompt text alone: one club, modest usage, post/browse workflow; no async processing requirement stated."
+    },
+    {
+      "id": "ev3_05",
+      "title": "Monthly energy-usage batch reporting",
+      "category": "medium",
+      "adversarial_kind": null,
+      "prompt": "Design a system that produces monthly energy-usage reports for property managers. Daily meter readings arrive as files from an external utility provider; the system validates them, stores them durably, aggregates monthly totals per property, and generates a report after month end. Late corrections for a prior day may arrive and must be reflected in the next report run. Assume thousands of meters.",
+      "expected_requirements": [
+        "Daily meter reading files arrive from an external utility provider.",
+        "Readings are validated and stored durably.",
+        "Monthly totals per property are aggregated and a report is generated after month end.",
+        "Late corrections are reflected in the next report run."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "An owned service boundary exists.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r02",
+          "statement": "Ingested readings reach durable storage from a service.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=service, to_type=database)"
+        },
+        {
+          "id": "r_ref",
+          "statement": "The design has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r_noclidb",
+          "statement": "No client connects directly to a database.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_tech",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r06",
+          "statement": "Late corrections for a prior day are reflected in the next report run rather than overwriting history silently.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The design does not introduce a CDN not required by the prompt.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x02",
+          "statement": "Monthly aggregation is based on durably stored readings, not on transient file delivery alone.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "No queue/worker/cache/load balancer exclusion: thousands of meters and batch/report processing can justify them. x01 justified from prompt text alone: files arrive from a utility provider and reports are generated internally; no edge/static content delivery requirement stated."
+    },
+    {
+      "id": "ev3_06",
+      "title": "Vendor contract document-signing workflow",
+      "category": "medium",
+      "adversarial_kind": null,
+      "prompt": "Design a document-signing workflow for vendor contracts. A procurement user creates a contract, sends it to an external e-signature provider for signature, tracks pending/signed/declined state, and stores the signed artifact durably. The contract must not be marked signed until the provider confirms completion. Assume modest contract volume.",
+      "expected_requirements": [
+        "Procurement users create and send contracts for signature.",
+        "An external e-signature provider is used.",
+        "Pending/signed/declined state is tracked.",
+        "Signed artifacts are stored durably.",
+        "Contracts are not marked signed before provider confirmation."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "An external e-signature provider boundary exists.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=external_service)"
+        },
+        {
+          "id": "r02",
+          "statement": "Contract or signature state reaches durable storage.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_ref",
+          "statement": "The design has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r_noclidb",
+          "statement": "No client connects directly to a database.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_tech",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r06",
+          "statement": "The design does not mark a contract signed before the external provider confirms completion.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The design does not introduce a CDN not required by the prompt.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x02",
+          "statement": "Signed artifacts or their durable records remain available after provider interaction completes.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "x01 justified from prompt text alone: modest contract volume, internal procurement workflow and external e-signature integration; no global/static content delivery requirement stated."
+    },
+    {
+      "id": "ev3_07",
+      "title": "Municipal procurement bid deadline",
+      "category": "medium",
+      "adversarial_kind": null,
+      "prompt": "Design a bid-submission system for a municipal procurement office. Suppliers submit sealed bids for a published tender before a fixed deadline. The system must reject late bids, keep bids confidential until the tender closes, and record all submitted bids durably. Assume one tender at a time and moderate volume.",
+      "expected_requirements": [
+        "Suppliers submit sealed bids before a fixed deadline.",
+        "Late bids are rejected.",
+        "Bids remain confidential until tender close.",
+        "Submitted bids are recorded durably."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A supplier-facing or staff-facing client boundary exists.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=client)"
+        },
+        {
+          "id": "r02",
+          "statement": "Submitted bids reach durable storage.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_ref",
+          "statement": "The design has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r_noclidb",
+          "statement": "No client connects directly to a database.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_tech",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r06",
+          "statement": "Late bids are rejected and bids remain confidential until tender close.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "No external service is present although no requirement justifies one.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=external_service)"
+        },
+        {
+          "id": "x02",
+          "statement": "Bid confidentiality is enforced by system design, not only by supplier behavior.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "x01 justified from prompt text alone: the prompt describes bid submission, deadline, confidentiality, and durable recording; no payment, settlement, or external payment provider is stated."
+    },
+    {
+      "id": "ev3_08",
+      "title": "School closure bulk notification system",
+      "category": "medium",
+      "adversarial_kind": null,
+      "prompt": "Design a system that sends school-closure alerts to parents. Administrators publish a closure notice; the system fans out notifications by email and SMS through external providers, records delivery attempts, and avoids sending the same notice twice to the same recipient. Assume thousands of recipients per notice.",
+      "expected_requirements": [
+        "Administrators publish closure notices.",
+        "Notifications fan out by email and SMS through external providers.",
+        "Delivery attempts are recorded.",
+        "The same notice is not sent twice to the same recipient."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "An external notification or provider boundary exists.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=external_service)"
+        },
+        {
+          "id": "r02",
+          "statement": "Notice or delivery state reaches durable storage.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_ref",
+          "statement": "The design has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r_noclidb",
+          "statement": "No client connects directly to a database.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_tech",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r06",
+          "statement": "The design avoids sending the same notice twice to the same recipient through durable delivery tracking or equivalent idempotency.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The design does not introduce a CDN not required by the prompt.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x02",
+          "statement": "Notification fan-out does not lose delivery-attempt records when a provider call fails.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "No queue/worker/cache/load balancer exclusion: thousands of recipients per notice and fan-out through external providers can justify async processing components. x01 justified from prompt text alone: alerts are sent to recipients through providers; no static content/edge delivery requirement stated."
+    },
+    {
+      "id": "ev3_09",
+      "title": "Blood-donation appointment and deferral windows",
+      "category": "complex",
+      "adversarial_kind": null,
+      "prompt": "Design appointment scheduling for a blood-donation center. Donors book appointments, but a donor who has a recorded deferral window must not be booked inside that window. Appointments and deferral records must be durable. Staff can cancel appointments and update deferral windows. Assume several centers and high day-to-day volume.",
+      "expected_requirements": [
+        "Donors can book appointments.",
+        "Donors with recorded deferral windows cannot be booked inside those windows.",
+        "Appointments and deferral records are durable.",
+        "Staff can cancel appointments and update deferral windows."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A donor or staff-facing client boundary exists.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=client)"
+        },
+        {
+          "id": "r02",
+          "statement": "Appointment or deferral records reach durable storage.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_ref",
+          "statement": "The design has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r_noclidb",
+          "statement": "No client connects directly to a database.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_tech",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r06",
+          "statement": "A donor with a recorded deferral window cannot be booked inside that window.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The design does not introduce object storage not required by the prompt.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=object_storage)"
+        },
+        {
+          "id": "x02",
+          "statement": "Deferral eligibility is checked against durable records, not only client-side input.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "x01 justified from prompt text alone: appointments and deferral windows are structured records; no file/blob artifact is stated."
+    },
+    {
+      "id": "ev3_10",
+      "title": "Harbour berth allocation with tide windows",
+      "category": "complex",
+      "adversarial_kind": null,
+      "prompt": "Design berth allocation for a small harbour. A vessel requests a berth for an arrival window; the system assigns a compatible berth only when tide and berth availability allow it. Allocations must be durable, and the same berth must not be assigned to overlapping vessel windows. Assume one harbour and many daily requests.",
+      "expected_requirements": [
+        "Vessels request berths for arrival windows.",
+        "Assignments consider berth compatibility, tide, and availability.",
+        "Allocations are durable.",
+        "The same berth cannot be assigned to overlapping vessel windows."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A requester or operator-facing client boundary exists.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=client)"
+        },
+        {
+          "id": "r02",
+          "statement": "Berth allocations reach durable storage.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_ref",
+          "statement": "The design has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r_noclidb",
+          "statement": "No client connects directly to a database.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_tech",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r06",
+          "statement": "The same berth is not assigned to overlapping vessel windows.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The design does not introduce a CDN not required by the prompt.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x02",
+          "statement": "Allocation decisions are based on durable allocation/state records, not only transient in-memory checks.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "x01 justified from prompt text alone: one harbour, operational allocation requests; no static content or edge delivery requirement stated."
+    },
+    {
+      "id": "ev3_11",
+      "title": "Disaster shelter occupancy and supply tracking",
+      "category": "complex",
+      "adversarial_kind": null,
+      "prompt": "Design a system for emergency shelters to track occupancy and critical supplies. Staff record intake, departure, and bed assignments; supply counts are updated as items are consumed or restocked. A shelter must not exceed its bed capacity, and occupancy/supply records must be durable during an active incident. Assume multiple shelters and intermittent connectivity to a central office. Each shelter enforces its own bed capacity locally and syncs with the central office when connectivity returns.",
+      "expected_requirements": [
+        "Staff record intake, departure, and bed assignments.",
+        "Supply counts are updated as items are consumed or restocked.",
+        "A shelter must not exceed its bed capacity.",
+        "Occupancy and supply records are durable during an active incident.",
+        "Each shelter enforces its own bed capacity locally and syncs with the central office when connectivity returns."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A staff-facing client boundary exists.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=client)"
+        },
+        {
+          "id": "r02",
+          "statement": "Occupancy or supply records reach durable storage.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_ref",
+          "statement": "The design has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r_noclidb",
+          "statement": "No client connects directly to a database.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_tech",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r07",
+          "statement": "Each shelter can enforce bed capacity locally and sync with the central office when connectivity returns.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The design does not introduce a CDN not required by the prompt.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x02",
+          "statement": "Occupancy and supply updates remain durable during an active incident, not only in transient client memory.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "No queue/worker/cache/load balancer exclusion: multiple shelters, active incidents, and intermittent connectivity can justify async sync or buffering components. x01 justified from prompt text alone: emergency shelter operations; no static content/edge delivery requirement stated."
+    },
+    {
+      "id": "ev3_12",
+      "title": "Clickstream analytics pipeline",
+      "category": "complex",
+      "adversarial_kind": null,
+      "prompt": "Design a clickstream analytics pipeline for a web product. Browser clients send page-view and interaction events continuously. The system must ingest events at high volume, aggregate counts per page and per minute for dashboards, and keep raw events durably for later ad-hoc analysis. Assume late or duplicated events may occur.",
+      "expected_requirements": [
+        "Browser clients send page-view and interaction events continuously.",
+        "The system ingests events at high volume.",
+        "Counts per page and per minute are aggregated for dashboards.",
+        "Raw events are kept durably for later ad-hoc analysis.",
+        "Late or duplicated events may occur."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A browser or client event source boundary exists.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=client)"
+        },
+        {
+          "id": "r02",
+          "statement": "Ingested events reach durable storage.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_ref",
+          "statement": "The design has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r_noclidb",
+          "statement": "No client connects directly to a database.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_tech",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r06",
+          "statement": "Raw events remain durably available for later ad-hoc analysis, separate from dashboard aggregates.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r07",
+          "statement": "The design tolerates late or duplicated events without corrupting aggregates.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The design does not introduce a CDN not required by the prompt.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x02",
+          "statement": "The design does not introduce an authentication provider not required by the prompt.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=auth_provider)"
+        }
+      ],
+      "blocking_flag_expected": "forbidden",
+      "expected_assumptions": [],
+      "notes": "No queue/worker/cache/load balancer exclusion: high-volume continuous ingestion and aggregation can justify async ingestion, workers, caches, or load distribution. x01 justified from prompt text alone: browser clients send analytics events; no static asset edge delivery requirement is stated. x02 justified from prompt text alone: the prompt describes event ingestion, aggregation, and storage; no authentication requirement is stated."
+    },
+    {
+      "id": "ev3_13",
+      "title": "Exactly-once delivery with no sender copy and offline receiver",
+      "category": "adversarial",
+      "adversarial_kind": "contradiction",
+      "prompt": "Design a message-delivery system with this requirement: \"A message must be delivered exactly once. The sender may never store a copy, and the receiver may be offline for days.\" Deliver a design.",
+      "expected_requirements": [
+        "The prompt states contradictory delivery requirements."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A blocking contradiction flag is present.",
+          "check": "deterministic",
+          "predicate": "flag_present(kind=contradiction, severity=blocking)"
+        },
+        {
+          "id": "r02",
+          "statement": "An owned service boundary exists.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=service)"
+        },
+        {
+          "id": "r_ref",
+          "statement": "The design has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r_noclidb",
+          "statement": "No client connects directly to a database.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_tech",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r06",
+          "statement": "The design surfaces the contradiction instead of silently claiming the stated guarantees are fully satisfied.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The design does not introduce a CDN not required by the prompt.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x02",
+          "statement": "The design does not present exactly-once delivery with no sender copy and long receiver offline as fully achievable without conflict.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "blocking_flag_expected": "required",
+      "expected_assumptions": [],
+      "notes": "ev3_13 prompt text was suggested by the reviewer. x01 justified from prompt text alone: the prompt states message delivery guarantees only; no static content/edge delivery requirement is stated. The contradiction is logically airtight: exactly-once delivery cannot be guaranteed without sender/receiver/broker state while the receiver may be offline for days."
+    },
+    {
+      "id": "ev3_14",
+      "title": "Volunteer coordination thing",
+      "category": "adversarial",
+      "adversarial_kind": "vague",
+      "prompt": "Design our new volunteer coordination thing. It should be helpful, modern, and work for the organization as it grows. We have not decided what activities volunteers do, who approves them, or how big the organization is. Make reasonable assumptions and sketch a design we can discuss.",
+      "expected_requirements": [
+        "A volunteer-facing concept is proposed.",
+        "Assumptions about activities, approval, and organization size are stated.",
+        "Something discussable is produced."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "The design stays small enough to discuss.",
+          "check": "deterministic",
+          "predicate": "component_count(lte=6)"
+        },
+        {
+          "id": "r02",
+          "statement": "The concept has durable state reachable from a client boundary.",
+          "check": "deterministic",
+          "predicate": "path_exists(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r03",
+          "statement": "An assumption about approval is recorded in the assumptions array.",
+          "check": "deterministic",
+          "predicate": "assumption_present(text~=\"approv\")"
+        },
+        {
+          "id": "r_ref",
+          "statement": "The design has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r_noclidb",
+          "statement": "No client connects directly to a database.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_tech",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "Any scalability component is justified by an assumption recorded in the assumptions array.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "x02",
+          "statement": "Invented activities or approval policies are not presented as facts.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "blocking_flag_expected": "optional",
+      "expected_assumptions": [
+        "Organization size and growth are unknown.",
+        "Volunteer activities are undefined.",
+        "Approval ownership is undefined."
+      ],
+      "notes": "r01 pre-registered before any v3 output exists and not tuned after v3 results; component_count(lte=6): prompt gives no concrete activities, approval owner, data flows, integrations, or scale target; minimum discussable design is one volunteer-facing client boundary, one coordination service, one durable store (3). Up to three additional components may be justified only by explicitly stated assumptions in the top-level assumptions array (e.g., assumed notification channel, auth provider, or staff/admin boundary). Anything beyond 6 is generic modern/grows infrastructure not required by prompt text or a stated assumption. r03 uses narrow token 'approv' justified from prompt text: 'who approves them' is explicitly unstated; predicate checks top-level assumptions array."
+    },
+    {
+      "id": "ev3_15",
+      "title": "Real-time evacuation route with no connectivity and mandatory central live coordination",
+      "category": "adversarial",
+      "adversarial_kind": "impossible",
+      "prompt": "Design a real-time evacuation routing system for a disaster zone. Evacuees' devices have no network connectivity, but every route update must be centrally coordinated and delivered to all evacuees in real time. Deliver a design.",
+      "expected_requirements": [
+        "The prompt states impossible/contradictory connectivity and real-time coordination requirements."
+      ],
+      "must_include": [
+        {
+          "id": "r01",
+          "statement": "A blocking contradiction flag is present.",
+          "check": "deterministic",
+          "predicate": "flag_present(kind=contradiction, severity=blocking)"
+        },
+        {
+          "id": "r02",
+          "statement": "An evacuee-facing client boundary exists.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=client)"
+        },
+        {
+          "id": "r_ref",
+          "statement": "The design has no dangling references.",
+          "check": "deterministic",
+          "predicate": "no_reference_issues()"
+        },
+        {
+          "id": "r_noclidb",
+          "statement": "No client connects directly to a database.",
+          "check": "deterministic",
+          "predicate": "no_connection(from_type=client, to_type=database)"
+        },
+        {
+          "id": "r_tech",
+          "statement": "Every technology label names a real product that fits its component type.",
+          "check": "human",
+          "predicate": null
+        },
+        {
+          "id": "r06",
+          "statement": "The design makes the no-connectivity versus mandatory central real-time delivery conflict explicit.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "must_not_include": [
+        {
+          "id": "x01",
+          "statement": "The design does not introduce a CDN not required by the prompt.",
+          "check": "deterministic",
+          "predicate": "component_exists(type=cdn)"
+        },
+        {
+          "id": "x02",
+          "statement": "The design does not claim real-time central delivery to disconnected devices is fully achievable without conflict.",
+          "check": "human",
+          "predicate": null
+        }
+      ],
+      "blocking_flag_expected": "required",
+      "expected_assumptions": [],
+      "notes": "x01 justified from prompt text alone: disaster evacuation routing with disconnected devices; no static content/edge delivery requirement stated. The impossibility is the conflict between no network connectivity and mandatory central real-time delivery to all evacuees."
+    }
+  ]
+}

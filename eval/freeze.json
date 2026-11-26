@@ -9,6 +9,10 @@
     "2.0": {
       "path": "eval/eval_set_v2.json",
       "sha256": "BD713F574A3C1EDFD6E450B38EF055B0AEEB18350CA62B1DB77DCC87F1E2770E"
+    },
+    "3.0": {
+      "path": "eval/eval_set_v3.json",
+      "sha256": "549FBB152C0AC0D34EC4A07D0A865A57DC903740744B78CBA29CCE66F577A53E"
     }
   },
   "system_prompt_version": "1.1",
@@ -21,6 +25,10 @@
     "1.2": {
       "path": "prompts/system/architecture-v1.2.md",
       "sha256": "EE6E94BF49E16AD22D6EE0191D3C0F50D0FC2DA7D956ABD4458C4BAAF1CE3D2D"
+    },
+    "1.3": {
+      "path": "prompts/system/architecture-v1.3.md",
+      "sha256": "A87CC5555D2BBF668FCDAB5EC112DDDFA2CC59D05AF8FA738BA5B29142E41CDB"
     }
   },
   "thresholds": {

@@ -37,7 +37,7 @@ class EvalPrompt(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    id: str = Field(pattern=r"^(ev_\d{2}|ev2_\d{2})$")
+    id: str = Field(pattern=r"^(ev_\d{2}|ev2_\d{2}|ev3_\d{2})$")
     title: str = Field(min_length=1)
     category: Literal["simple", "medium", "complex", "adversarial"]
     adversarial_kind: Literal["contradiction", "vague", "impossible"] | None = None
@@ -55,12 +55,12 @@ class EvalSet(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    eval_set_version: Literal["1.0", "2.0"]
+    eval_set_version: Literal["1.0", "2.0", "3.0"]
     prompts: list[EvalPrompt]
 
     @model_validator(mode="after")
     def _ids_match_version(self) -> "EvalSet":
-        prefix = "ev_" if self.eval_set_version == "1.0" else "ev2_"
+        prefix = {"1.0": "ev_", "2.0": "ev2_", "3.0": "ev3_"}[self.eval_set_version]
         for prompt in self.prompts:
             if re.fullmatch(rf"{re.escape(prefix)}\d{{2}}", prompt.id) is None:
                 raise ValueError(

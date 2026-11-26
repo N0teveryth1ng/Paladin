@@ -19,6 +19,7 @@ from app.eval.models import EvalPrompt, EvalSet
 from app.eval.runner import (
     DEFAULT_EVAL_SET_VERSION,
     EVAL_SET_PATHS,
+    SYSTEM_PROMPT_VERSION_BY_EVAL_SET,
     expected_eval_set_hash,
     expected_system_prompt_hash,
     resolve_eval_set_path,
@@ -238,6 +239,7 @@ def _record_paths(model_dir: Path) -> list[Path]:
     paths = {
         *model_dir.glob("ev_*/run-*.json"),
         *model_dir.glob("ev2_*/run-*.json"),
+        *model_dir.glob("ev3_*/run-*.json"),
     }
     return sorted(
         path for path in paths if not path.name.endswith(".architecture.json")
@@ -596,9 +598,12 @@ def generate_report(
         f"Eval set SHA-256: {expected_eval_set_hash(freeze, eval_set_version)}",
     ]
     if eval_set_version != "1.0":
+        prompt_version = SYSTEM_PROMPT_VERSION_BY_EVAL_SET.get(
+            eval_set_version, eval_set_version
+        )
         lines.append(f"Eval set version: {eval_set_version}")
         lines.append(
-            f"System prompt: v1.2 ({expected_system_prompt_hash(freeze, eval_set_version)})"
+            f"System prompt: v{prompt_version} ({expected_system_prompt_hash(freeze, eval_set_version)})"
         )
     else:
         lines.append(
@@ -613,7 +618,11 @@ def generate_report(
         lines.append(_render_model(analysis))
         lines.append("")
 
-    report_dir = runs_dir if eval_set_version == "1.0" else runs_dir / "v2"
+    if eval_set_version == "1.0":
+        report_dir = runs_dir
+    else:
+        version_dir = eval_set_version.split(".")[0]
+        report_dir = runs_dir / f"v{version_dir}"
     report_dir.mkdir(parents=True, exist_ok=True)
 
     sheet, key = render_human_sheet(runs_dir, analyses, eval_set)
