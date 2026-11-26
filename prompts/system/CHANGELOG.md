@@ -156,6 +156,15 @@ not change the active hash or the v1.0 freeze.
   the capture rerun had 0 retries and 5/5 first-attempt schema-valid calls. v1.2
   wording was unchanged, the active prompt remains v1.1, no `selected_model` was
   set and `scored_run_approved` remains false.
+- Scored v2 result (2026-11-26, nemotron-3.5-super-vl, `json_schema`, eval set v2.0
+  `BD713F57...E2770E`, prompt v1.2 `EE6E94BF...3D2D`, 45 runs): **FAILED the
+  pre-registered bar** on one criterion — **adversarial 2 of 3**. `ev2_14`
+  failed the deterministic gate in 3 of 3 runs (`r01`, `r03`; optional blocking
+  flag skipped). Deterministic gate 14/15; first-attempt schema-valid 42/45
+  (bar met); blocking flags correct in both directions (required 2/2, forbidden
+  0/12 violated, optional 1 skipped). Human scoring incomplete; mechanical
+  verdict FAIL. No prompt/rubric/threshold/setting/evaluator change made; v2 not
+  selected/frozen active; `scored_run_approved` and `selected_model` not set.
 
 <!--
 Format for a calibration revision:

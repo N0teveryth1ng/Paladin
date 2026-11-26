@@ -43,3 +43,14 @@ Status: **draft, not active and not frozen**. SHA-256 `BD713F574A3C1EDFD6E450B38
   `docs/prompts/step-7-prompt-v1.2-and-eval-v2.md` §6.0).
 - Authoring-independence controls and the three v1.0 rubric defects as
   history-only lessons are recorded in §6.0 and §8 of that document.
+
+## 2.0 — 26 November 2026 — scored v2 run, **FAILED pre-registered bar**
+
+Status: **scored, failed**. v2.0 remained held-out/draft; it was not frozen as the active eval set. The scored run used `eval/eval_set_v2.json` (v2.0, `BD713F57...E2770E`) with `prompts/system/architecture-v1.2.md` (v1.2, `EE6E94BF...3D2D`) for `nemotron-3.5-super-vl`, `json_schema`, fixed `max_tokens` 32768, 3 runs/prompt, 45 runs total. No rubric, threshold, prompt, setting or evaluator was changed after the run.
+
+- **Mechanical verdict: FAIL** on one pre-registered criterion: **adversarial 2 of 3**.
+- **Deterministic gate:** 14 of 15 prompts passed (2-of-3). `ev2_14` failed the deterministic gate in **3 of 3 runs** (failed items `r01`, `r03` each run); `blocking_flag_rule` was `optional_skipped` in all 3 runs.
+- **First-attempt schema-valid:** 42 of 45 (bar 41/45 met).
+- **Blocking flags:** correct in both directions — required present 2/2 (`ev2_13`, `ev2_15`), forbidden violated 0/12, optional skipped 1 (`ev2_14`).
+- **Human scoring:** incomplete; no verdict beyond the mechanical FAIL.
+- **Disposition:** v2.0 is not selected and not frozen active. `scored_run_approved` and `selected_model` were not set. Any further prompt/rubric tuning requires a new held-out v3 set; v2 items/thresholds are unchanged.
