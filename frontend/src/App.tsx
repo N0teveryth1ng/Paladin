@@ -13,49 +13,141 @@ import {
   type PendingRun,
   type RunErrorView,
 } from './app/live';
-import {
-  FIXTURES,
-  parseMode,
-  prefersDark,
-  type Entry,
-  type FixtureName,
-  type ThemeName,
-} from './app/modes';
+import { parseMode, type LiveEntry, type ThemeName } from './app/modes';
+import type { ArchitectureDraft, Component, Connection, Group } from './types/architecture.generated';
 import { layoutArchitecture, type LayoutResult } from './layout/layout';
-import { BlockingFlagsPanel } from './render/BlockingFlagsPanel';
 import { Canvas } from './render/Canvas';
+import { downloadSvg, toMermaid } from './render/diagramExport';
 import { ErrorBoundary } from './render/ErrorBoundary';
 import { PromptBox } from './render/PromptBox';
 import { RunStatus } from './render/RunStatus';
-import { SidePanel, type Selection } from './render/SidePanel';
+import { SidePanel } from './render/SidePanel';
+import type { Selection } from './render/selection';
 import { Toolbar } from './render/Toolbar';
 
 interface Committed {
-  entry: Entry;
+  entry: LiveEntry;
   layout: LayoutResult;
 }
 
+const EMPTY_LAYOUT: LayoutResult = {
+  title: 'Untitled system',
+  nodes: [],
+  edges: [],
+  adjustments: [],
+  width: 0,
+  height: 0,
+};
+
+function blankDocument(): Committed {
+  return {
+    entry: {
+      name: 'live',
+      label: 'Untitled system',
+      file: 'canvas',
+      draft: {
+        title: 'Untitled system',
+        summary: '',
+        requirements: [{
+          id: 'req_canvas',
+          text: 'User-created system design.',
+          kind: 'functional',
+          source: 'inferred',
+        }],
+        components: [],
+        connections: [],
+        groups: [],
+        assumptions: [],
+        flags: [],
+      },
+      issues: { fixture: 'canvas', rules_version: '1.1', issues: [] },
+    },
+    layout: EMPTY_LAYOUT,
+  };
+}
+
+function nextId(prefix: string, existing: string[]): string {
+  let suffix = 1;
+  while (existing.includes(`${prefix}_manual_${suffix}`)) suffix += 1;
+  return `${prefix}_manual_${suffix}`;
+}
+
+function canvasRequirement(draft: ArchitectureDraft): { draft: ArchitectureDraft; id: string } {
+  const existing = draft.requirements.find((item) => item.id === 'req_canvas');
+  if (existing !== undefined) return { draft, id: existing.id };
+  const id = nextId('req', draft.requirements.map((item) => item.id));
+  return {
+    id,
+    draft: {
+      ...draft,
+      requirements: [...draft.requirements, {
+        id,
+        text: 'The user is composing this architecture on the canvas.',
+        kind: 'functional',
+        source: 'inferred',
+      }],
+    },
+  };
+}
+
+function layoutWithPositions(
+  layout: LayoutResult,
+  positions: Record<string, { x: number; y: number }>,
+): LayoutResult {
+  return {
+    ...layout,
+    nodes: layout.nodes.map((node) => {
+      const position = positions[node.id];
+      return position === undefined ? node : { ...node, x: position.x, y: position.y };
+    }),
+  };
+}
+
+function refreshLayoutData(layout: LayoutResult, draft: ArchitectureDraft): LayoutResult {
+  const components = new Map(draft.components.map((item) => [item.id, item]));
+  const groups = new Map((draft.groups ?? []).map((item) => [item.id, item]));
+  const connections = new Map((draft.connections ?? []).map((item) => [item.id, item]));
+  return {
+    ...layout,
+    title: draft.title,
+    nodes: layout.nodes.map((node) => node.kind === 'component'
+      ? { ...node, component: components.get(node.id) }
+      : { ...node, group: groups.get(node.id) }),
+    edges: layout.edges.map((edge) => {
+      const connection = connections.get(edge.id);
+      return connection === undefined ? edge : {
+        ...edge,
+        label: connection.label,
+        displayLabel: connection.label.length > 36 ? `${connection.label.slice(0, 33)}…` : connection.label,
+        type: connection.type,
+        technology: connection.technology ?? null,
+        assumed: connection.assumed,
+      };
+    }),
+  };
+}
+
 export default function App() {
-  const initial = useMemo(() => parseMode(window.location.search, prefersDark()), []);
-  const [fixture, setFixture] = useState<FixtureName>(initial.fixture);
+  const initial = useMemo(() => parseMode(window.location.search, true), []);
   const [theme, setTheme] = useState<ThemeName>(initial.theme);
   const [selection, setSelection] = useState<Selection>(null);
-  const [committed, setCommitted] = useState<Committed | null>(null);
+  const [committed, setCommitted] = useState<Committed>(blankDocument);
   const [pending, setPending] = useState<PendingRun | null>(null);
   const [runError, setRunError] = useState<RunErrorView | null>(null);
   const [layoutError, setLayoutError] = useState<string | null>(null);
   const [fitNonce, setFitNonce] = useState(0);
+  const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
 
   const pendingRef = useRef<PendingRun | null>(null);
   const runIdRef = useRef<string>('');
   const pollTimerRef = useRef<number | null>(null);
   const tickTimerRef = useRef<number | null>(null);
   const generationRef = useRef(0);
-  const fixtureRequestRef = useRef(0);
+  const documentRequestRef = useRef(0);
   const pollRef = useRef<() => Promise<void>>(async () => {});
 
-  const locked = initial.locked || pending !== null;
-  const entry: Entry = committed?.entry ?? FIXTURES[fixture];
+  const locked = pending !== null;
+  const entry = committed.entry;
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -82,44 +174,31 @@ export default function App() {
     updatePending(null);
   }, [stopTimers, updatePending]);
 
-  const failRun = useCallback(
-    (code: RunErrorCode, message?: string): void => {
-      generationRef.current += 1;
-      setRunError({ code, message: message ?? errorMessage(code) });
-      finishRun();
-    },
-    [finishRun],
-  );
+  const failRun = useCallback((code: RunErrorCode, message?: string): void => {
+    generationRef.current += 1;
+    setRunError({ code, message: message ?? errorMessage(code) });
+    finishRun();
+  }, [finishRun]);
 
   const schedulePoll = useCallback((): void => {
-    if (pollTimerRef.current !== null) {
-      window.clearTimeout(pollTimerRef.current);
-    }
-    pollTimerRef.current = window.setTimeout(() => {
-      void pollRef.current();
-    }, POLL_INTERVAL_MS);
+    if (pollTimerRef.current !== null) window.clearTimeout(pollTimerRef.current);
+    pollTimerRef.current = window.setTimeout(() => void pollRef.current(), POLL_INTERVAL_MS);
   }, []);
 
   const poll = useCallback(async (): Promise<void> => {
     pollTimerRef.current = null;
     const runId = runIdRef.current;
     const mine = generationRef.current;
-    if (runId === '' || pendingRef.current === null) {
-      return;
-    }
+    if (runId === '' || pendingRef.current === null) return;
 
     let response: GetRunResponse;
     try {
       response = await getRun(runId);
     } catch {
-      if (generationRef.current === mine) {
-        failRun('connection_lost');
-      }
+      if (generationRef.current === mine) failRun('connection_lost');
       return;
     }
-    if (generationRef.current !== mine || pendingRef.current === null) {
-      return;
-    }
+    if (generationRef.current !== mine || pendingRef.current === null) return;
 
     if (response.state === 'queued' || response.state === 'running') {
       updatePending({
@@ -131,199 +210,236 @@ export default function App() {
       schedulePoll();
       return;
     }
-
     if (response.state === 'failed' || response.state === 'timeout') {
       failRun(normalizeErrorCode(response.error?.code));
       return;
     }
-
-    if (response.state !== 'succeeded') {
-      failRun('internal_error');
-      return;
-    }
-
-    const result: unknown = response.result;
-    if (!isValidRunResult(result)) {
+    if (response.state !== 'succeeded' || !isValidRunResult(response.result)) {
       failRun('schema_invalid');
       return;
     }
-    const payload: RunResult = result;
 
-    let layout: LayoutResult;
+    const payload: RunResult = response.result;
     try {
-      // Layout runs before the commit. A bad draft never reaches the canvas.
-      layout = await layoutArchitecture(payload.draft);
+      const layout = await layoutArchitecture(payload.draft);
+      if (generationRef.current !== mine) return;
+      setPositions({});
+      setCommitted(prepareCommit(payload, layout));
+      setSelection(null);
+      setFitNonce((value) => value + 1);
+      generationRef.current += 1;
+      finishRun();
     } catch {
-      if (generationRef.current === mine) {
-        failRun('internal_error', LAYOUT_FAILURE_MESSAGE);
-      }
-      return;
+      if (generationRef.current === mine) failRun('internal_error', LAYOUT_FAILURE_MESSAGE);
     }
-    if (generationRef.current !== mine) {
-      return;
-    }
-
-    // One state update carries the draft, the issues artifact and the layout.
-    setCommitted(prepareCommit(payload, layout));
-    generationRef.current += 1;
-    setSelection(null);
-    finishRun();
   }, [failRun, finishRun, schedulePoll, updatePending]);
   pollRef.current = poll;
 
-  const submit = useCallback(
-    async (prompt: string): Promise<void> => {
-      if (pendingRef.current !== null) {
-        return;
-      }
-      const mine = generationRef.current + 1;
-      generationRef.current = mine;
-      runIdRef.current = '';
-      setRunError(null);
-      setLayoutError(null);
-      setSelection(null);
-      updatePending({ id: '', state: 'running', elapsedMs: 0, maxRunSeconds: 0 });
+  const submit = useCallback(async (prompt: string): Promise<void> => {
+    if (pendingRef.current !== null) return;
+    const mine = generationRef.current + 1;
+    generationRef.current = mine;
+    runIdRef.current = '';
+    setRunError(null);
+    setLayoutError(null);
+    setSelection(null);
+    updatePending({ id: '', state: 'running', elapsedMs: 0, maxRunSeconds: 0 });
 
-      let created;
-      try {
-        created = await createRun(prompt);
-      } catch (cause) {
-        if (generationRef.current !== mine) {
-          return;
-        }
-        if (cause instanceof ApiRequestError) {
-          const code = normalizeErrorCode(cause.code);
-          failRun(code, code === 'internal_error' ? cause.message : undefined);
-        } else {
-          failRun('connection_lost');
-        }
-        return;
-      }
-      if (generationRef.current !== mine) {
-        return;
-      }
+    let created;
+    try {
+      created = await createRun(prompt);
+    } catch (cause) {
+      if (generationRef.current !== mine) return;
+      if (cause instanceof ApiRequestError) {
+        const code = normalizeErrorCode(cause.code);
+        failRun(code, code === 'internal_error' ? cause.message : undefined);
+      } else failRun('connection_lost');
+      return;
+    }
+    if (generationRef.current !== mine) return;
 
-      runIdRef.current = created.run_id;
-      updatePending({
-        id: created.run_id,
-        state: created.state === 'queued' ? 'queued' : 'running',
-        elapsedMs: 0,
-        maxRunSeconds: created.max_run_seconds,
+    runIdRef.current = created.run_id;
+    updatePending({ id: created.run_id, state: 'running', elapsedMs: 0, maxRunSeconds: created.max_run_seconds });
+    tickTimerRef.current = window.setInterval(() => {
+      const current = pendingRef.current;
+      if (current !== null) updatePending({ ...current, elapsedMs: current.elapsedMs + ELAPSED_TICK_MS });
+    }, ELAPSED_TICK_MS);
+    await pollRef.current();
+  }, [failRun, updatePending]);
+
+  const commitStructure = useCallback((draft: ArchitectureDraft, select?: Selection): void => {
+    if (pendingRef.current !== null) return;
+    const request = ++documentRequestRef.current;
+    const previousEntry = committed.entry;
+    setLayoutError(null);
+    void layoutArchitecture(draft).then((layout) => {
+      if (request !== documentRequestRef.current) return;
+      setCommitted({
+        entry: {
+          ...previousEntry,
+          label: draft.title,
+          draft,
+          issues: { ...previousEntry.issues, fixture: 'edited canvas', issues: [] },
+        },
+        layout: layoutWithPositions(layout, positions),
       });
-      tickTimerRef.current = window.setInterval(() => {
-        const current = pendingRef.current;
-        if (current !== null) {
-          updatePending({ ...current, elapsedMs: current.elapsedMs + ELAPSED_TICK_MS });
-        }
-      }, ELAPSED_TICK_MS);
+      if (select !== undefined) setSelection(select);
+      setFitNonce((value) => value + 1);
+    }).catch((cause: unknown) => {
+      setLayoutError(cause instanceof Error ? cause.message : 'Could not lay out this change.');
+    });
+  }, [committed.entry, positions]);
 
-      // Poll immediately once, then at the one-second interval.
-      await pollRef.current();
-    },
-    [failRun, updatePending],
-  );
+  const addComponent = useCallback((): void => {
+    const { draft, id: requirementId } = canvasRequirement(entry.draft);
+    const id = nextId('cmp', draft.components.map((item) => item.id));
+    const component: Component = {
+      id,
+      type: 'service',
+      name: 'New box',
+      technology: null,
+      description: '',
+      attributes: {},
+      requirement_refs: [requirementId],
+      assumed: false,
+      rationale: null,
+    };
+    commitStructure({ ...draft, components: [...draft.components, component] }, { kind: 'component', id });
+  }, [commitStructure, entry.draft]);
 
-  const chooseFixture = useCallback(
-    (name: FixtureName): void => {
-      if (pendingRef.current !== null) {
-        return;
-      }
-      const request = fixtureRequestRef.current + 1;
-      fixtureRequestRef.current = request;
-      const next = FIXTURES[name];
-      setFixture(name);
-      setSelection(null);
-      setRunError(null);
-      setLayoutError(null);
+  const connectComponents = useCallback((source: string, target: string): void => {
+    const { draft, id: requirementId } = canvasRequirement(entry.draft);
+    if ((draft.connections ?? []).some((item) => item.from === source && item.to === target)) return;
+    const id = nextId('cnx', (draft.connections ?? []).map((item) => item.id));
+    const connection: Connection = {
+      id,
+      from: source,
+      to: target,
+      type: 'sync',
+      label: 'Request',
+      technology: null,
+      requirement_refs: [requirementId],
+      assumed: false,
+      rationale: null,
+    };
+    commitStructure({ ...draft, connections: [...(draft.connections ?? []), connection] }, { kind: 'edge', id });
+  }, [commitStructure, entry.draft]);
 
-      layoutArchitecture(next.draft)
-        .then((layout) => {
-          if (request === fixtureRequestRef.current) {
-            setCommitted({ entry: next, layout });
-          }
-        })
-        .catch((cause: unknown) => {
-          if (request === fixtureRequestRef.current) {
-            setLayoutError(cause instanceof Error ? cause.message : String(cause));
-          }
-        });
-    },
-    [],
-  );
-
-  useEffect(() => {
-    chooseFixture(initial.fixture);
-  }, [chooseFixture, initial.fixture]);
-
-  useEffect(() => {
-    return () => stopTimers();
-  }, [stopTimers]);
-
-  const onReady = useCallback(() => {
-    // The canvas sets its own ready flag after the initial fit.
+  const updateComponent = useCallback((id: string, patch: Partial<Component>): void => {
+    setCommitted((current) => {
+      const draft = { ...current.entry.draft, components: current.entry.draft.components.map((item) => item.id === id ? { ...item, ...patch } : item) };
+      return {
+        entry: { ...current.entry, draft, issues: { ...current.entry.issues, issues: [] } },
+        layout: refreshLayoutData(current.layout, draft),
+      };
+    });
   }, []);
 
-  const blockingFlags = (entry.draft.flags ?? []).filter((flag) => flag.severity === 'blocking');
+  const updateConnection = useCallback((id: string, patch: Partial<Connection>): void => {
+    setCommitted((current) => {
+      const draft = { ...current.entry.draft, connections: (current.entry.draft.connections ?? []).map((item) => item.id === id ? { ...item, ...patch } : item) };
+      return {
+        entry: { ...current.entry, draft, issues: { ...current.entry.issues, issues: [] } },
+        layout: refreshLayoutData(current.layout, draft),
+      };
+    });
+  }, []);
+
+  const updateGroup = useCallback((id: string, patch: Partial<Group>): void => {
+    setCommitted((current) => {
+      const draft = { ...current.entry.draft, groups: (current.entry.draft.groups ?? []).map((item) => item.id === id ? { ...item, ...patch } : item) };
+      return { entry: { ...current.entry, draft }, layout: refreshLayoutData(current.layout, draft) };
+    });
+  }, []);
+
+  const deleteSelection = useCallback((target: Exclude<Selection, null>): void => {
+    const draft = entry.draft;
+    let next = draft;
+    if (target.kind === 'component') {
+      next = {
+        ...draft,
+        components: draft.components.filter((item) => item.id !== target.id),
+        connections: (draft.connections ?? []).filter((item) => item.from !== target.id && item.to !== target.id),
+        groups: (draft.groups ?? []).map((group) => ({ ...group, members: group.members.filter((id) => id !== target.id) })).filter((group) => group.members.length > 0),
+      };
+    } else if (target.kind === 'edge') {
+      next = { ...draft, connections: (draft.connections ?? []).filter((item) => item.id !== target.id) };
+    } else {
+      next = { ...draft, groups: (draft.groups ?? []).filter((item) => item.id !== target.id).map((group) => group.parent_id === target.id ? { ...group, parent_id: null } : group) };
+    }
+    setPositions((current) => Object.fromEntries(Object.entries(current).filter(([id]) => id !== target.id)));
+    setSelection(null);
+    commitStructure(next);
+  }, [commitStructure, entry.draft]);
+
+  const updatePosition = useCallback((id: string, position: { x: number; y: number }): void => {
+    setPositions((current) => ({ ...current, [id]: position }));
+  }, []);
+
+  const resetDocument = useCallback((): void => {
+    documentRequestRef.current += 1;
+    generationRef.current += 1;
+    setCommitted(blankDocument());
+    setPositions({});
+    setSelection(null);
+    setRunError(null);
+    setLayoutError(null);
+    setFitNonce((value) => value + 1);
+  }, []);
+
+  useEffect(() => () => stopTimers(), [stopTimers]);
 
   return (
     <div className="app" data-theme={theme} data-fixture={entry.name}>
       <Toolbar
-        entry={entry}
         theme={theme}
         locked={locked}
-        onFixture={chooseFixture}
-        onTheme={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
+        onAddComponent={addComponent}
+        onNew={resetDocument}
+        onTheme={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
         onFit={() => setFitNonce((value) => value + 1)}
+        onDownload={() => downloadSvg(committed.layout, theme)}
+        onCopy={() => navigator.clipboard.writeText(toMermaid(committed.layout))}
       />
-
-      <div className="generation-bar">
-        <PromptBox disabled={pending !== null} onSubmit={(prompt) => void submit(prompt)} />
-        <RunStatus run={pending} error={runError} />
-      </div>
 
       <div className="workspace">
         <main className="canvas-column">
-          <BlockingFlagsPanel flags={blockingFlags} />
           <div className="canvas-stage">
-            {layoutError !== null ? (
-              <div className="error-card" role="alert" data-testid="layout-error">
-                <h2>Layout failed</h2>
-                <p>{layoutError}</p>
-              </div>
-            ) : committed === null ? (
-              <div className="loading" data-testid="layout-loading">
-                Laying out {entry.label}…
-              </div>
-            ) : (
-              <ErrorBoundary>
-                <Canvas
-                  key={entry.name}
-                  result={committed.layout}
-                  issues={entry.issues.issues}
-                  theme={theme}
-                  locked={locked}
-                  focus={initial.focus}
-                  zoom={initial.zoom}
-                  fitNonce={fitNonce}
-                  fixtureName={entry.name}
-                  onSelect={(kind, id) => setSelection({ kind, id })}
-                  onClearSelection={() => setSelection(null)}
-                  onReady={onReady}
-                />
-              </ErrorBoundary>
-            )}
+            {layoutError !== null ? <div className="canvas-toast" role="alert">{layoutError}</div> : null}
+            <ErrorBoundary>
+              <Canvas
+                key="workbench"
+                result={committed.layout}
+                issues={entry.issues.issues}
+                theme={theme}
+                locked={locked}
+                focus={initial.focus}
+                zoom={initial.zoom}
+                fitNonce={fitNonce}
+                fixtureName="canvas"
+                positions={positions}
+                onSelect={(kind, id) => setSelection({ kind, id })}
+                onClearSelection={() => setSelection(null)}
+                onPositionChange={updatePosition}
+                onConnect={connectComponents}
+                onDelete={deleteSelection}
+                onReady={() => {}}
+              />
+            </ErrorBoundary>
           </div>
+          <PromptBox disabled={locked} onSubmit={(prompt) => void submit(prompt)} />
+          <RunStatus run={pending} error={runError} />
         </main>
 
-        {committed !== null ? (
-          <SidePanel
-            entry={entry}
-            result={committed.layout}
-            selection={selection}
-            onSelect={setSelection}
-            theme={theme}
-          />
-        ) : null}
+        <SidePanel
+          entry={entry}
+          selection={selection}
+          onChangeComponent={updateComponent}
+          onChangeConnection={updateConnection}
+          onChangeGroup={updateGroup}
+          onClearSelection={() => setSelection(null)}
+          onDelete={() => selection !== null && deleteSelection(selection)}
+        />
       </div>
     </div>
   );

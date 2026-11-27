@@ -1,4 +1,5 @@
 import {
+  BaseEdge,
   EdgeLabelRenderer,
   getSmoothStepPath,
   type Edge,
@@ -16,10 +17,6 @@ export interface ArchitectureEdgeData extends Record<string, unknown> {
 }
 
 export type ArchitectureFlowEdge = Edge<ArchitectureEdgeData, 'architecture'>;
-
-function toPath(points: LayoutPoint[]): string {
-  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
-}
 
 function ArrowHead({
   points,
@@ -81,42 +78,20 @@ export function ArchitectureEdge(props: EdgeProps<ArchitectureFlowEdge>) {
 
   const edge = data.edge;
   const severity = worstSeverity(data.issues);
-  const labelPoint = {
-    x: edge.labelBox.x + edge.labelBox.width / 2,
-    y: edge.labelBox.y + edge.labelBox.height / 2,
-  };
-
-  let path: string;
-  let points: LayoutPoint[];
-
-  if (edge.section !== null && edge.section.length >= 2) {
-    points = edge.section;
-    path = toPath(points);
-  } else if (edge.from === edge.to) {
-    points = [
-      { x: sourceX, y: sourceY },
-      { x: sourceX + 70, y: sourceY - 70 },
-      { x: sourceX - 70, y: sourceY - 70 },
-      { x: sourceX, y: sourceY },
-    ];
-    path = `M ${sourceX} ${sourceY} C ${sourceX + 70} ${sourceY - 70}, ${sourceX - 70} ${
-      sourceY - 70
-    }, ${sourceX} ${sourceY}`;
-  } else {
-    const [smoothPath] = getSmoothStepPath({
-      sourceX,
-      sourceY,
-      sourcePosition,
-      targetX,
-      targetY,
-      targetPosition,
-    });
-    path = smoothPath;
-    points = [
-      { x: sourceX, y: sourceY },
-      { x: targetX, y: targetY },
-    ];
-  }
+  const [path, labelX, labelY] = getSmoothStepPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+    borderRadius: 8,
+  });
+  const labelPoint = { x: labelX, y: labelY };
+  const points: LayoutPoint[] = [
+    { x: sourceX, y: sourceY },
+    { x: targetX, y: targetY },
+  ];
 
   return (
     <g
@@ -126,8 +101,7 @@ export function ArchitectureEdge(props: EdgeProps<ArchitectureFlowEdge>) {
       data-edge-type={edge.type}
       data-severity={severity ?? ''}
     >
-      <path className="edge-interaction" d={path} fill="none" stroke="transparent" strokeWidth={20} />
-      <path className="edge-path" d={path} fill="none" />
+      <BaseEdge path={path} className="edge-path" interactionWidth={20} />
       <ArrowHead points={points} type={edge.type} />
 
       <EdgeLabelRenderer>

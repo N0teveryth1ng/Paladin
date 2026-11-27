@@ -12,20 +12,20 @@ export interface TypeToken {
  * identical for every type; colour and glyph carry the type.
  */
 export const TYPE_TOKENS: Record<ComponentType, TypeToken> = {
-  client: { glyph: 'CL', light: '#1D4ED8', dark: '#60A5FA' },
-  api_gateway: { glyph: 'GW', light: '#6D28D9', dark: '#A78BFA' },
-  load_balancer: { glyph: 'LB', light: '#0369A1', dark: '#38BDF8' },
-  service: { glyph: 'SV', light: '#047857', dark: '#34D399' },
-  worker: { glyph: 'WK', light: '#B45309', dark: '#FBBF24' },
-  database: { glyph: 'DB', light: '#B91C1C', dark: '#F87171' },
-  cache: { glyph: 'CA', light: '#BE185D', dark: '#F472B6' },
-  message_queue: { glyph: 'MQ', light: '#7E22CE', dark: '#C084FC' },
-  object_storage: { glyph: 'OS', light: '#0E7490', dark: '#22D3EE' },
-  cdn: { glyph: 'CD', light: '#4D7C0F', dark: '#A3E635' },
-  auth_provider: { glyph: 'AU', light: '#4338CA', dark: '#818CF8' },
-  search_index: { glyph: 'SX', light: '#C2410C', dark: '#FB923C' },
-  scheduler: { glyph: 'SC', light: '#0F766E', dark: '#2DD4BF' },
-  external_service: { glyph: 'EX', light: '#475569', dark: '#94A3B8' },
+  client: { glyph: 'CL', light: '#526579', dark: '#AAB8C5' },
+  api_gateway: { glyph: 'GW', light: '#A66A1F', dark: '#E9AD57' },
+  load_balancer: { glyph: 'LB', light: '#A66A1F', dark: '#E9AD57' },
+  service: { glyph: 'SV', light: '#2865A3', dark: '#79B7F2' },
+  worker: { glyph: 'WK', light: '#39779A', dark: '#72BBD8' },
+  database: { glyph: 'DB', light: '#7445A6', dark: '#BD91EB' },
+  cache: { glyph: 'CA', light: '#7445A6', dark: '#BD91EB' },
+  message_queue: { glyph: 'MQ', light: '#6749A5', dark: '#AE97ED' },
+  object_storage: { glyph: 'OS', light: '#6354A5', dark: '#A99BF1' },
+  cdn: { glyph: 'CD', light: '#287B83', dark: '#6FC5C9' },
+  auth_provider: { glyph: 'AU', light: '#896424', dark: '#D6B76C' },
+  search_index: { glyph: 'SX', light: '#347B68', dark: '#74C7A7' },
+  scheduler: { glyph: 'SC', light: '#347B68', dark: '#74C7A7' },
+  external_service: { glyph: 'EX', light: '#475569', dark: '#AAB3BB' },
 };
 
 export const COMPONENT_TYPES = Object.keys(TYPE_TOKENS) as ComponentType[];
@@ -41,6 +41,14 @@ export function glyphFor(type: ComponentType): string {
 
 export function typeLabel(type: ComponentType): string {
   return type.replace(/_/g, ' ');
+}
+
+const GROUP_ACCENTS = ['#5B9BFF', '#59C896', '#BD8BFF', '#E8AE55'] as const;
+
+export function groupAccentFor(id: string): string {
+  let hash = 0;
+  for (const character of id) hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  return GROUP_ACCENTS[hash % GROUP_ACCENTS.length];
 }
 
 /** Node text/background pairs, checked for WCAG AA contrast in both themes. */
