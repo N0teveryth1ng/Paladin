@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type WheelEvent as ReactWheelEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type WheelEvent as ReactWheelEvent } from 'react';
 import {
   Background,
   ReactFlow,
@@ -80,6 +80,8 @@ function CanvasInner({
   const [fitted, setFitted] = useState(false);
   const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
   const { getViewport, zoomTo } = useReactFlow();
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
 
   const handleWheel = useCallback((event: ReactWheelEvent<HTMLDivElement>) => {
     if (locked || event.ctrlKey || event.metaKey) return;
@@ -156,8 +158,8 @@ function CanvasInner({
 
   const handleReady = useCallback(() => {
     setFitted(true);
-    onReady();
-  }, [onReady]);
+    onReadyRef.current();
+  }, []);
 
   const focusBox = useMemo<LayoutNode | null>(() => {
     if (focus === null) {

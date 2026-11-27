@@ -167,6 +167,7 @@ button { color: inherit; }
 .architecture-edge .edge-path { stroke: var(--edge); stroke-width: 2; }
 .architecture-edge.edge-async .edge-path { stroke-dasharray: 7 5; }
 .architecture-edge.selected .edge-path { stroke: var(--accent); stroke-width: 2.8; }
+.react-flow__edgelabel-renderer { z-index: 10; }
 .edge-label {
   position: absolute;
   display: flex;
@@ -177,6 +178,7 @@ button { color: inherit; }
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--panel);
+  opacity: 1;
   color: var(--text);
   box-shadow: 0 3px 10px rgba(0, 0, 0, .22);
   font-size: 12px;
