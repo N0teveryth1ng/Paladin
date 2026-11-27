@@ -4,10 +4,10 @@ import {
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
-  type Edge,
   MarkerType,
   type Node,
   type NodeTypes,
+  type EdgeTypes,
   useEdgesState,
   useNodesState,
   type Connection as FlowConnection,
@@ -20,6 +20,7 @@ import { issuesFor } from '../types/issues';
 import { ComponentNode } from './nodes/ComponentNode';
 import { GroupNode } from './nodes/GroupNode';
 import type { Selection } from './selection';
+import { ArchitectureEdge, type ArchitectureFlowEdge } from './edges/ArchitectureEdge';
 
 export type SelectionKind = 'component' | 'group' | 'edge';
 
@@ -27,6 +28,10 @@ const nodeTypes = {
   component: ComponentNode,
   group: GroupNode,
 } as unknown as NodeTypes;
+
+const edgeTypes = {
+  architecture: ArchitectureEdge,
+} as unknown as EdgeTypes;
 
 export interface CanvasProps {
   result: LayoutResult;
@@ -112,19 +117,15 @@ function CanvasInner({
     [result, issues, theme, locked, positions],
   );
 
-  const initialEdges = useMemo<Edge[]>(
+  const initialEdges = useMemo<ArchitectureFlowEdge[]>(
     () =>
-      result.edges.map((layoutEdge) => ({
+      result.edges.map((layoutEdge, parallelIndex) => ({
         id: layoutEdge.id,
         source: layoutEdge.from,
         target: layoutEdge.to,
         sourceHandle: 's',
         targetHandle: 't',
-        type: 'smoothstep',
-        label: layoutEdge.displayLabel,
-        labelStyle: { fill: 'var(--muted)', fontSize: 10 },
-        labelBgStyle: { fill: 'var(--bg)', fillOpacity: 1, stroke: 'var(--border)', strokeWidth: 0.7 },
-        labelBgPadding: [6, 3] as [number, number],
+        type: 'architecture',
         markerEnd: { type: layoutEdge.type === 'sync' ? MarkerType.ArrowClosed : MarkerType.Arrow, color: 'var(--edge)' },
         className: `edge-${layoutEdge.type}`,
         style: {
@@ -135,6 +136,7 @@ function CanvasInner({
         data: {
           edge: layoutEdge,
           issues: issuesFor(issues, layoutEdge.id),
+          parallelIndex,
         },
         selectable: !locked,
         focusable: !locked,
@@ -143,7 +145,7 @@ function CanvasInner({
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initialEdges);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<ArchitectureFlowEdge>(initialEdges);
 
   useEffect(() => setNodes(initialNodes), [initialNodes, setNodes]);
   useEffect(() => setEdges(initialEdges), [initialEdges, setEdges]);
@@ -199,6 +201,7 @@ function CanvasInner({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onInit={() => setInitialised(true)}
         onNodeClick={(_event, node) =>
           onSelect(node.type === 'group' ? 'group' : 'component', node.id)

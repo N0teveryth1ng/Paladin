@@ -118,7 +118,7 @@ function refreshLayoutData(layout: LayoutResult, draft: ArchitectureDraft): Layo
       return connection === undefined ? edge : {
         ...edge,
         label: connection.label,
-        displayLabel: connection.label.length > 36 ? `${connection.label.slice(0, 33)}…` : connection.label,
+        displayLabel: connection.label,
         type: connection.type,
         technology: connection.technology ?? null,
         assumed: connection.assumed,

@@ -15,13 +15,13 @@ export const ELK_ROOT_OPTIONS: Record<string, string> = {
   'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
   'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
   'elk.layered.cycleBreaking.strategy': 'GREEDY',
-  'elk.spacing.nodeNode': '40',
-  'elk.layered.spacing.nodeNodeBetweenLayers': '80',
-  'elk.spacing.edgeNode': '24',
-  'elk.spacing.edgeEdge': '12',
-  'elk.spacing.labelNode': '8',
-  'elk.spacing.labelEdge': '8',
-  'elk.padding': '[top=44,left=28,bottom=28,right=28]',
+  'elk.spacing.nodeNode': '72',
+  'elk.layered.spacing.nodeNodeBetweenLayers': '128',
+  'elk.spacing.edgeNode': '40',
+  'elk.spacing.edgeEdge': '32',
+  'elk.spacing.labelNode': '24',
+  'elk.spacing.labelEdge': '24',
+  'elk.padding': '[top=64,left=48,bottom=48,right=48]',
 };
 
 /** The same padding block is set on every group container. */

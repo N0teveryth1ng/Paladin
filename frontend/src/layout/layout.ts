@@ -24,9 +24,8 @@ import { normalizeDraft } from './normalize';
 import {
   COMPONENT_HEIGHT,
   COMPONENT_WIDTH,
-  EDGE_LABEL_HEIGHT,
+  edgeLabelHeight,
   edgeLabelWidth,
-  truncateLabel,
 } from './nodeSizes';
 
 /**
@@ -83,7 +82,7 @@ export async function layoutArchitecture(draft: ArchitectureDraft): Promise<Layo
   };
 
   const edges: ElkExtendedEdge[] = normalized.connections.map((connection) => {
-    const displayLabel = truncateLabel(connection.label);
+    const displayLabel = connection.label;
     return {
       id: connection.id,
       sources: [connection.from],
@@ -92,7 +91,7 @@ export async function layoutArchitecture(draft: ArchitectureDraft): Promise<Layo
         {
           text: displayLabel,
           width: edgeLabelWidth(displayLabel),
-          height: EDGE_LABEL_HEIGHT,
+          height: edgeLabelHeight(displayLabel),
         },
       ],
     };
@@ -189,7 +188,7 @@ export async function layoutArchitecture(draft: ArchitectureDraft): Promise<Layo
         section === null
           ? null
           : section.map((point) => ({ x: point.x + offsetX, y: point.y + offsetY }));
-      const displayLabel = truncateLabel(meta.label);
+      const displayLabel = meta.label;
 
       return [
         {
@@ -202,7 +201,16 @@ export async function layoutArchitecture(draft: ArchitectureDraft): Promise<Layo
           technology: meta.technology ?? null,
           assumed: meta.assumed,
           section: absoluteSection,
-          labelBox: labelBoxFor(meta, displayLabel, absoluteSection, index, absoluteById),
+          labelBox: labelBoxFor(
+            meta,
+            displayLabel,
+            absoluteSection,
+            index,
+            absoluteById,
+            edge.labels?.[0],
+            offsetX,
+            offsetY,
+          ),
         },
       ];
     });
@@ -276,9 +284,21 @@ function labelBoxFor(
   section: LayoutPoint[] | null,
   index: number,
   nodes: Map<string, LayoutNode>,
+  elkLabel: { x?: number; y?: number; width?: number; height?: number } | undefined,
+  offsetX: number,
+  offsetY: number,
 ): LayoutBox {
   const width = edgeLabelWidth(displayLabel);
-  const height = EDGE_LABEL_HEIGHT;
+  const height = edgeLabelHeight(displayLabel, width);
+
+  if (elkLabel?.x !== undefined && elkLabel.y !== undefined) {
+    return {
+      x: elkLabel.x + offsetX,
+      y: elkLabel.y + offsetY,
+      width: elkLabel.width ?? width,
+      height: elkLabel.height ?? height,
+    };
+  }
 
   let center: LayoutPoint;
   if (section !== null && section.length >= 2) {

@@ -126,7 +126,7 @@ button { color: inherit; }
   height: 100%;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--component-accent, var(--node-border)) 45%, var(--node-border));
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--node-bg);
   color: var(--text);
   box-shadow: 0 2px 5px rgba(20, 28, 38, .06);
@@ -134,14 +134,15 @@ button { color: inherit; }
 .component-node.assumed { border-style: dashed; }
 .component-node[data-type='database'], .component-node[data-type='cache'], .component-node[data-type='search_index'] { border-radius: 50% / 16%; }
 .component-band { display: none; }
-.component-icon { display: grid; width: 25px; height: 25px; flex: 0 0 25px; place-items: center; margin-left: 10px; border: 1px solid currentColor; border-radius: 5px; background: color-mix(in srgb, currentColor 12%, var(--node-bg)); }
-.component-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.component-body { display: flex; flex: 1; min-width: 0; flex-direction: column; justify-content: center; gap: 7px; padding: 8px 10px; }
-.component-name { overflow: hidden; font-size: 13px; font-weight: 630; line-height: 1.25; text-overflow: ellipsis; }
+.component-icon { display: grid; width: 32px; height: 32px; flex: 0 0 32px; place-items: center; margin-left: 13px; border: 1px solid currentColor; border-radius: 7px; background: color-mix(in srgb, currentColor 12%, var(--node-bg)); }
+.component-icon svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.component-body { display: flex; flex: 1; min-width: 0; flex-direction: column; justify-content: center; gap: 9px; padding: 12px 14px; }
+.component-name { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 15px; font-weight: 640; line-height: 1.3; overflow-wrap: anywhere; }
 .component-meta { display: flex; align-items: center; gap: 7px; min-width: 0; }
 .type-badge { display: none; }
-.component-type { color: var(--muted); font-size: 9px; text-transform: capitalize; }
-.component-tech { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.component-type { flex: 0 0 auto; color: var(--muted); font-size: 11px; text-transform: capitalize; }
+.component-tech { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.component-tech::before { content: '·'; padding: 0 7px 0 1px; color: var(--border); }
 .component-tech.muted { display: none; }
 .assumed-pill { display: none; }
 .severity-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
@@ -157,12 +158,39 @@ button { color: inherit; }
   border-radius: 7px;
   background: color-mix(in srgb, var(--group-accent, #aeb9c8) 11%, var(--canvas-group-bg));
 }
-.group-header { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px; border-bottom: 1px solid color-mix(in srgb, var(--group-accent, var(--border)) 65%, transparent); }
-.group-name { overflow: hidden; font-size: 11px; font-weight: 620; text-overflow: ellipsis; white-space: nowrap; }
+.group-header { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 16px; border-bottom: 1px solid color-mix(in srgb, var(--group-accent, var(--border)) 65%, transparent); }
+.group-name { overflow: hidden; font-size: 13px; font-weight: 620; text-overflow: ellipsis; white-space: nowrap; }
 .group-count { padding: 1px 5px; border-radius: 999px; background: color-mix(in srgb, var(--group-accent, var(--border)) 18%, transparent); color: var(--text); font-size: 9px; }
 .group-header .assumed-pill { position: static; margin-left: auto; }
 
 .react-flow__edge-path { stroke: var(--edge); stroke-width: 1.7; }
+.architecture-edge .edge-path { stroke: var(--edge); stroke-width: 2; }
+.architecture-edge.edge-async .edge-path { stroke-dasharray: 7 5; }
+.architecture-edge.selected .edge-path { stroke: var(--accent); stroke-width: 2.8; }
+.edge-label {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .22);
+  font-size: 12px;
+  font-weight: 530;
+  line-height: 1.4;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  pointer-events: all;
+  cursor: pointer;
+}
+.edge-label.selected { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent); }
+.edge-label-text { min-width: 0; }
+.edge-assumed { flex: 0 0 auto; padding: 1px 5px; border-radius: 4px; background: color-mix(in srgb, var(--judgment) 20%, transparent); color: var(--judgment); font-size: 9px; font-weight: 650; }
 .react-flow__edge-textbg { fill: var(--bg); fill-opacity: .98; stroke: var(--border); stroke-width: .7; }
 .react-flow__edge-text { font-size: 10px; font-weight: 550; letter-spacing: .01em; }
 .react-flow__edge.edge-async .react-flow__edge-path { stroke-dasharray: 5 4; }
