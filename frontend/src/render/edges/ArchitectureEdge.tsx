@@ -18,48 +18,6 @@ export interface ArchitectureEdgeData extends Record<string, unknown> {
 
 export type ArchitectureFlowEdge = Edge<ArchitectureEdgeData, 'architecture'>;
 
-function ArrowHead({
-  points,
-  type,
-}: {
-  points: LayoutPoint[];
-  type: 'sync' | 'async';
-}) {
-  if (points.length < 2) {
-    return null;
-  }
-
-  const tip = points[points.length - 1];
-  const previous = points[points.length - 2];
-  const angle = Math.atan2(tip.y - previous.y, tip.x - previous.x);
-  const size = 10;
-  const spread = Math.PI / 7;
-  const left = {
-    x: tip.x - size * Math.cos(angle - spread),
-    y: tip.y - size * Math.sin(angle - spread),
-  };
-  const right = {
-    x: tip.x - size * Math.cos(angle + spread),
-    y: tip.y - size * Math.sin(angle + spread),
-  };
-
-  if (type === 'sync') {
-    return (
-      <polygon
-        className="edge-arrow edge-arrow-filled"
-        points={`${tip.x},${tip.y} ${left.x},${left.y} ${right.x},${right.y}`}
-      />
-    );
-  }
-
-  return (
-    <path
-      className="edge-arrow edge-arrow-open"
-      d={`M ${left.x} ${left.y} L ${tip.x} ${tip.y} L ${right.x} ${right.y}`}
-    />
-  );
-}
-
 export function ArchitectureEdge(props: EdgeProps<ArchitectureFlowEdge>) {
   const {
     data,
@@ -70,28 +28,37 @@ export function ArchitectureEdge(props: EdgeProps<ArchitectureFlowEdge>) {
     targetX,
     targetY,
     targetPosition,
+    markerEnd,
   } = props;
 
-  if (data === undefined) {
-    return null;
-  }
+  if (data === undefined) return null;
 
   const edge = data.edge;
   const severity = worstSeverity(data.issues);
-  const [path, labelX, labelY] = getSmoothStepPath({
+  const section = edge.section;
+  const routeMatchesNodes = section !== null && section.length >= 2
+    && Math.abs(section[0].x - sourceX) < 2
+    && Math.abs(section[0].y - sourceY) < 2
+    && Math.abs(section[section.length - 1].x - targetX) < 2
+    && Math.abs(section[section.length - 1].y - targetY) < 2;
+  const [fallbackPath, fallbackLabelX, fallbackLabelY] = getSmoothStepPath({
     sourceX,
     sourceY,
     sourcePosition,
     targetX,
     targetY,
     targetPosition,
-    borderRadius: 8,
+    borderRadius: 12,
   });
-  const labelPoint = { x: labelX, y: labelY };
-  const points: LayoutPoint[] = [
-    { x: sourceX, y: sourceY },
-    { x: targetX, y: targetY },
-  ];
+  const path = routeMatchesNodes
+    ? pointsToPath(section as LayoutPoint[])
+    : fallbackPath;
+  const labelX = routeMatchesNodes
+    ? edge.labelBox.x + edge.labelBox.width / 2
+    : fallbackLabelX;
+  const labelY = routeMatchesNodes
+    ? edge.labelBox.y + edge.labelBox.height / 2
+    : fallbackLabelY;
 
   return (
     <g
@@ -101,19 +68,24 @@ export function ArchitectureEdge(props: EdgeProps<ArchitectureFlowEdge>) {
       data-edge-type={edge.type}
       data-severity={severity ?? ''}
     >
-      <BaseEdge path={path} className="edge-path" interactionWidth={20} />
-      <ArrowHead points={points} type={edge.type} />
-
+      <BaseEdge
+        path={path}
+        markerEnd={markerEnd}
+        className="edge-path"
+        interactionWidth={24}
+      />
       <EdgeLabelRenderer>
         <div
           className={`edge-label${selected ? ' selected' : ''}`}
           style={{
-            transform: `translate(-50%, -50%) translate(${labelPoint.x}px, ${labelPoint.y}px)`,
+            width: Math.max(96, edge.labelBox.width),
+            minHeight: Math.max(32, edge.labelBox.height),
+            transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
           }}
           title={`${edge.label}${edge.technology !== null ? ` · ${edge.technology}` : ''}`}
         >
-          {edge.assumed ? <span className="edge-assumed">A</span> : null}
-          <span className="edge-label-text">{edge.displayLabel}</span>
+          {edge.assumed ? <span className="edge-assumed">Assumed</span> : null}
+          <span className="edge-label-text">{edge.label}</span>
           {severity !== null ? (
             <span
               className={`severity-dot severity-${severity}`}
@@ -124,4 +96,8 @@ export function ArchitectureEdge(props: EdgeProps<ArchitectureFlowEdge>) {
       </EdgeLabelRenderer>
     </g>
   );
+}
+
+function pointsToPath(points: LayoutPoint[]): string {
+  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
 }

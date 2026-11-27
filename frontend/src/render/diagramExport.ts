@@ -10,6 +10,31 @@ function mermaidId(value: string): string {
   return `n_${value.replace(/[^a-zA-Z0-9_]/g, '_')}`;
 }
 
+function wrapLabel(text: string, width: number): string[] {
+  const maxChars = Math.max(12, Math.floor((width - 28) / 7));
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let line = '';
+  for (const word of words) {
+    if (word.length > maxChars) {
+      if (line) lines.push(line);
+      line = '';
+      for (let index = 0; index < word.length; index += maxChars) {
+        const chunk = word.slice(index, index + maxChars);
+        if (index + maxChars < word.length) lines.push(chunk);
+        else line = chunk;
+      }
+    } else if (line.length + word.length + (line ? 1 : 0) <= maxChars) {
+      line += `${line ? ' ' : ''}${word}`;
+    } else {
+      lines.push(line);
+      line = word;
+    }
+  }
+  if (line) lines.push(line);
+  return lines.length ? lines : [''];
+}
+
 export function toMermaid(layout: LayoutResult): string {
   const lines = ['flowchart LR'];
   for (const node of layout.nodes) {
@@ -52,11 +77,18 @@ export function toSvg(layout: LayoutResult, theme: 'light' | 'dark'): string {
     if (!source || !target || !a || !b) return '';
     const sx = a.x + source.width; const sy = a.y + source.height / 2;
     const tx = b.x; const ty = b.y + target.height / 2;
-    const mid = (sx + tx) / 2;
-    const label = item.displayLabel;
-    const lx = mid; const ly = (sy + ty) / 2 - 8;
-    const labelW = Math.min(220, Math.max(52, label.length * 6.5 + 18));
-    return `<path d="M ${sx} ${sy} H ${mid} V ${ty} H ${tx}" fill="none" stroke="${edge}" stroke-width="2"${item.type === 'async' ? ' stroke-dasharray="6 5"' : ''} marker-end="url(#arrow)"/><rect x="${lx - labelW / 2}" y="${ly - 10}" width="${labelW}" height="20" rx="5" fill="${bg}" stroke="${border}"/><text x="${lx}" y="${ly + 4}" text-anchor="middle" fill="${fg}" font-size="11">${escapeXml(label)}</text>`;
+    const route = item.section?.length
+      ? item.section.map((point) => ({ x: point.x + padding, y: point.y + padding }))
+      : [{ x: sx, y: sy }, { x: (sx + tx) / 2, y: sy }, { x: (sx + tx) / 2, y: ty }, { x: tx, y: ty }];
+    const path = route.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' ');
+    const labelX = item.labelBox.x + padding;
+    const labelY = item.labelBox.y + padding;
+    const labelWidth = item.labelBox.width;
+    const labelHeight = item.labelBox.height;
+    const lines = wrapLabel(item.label, labelWidth);
+    const firstLineY = labelY + labelHeight / 2 - ((lines.length - 1) * 15) / 2 + 4;
+    const labelText = lines.map((line, index) => `<tspan x="${labelX + labelWidth / 2}" dy="${index === 0 ? 0 : 15}">${escapeXml(line)}</tspan>`).join('');
+    return `<path d="${path}" fill="none" stroke="${edge}" stroke-width="2"${item.type === 'async' ? ' stroke-dasharray="7 5"' : ''} marker-end="url(#arrow)"/><rect x="${labelX}" y="${labelY}" width="${labelWidth}" height="${labelHeight}" rx="8" fill="${nodeBg}" stroke="${border}"/><text x="${labelX + labelWidth / 2}" y="${firstLineY}" text-anchor="middle" fill="${fg}" font-size="12" font-weight="500">${labelText}</text>`;
   }).join('');
   const renderedNodes = nodes.map((node) => {
     const p = point(node.id);
