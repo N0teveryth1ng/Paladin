@@ -15,14 +15,27 @@ export const GROUP_PADDING = {
 } as const;
 
 export const EDGE_LABEL_HEIGHT = 40;
-export const EDGE_LABEL_MAX_WIDTH = 360;
+export const EDGE_LABEL_MAX_WIDTH = 440;
+export const ASSUMED_BADGE_WIDTH = 76;
 
-export function edgeLabelWidth(text: string): number {
-  return Math.min(EDGE_LABEL_MAX_WIDTH, Math.max(120, 28 + text.length * 7.5));
+export function edgeLabelWidth(text: string, assumed = false): number {
+  return Math.min(
+    EDGE_LABEL_MAX_WIDTH,
+    Math.max(120, 28 + text.length * 7.5 + (assumed ? ASSUMED_BADGE_WIDTH : 0)),
+  );
 }
 
-export function edgeLabelHeight(text: string, width = edgeLabelWidth(text)): number {
+export function edgeLabelHeight(
+  text: string,
+  width = edgeLabelWidth(text),
+  assumed = false,
+): number {
   const charsPerLine = Math.max(12, Math.floor((width - 28) / 7));
-  const lines = Math.max(1, Math.ceil(text.length / charsPerLine));
-  return Math.max(EDGE_LABEL_HEIGHT, 16 + lines * 18);
+  const firstLineChars = Math.max(
+    8,
+    charsPerLine - (assumed ? Math.ceil(ASSUMED_BADGE_WIDTH / 7) : 0),
+  );
+  const remainingChars = Math.max(0, text.length - firstLineChars);
+  const lines = 1 + Math.ceil(remainingChars / charsPerLine);
+  return Math.max(EDGE_LABEL_HEIGHT, 20 + lines * 18);
 }

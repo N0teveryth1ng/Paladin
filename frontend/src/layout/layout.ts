@@ -90,8 +90,12 @@ export async function layoutArchitecture(draft: ArchitectureDraft): Promise<Layo
       labels: [
         {
           text: displayLabel,
-          width: edgeLabelWidth(displayLabel),
-          height: edgeLabelHeight(displayLabel),
+          width: edgeLabelWidth(displayLabel, connection.assumed),
+          height: edgeLabelHeight(
+            displayLabel,
+            edgeLabelWidth(displayLabel, connection.assumed),
+            connection.assumed,
+          ),
         },
       ],
     };
@@ -288,8 +292,8 @@ function labelBoxFor(
   offsetX: number,
   offsetY: number,
 ): LayoutBox {
-  const width = edgeLabelWidth(displayLabel);
-  const height = edgeLabelHeight(displayLabel, width);
+  const width = edgeLabelWidth(displayLabel, connection.assumed);
+  const height = edgeLabelHeight(displayLabel, width, connection.assumed);
 
   if (elkLabel?.x !== undefined && elkLabel.y !== undefined) {
     return {
