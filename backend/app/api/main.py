@@ -20,16 +20,22 @@ from app.api.config import (
     load_freeze,
     startup_check,
 )
+from app.api.chat import respond_to_chat
+from app.api.generation import RATE_LIMIT_MESSAGE
 from app.api.models import (
+    ChatRequest,
+    ChatResponse,
     ErrorDetail,
     HealthResponse,
     RunAccepted,
     RunRequest,
     RunResult,
     RunStatus,
+    UpdateRequest,
 )
 from app.api.runs import Clock, RunInProgress, RunRegistry
 from app.eval import constants
+from app.llm.client import LLMTimeoutError, RateLimitedError, TruncatedError, TransportError
 from app.llm.system_prompt import SYSTEM_PROMPT_VERSION
 from app.validation.rules import load_rules
 
@@ -38,6 +44,7 @@ ALLOWED_ORIGINS = (
     "http://127.0.0.1:4173",
 )
 MAX_BODY_BYTES = 16 * 1024
+MAX_UPDATE_BODY_BYTES = 512 * 1024
 
 NO_MODEL_MESSAGE = "freeze.json has no selected_model; no fallback model is used"
 
@@ -152,13 +159,14 @@ def create_app(
     # including CORS preflights and error responses, gets no-store.
     @app.middleware("http")
     async def _security_middleware(request: Request, call_next):
+        body_limit = MAX_UPDATE_BODY_BYTES if request.url.path == "/api/updates" else MAX_BODY_BYTES
         declared = request.headers.get("content-length")
-        oversized = declared is not None and declared.isdigit() and int(declared) > MAX_BODY_BYTES
+        oversized = declared is not None and declared.isdigit() and int(declared) > body_limit
         if not oversized:
-            oversized = len(await request.body()) > MAX_BODY_BYTES
+            oversized = len(await request.body()) > body_limit
         if oversized:
             response: JSONResponse = _error_response(
-                400, "invalid_request", "request body exceeds 16 KB"
+                400, "invalid_request", f"request body exceeds {body_limit // 1024} KB"
             )
         else:
             response = await call_next(request)
@@ -219,6 +227,62 @@ def create_app(
             started_at=snapshot["started_at"],
             max_run_seconds=snapshot["max_run_seconds"],
         )
+
+    @app.post("/api/updates", status_code=202)
+    async def update_architecture(
+        request: Request,
+        client_factory_dependency: Callable[[], Any] = Depends(get_client_factory),
+    ):
+        if selected is None:
+            return _error_response(503, "no_model_selected", NO_MODEL_MESSAGE)
+        try:
+            payload = UpdateRequest.model_validate(json.loads(await request.body()))
+        except ValueError:
+            return _error_response(400, "invalid_request", "invalid architecture update request")
+        architecture = payload.current_architecture.model_dump(mode="json")
+        prompt = (
+            "Apply the user's request as a targeted update to the existing architecture below.\n"
+            "Do not redesign the system from scratch. Preserve existing component, connection, group, and requirement IDs and all unrelated design decisions.\n"
+            "Only change what the user asks for. If adding or removing an element, keep every reference valid and preserve the required schema fields.\n"
+            "Return the complete updated architecture object matching the supplied JSON Schema.\n\n"
+            "Existing architecture JSON:\n"
+            f"{json.dumps(architecture, ensure_ascii=False, separators=(',', ':'))}\n\n"
+            "User request:\n"
+            f"{payload.request}"
+        )
+        try:
+            snapshot = request.app.state.registry.create(prompt, client_factory_dependency)
+        except RunInProgress:
+            return _error_response(409, "run_in_progress", "a run is already in progress")
+        return RunAccepted(
+            run_id=snapshot["run_id"],
+            state="running",
+            started_at=snapshot["started_at"],
+            max_run_seconds=snapshot["max_run_seconds"],
+        )
+
+    @app.post("/api/chat", response_model=ChatResponse)
+    def chat(
+        payload: ChatRequest,
+        client_factory_dependency: Callable[[], Any] = Depends(get_client_factory),
+    ):
+        if selected is None:
+            return _error_response(503, "no_model_selected", NO_MODEL_MESSAGE)
+        try:
+            reply = respond_to_chat(payload, client_factory_dependency(), selected.config)
+            if not reply:
+                return _error_response(502, "empty_chat_reply", "The assistant returned an empty reply.")
+            return ChatResponse(reply=reply)
+        except RateLimitedError:
+            return _error_response(429, "rate_limited", RATE_LIMIT_MESSAGE)
+        except LLMTimeoutError:
+            return _error_response(504, "provider_timeout", "The assistant reply timed out. Your diagram was not changed.")
+        except TruncatedError:
+            return _error_response(502, "truncated", "The assistant reply was cut off. Your diagram was not changed.")
+        except TransportError:
+            return _error_response(502, "transport_error", "The assistant could not reach the configured model. Your diagram was not changed.")
+        except Exception:
+            return _error_response(500, "internal_error", "The assistant could not reply. Your diagram was not changed.")
 
     @app.get("/api/runs/{run_id}")
     def get_run(run_id: str, request: Request):

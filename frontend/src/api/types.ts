@@ -38,6 +38,20 @@ export interface CreateRunRequest {
   prompt: string;
 }
 
+export interface UpdateRunRequest {
+  request: string;
+  current_architecture: ArchitectureDraft;
+}
+
+export interface ChatTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ChatResponse {
+  reply: string;
+}
+
 export interface CreateRunResponse {
   run_id: string;
   state: RunState;

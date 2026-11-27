@@ -24,6 +24,7 @@ import { normalizeDraft } from './normalize';
 import {
   COMPONENT_HEIGHT,
   COMPONENT_WIDTH,
+  displayEdgeLabel,
   edgeLabelHeight,
   edgeLabelWidth,
 } from './nodeSizes';
@@ -37,6 +38,11 @@ import {
  */
 
 const elk = new ELK();
+
+const DENSE_GRAPH_OPTIONS = {
+  'elk.layered.layering.strategy': 'MIN_WIDTH',
+  'elk.layered.wrapping.strategy': 'MULTI_EDGE',
+};
 
 function byId<T extends { id: string }>(a: T, b: T): number {
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
@@ -82,7 +88,7 @@ export async function layoutArchitecture(draft: ArchitectureDraft): Promise<Layo
   };
 
   const edges: ElkExtendedEdge[] = normalized.connections.map((connection) => {
-    const displayLabel = connection.label;
+    const displayLabel = displayEdgeLabel(connection.label);
     return {
       id: connection.id,
       sources: [connection.from],
@@ -101,14 +107,25 @@ export async function layoutArchitecture(draft: ArchitectureDraft): Promise<Layo
     };
   });
 
-  const graph: ElkNode = {
+  const graph = (layoutOptions: Record<string, string>): ElkNode => ({
     id: 'root',
-    layoutOptions: { ...ELK_ROOT_OPTIONS },
+    layoutOptions,
     children: groupChildren(null),
-    edges,
-  };
+    edges: edges.map((edge) => ({
+      ...edge,
+      sources: [...edge.sources],
+      targets: [...edge.targets],
+      labels: edge.labels?.map((label) => ({ ...label })),
+    })),
+  });
 
-  const laid = await elk.layout(graph);
+  let laid = await elk.layout(graph({ ...ELK_ROOT_OPTIONS }));
+  if (normalized.components.length >= 40 && normalized.connections.length >= 80) {
+    const dense = await elk.layout(graph({ ...ELK_ROOT_OPTIONS, ...DENSE_GRAPH_OPTIONS }));
+    if (fitScore(dense.width ?? 0, dense.height ?? 0) > fitScore(laid.width ?? 0, laid.height ?? 0)) {
+      laid = dense;
+    }
+  }
 
   const nodes: LayoutNode[] = [];
   const walk = (
@@ -192,7 +209,7 @@ export async function layoutArchitecture(draft: ArchitectureDraft): Promise<Layo
         section === null
           ? null
           : section.map((point) => ({ x: point.x + offsetX, y: point.y + offsetY }));
-      const displayLabel = meta.label;
+      const displayLabel = displayEdgeLabel(meta.label);
 
       return [
         {
@@ -227,6 +244,10 @@ export async function layoutArchitecture(draft: ArchitectureDraft): Promise<Layo
     width: laid.width ?? 0,
     height: laid.height ?? 0,
   };
+}
+
+function fitScore(width: number, height: number): number {
+  return 1 / Math.max(width / 1600, height / 900, 1);
 }
 
 function sectionPoints(edge: ElkExtendedEdge): LayoutPoint[] | null {

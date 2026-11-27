@@ -19,8 +19,9 @@ Nothing outside this pipeline is in scope until it passes its evaluation.
 - **Typed model is the foundation.** The AI produces a graph of components, connections,
   groups and properties, never a picture. Validation, editing, diffing and explanation all
   read from it.
-- **The AI never decides coordinates.** Position, spacing, routing and overlap are
-  deterministic. No geometry or styling exists in the model.
+- **The AI never decides coordinates.** A deterministic first layout gives users a
+  clean starting point; they can then arrange the diagram directly on the canvas.
+  Coordinates stay out of the architecture model.
 - **Agent runs are atomic.** A run fully lands or rolls back.
 - **Validation is mostly deterministic.** Rule checks are code; judgment calls are flagged
   separately as critique.
@@ -31,10 +32,13 @@ Nothing outside this pipeline is in scope until it passes its evaluation.
 | Step | Scope | State |
 | --- | --- | --- |
 | 1 | Data model + JSON Schema export | done |
-| 2 | Evaluation set (15 prompts + rubrics) | not started |
-| 3 | Headless generation harness | not started |
-| 4 | Deterministic validators (networkx) | not started |
-| 5 | Layout and render (elkjs + React Flow) | not started |
+| 2 | Versioned evaluation sets | done; v1 frozen, v2 scored (failed), v3 frozen as a prompt pair |
+| 3 | Generation harness + local API | done; free Nemotron model selected for local generation |
+| 4 | Deterministic validators | done |
+| 5 | Deterministic first layout + interactive canvas | done |
+| 6 | Frontend/API integration | done |
+| 7 | Prompt v1.2 + evaluation v2 | done; v2 did not meet the registered pass bar |
+| 8 | Prompt v1.3 + evaluation v3 | v3 pair frozen, not scored; v1.3.1 candidate scratch check pending |
 
 ## Evaluation versions
 
@@ -43,7 +47,13 @@ with system prompt v1.1. `eval/eval_set_v2.json` (v2.0, SHA-256 `BD713F…E2770E
 is the new held-out set paired with the approved v1.2 draft
 `prompts/system/architecture-v1.2.md`. Both are chosen with
 `--eval-set-version` (default `1.0`); no file is swapped and no threshold
-changes. See `eval/README.md` for the protocol and hashes.
+changes. `eval/eval_set_v3.json` is also frozen as a versioned pair with prompt
+v1.3, but has not been scored. The v2 run failed one adversarial criterion;
+v3 has no result yet. See `eval/README.md` for the protocol and hashes.
+
+The local API currently selects `nemotron-3.5-super-vl`, the zero-priced
+OpenRouter free model, in `eval/freeze.json`. Provider credentials stay in the
+git-ignored `.env`; generation sends prompts to the configured provider.
 
 ## Layout
 

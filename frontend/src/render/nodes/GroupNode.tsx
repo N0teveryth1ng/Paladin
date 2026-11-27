@@ -26,6 +26,7 @@ export function GroupNode({ data }: NodeProps<GroupFlowNode>) {
       data-group-id={group.id}
       role="group"
       aria-label={`${group.name}, group, ${group.members.length} members`}
+      title="Double-click to focus this group"
       style={{
         width: node.width,
         height: node.height,

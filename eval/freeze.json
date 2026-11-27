@@ -29,6 +29,14 @@
     "1.3": {
       "path": "prompts/system/architecture-v1.3.md",
       "sha256": "A87CC5555D2BBF668FCDAB5EC112DDDFA2CC59D05AF8FA738BA5B29142E41CDB"
+    },
+    "1.3.1": {
+      "path": "prompts/system/architecture-v1.3.1.md",
+      "sha256": "B43D4E7E2B0D55CF8CBB8BA5E55462E819982CCAE4F0DD1720F8D28EA98B3870"
+    },
+    "1.3.2": {
+      "path": "prompts/system/architecture-v1.3.2.md",
+      "sha256": "DEA702353DDC4D8A74D381F077F2F7998F76897013D5C01E9BF98C78B2E49616"
     }
   },
   "thresholds": {
@@ -181,6 +189,7 @@
     }
   ],
   "reasoning_transform": null,
+  "selected_model": "nemotron-3.5-super-vl",
   "models": {
     "nemotron-3.5-super-vl": {
       "model_id": "nvidia/nemotron-3.5-super-vl:free",

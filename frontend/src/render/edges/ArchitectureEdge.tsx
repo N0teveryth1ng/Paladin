@@ -111,10 +111,10 @@ export function ArchitectureEdge(props: EdgeProps<ArchitectureFlowEdge>) {
             minHeight: Math.max(32, edge.labelBox.height),
             transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
           }}
-          title={`${edge.label}${edge.technology !== null ? ` · ${edge.technology}` : ''}`}
+          title={`${edge.label}${edge.technology !== null ? ` · ${edge.technology}` : ''} · Double-click to focus`}
         >
           {edge.assumed ? <span className="edge-assumed">Assumed</span> : null}
-          <span className="edge-label-text">{edge.label}</span>
+          <span className="edge-label-text">{edge.displayLabel}</span>
           {severity !== null ? (
             <span
               className={`severity-dot severity-${severity}`}

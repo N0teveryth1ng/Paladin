@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { ApiRequestError, createRun, getRun } from './api/client';
+import { ApiRequestError, createRun, getRun, sendChat } from './api/client';
+import type { ChatTurn } from './api/types';
 import type { GetRunResponse, RunErrorCode, RunResult } from './api/types';
 import {
   ELAPSED_TICK_MS,
@@ -16,8 +17,9 @@ import {
 import { parseMode, type LiveEntry, type ThemeName } from './app/modes';
 import type { ArchitectureDraft, Component, Connection, Group } from './types/architecture.generated';
 import { layoutArchitecture, type LayoutResult } from './layout/layout';
+import { displayEdgeLabel } from './layout/nodeSizes';
 import { Canvas } from './render/Canvas';
-import { downloadSvg, toMermaid } from './render/diagramExport';
+import { downloadPng, downloadSvg, toMermaid } from './render/diagramExport';
 import { ErrorBoundary } from './render/ErrorBoundary';
 import { PromptBox } from './render/PromptBox';
 import { RunStatus } from './render/RunStatus';
@@ -28,6 +30,21 @@ import { Toolbar } from './render/Toolbar';
 interface Committed {
   entry: LiveEntry;
   layout: LayoutResult;
+}
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+  status?: 'working' | 'complete' | 'failed';
+  activity?: 'chat' | 'design';
+}
+
+type RunIntent = 'create' | 'update';
+
+interface ActiveChatRun {
+  assistantId: string;
+  intent: RunIntent;
 }
 
 const EMPTY_LAYOUT: LayoutResult = {
@@ -118,7 +135,7 @@ function refreshLayoutData(layout: LayoutResult, draft: ArchitectureDraft): Layo
       return connection === undefined ? edge : {
         ...edge,
         label: connection.label,
-        displayLabel: connection.label,
+        displayLabel: displayEdgeLabel(connection.label),
         type: connection.type,
         technology: connection.technology ?? null,
         assumed: connection.assumed,
@@ -127,8 +144,69 @@ function refreshLayoutData(layout: LayoutResult, draft: ArchitectureDraft): Layo
   };
 }
 
+function startsNewDesignRequest(text: string): boolean {
+  const request = text.trim();
+  return /^(?:(?:please|can you|could you|help me|i want to)\s+)?(design|architect|model)\b/i.test(request)
+    || /^(?:(?:please|can you|could you|help me|i want to)\s+)?(create|build|draw|generate)\b.*\b(system|architecture|platform|application|app|website|product|backend|marketplace)\b/i.test(request)
+    || /\b(from scratch|new system|new architecture|whole system|entire system|start over)\b/i.test(request);
+}
+
+function isConversationalMessage(text: string): boolean {
+  const message = text.trim();
+  return /[?]\s*$/.test(message)
+    || /^(hi|hello|hey|hiya|heya|yo|sup|howdy|how are you|how r u|hru|thanks|thank you|thx|lol|lmao|nice|cool|okay|ok|great|awesome|good morning|good afternoon|good evening|what|why|who|when|where|explain|tell me|help me understand)\b/i.test(message);
+}
+
+function isArchitectureEditRequest(text: string): boolean {
+  const message = text.trim();
+  return /^(?:(?:please|can you|could you|can we|could we|let's|i want you to)\s+)*(add|insert|remove|delete|rename|connect|disconnect|move|reposition|resize|align|group|ungroup|relabel|simplify|adjust|change|update|replace|modify|switch|set)\b/i.test(message)
+    || /^(?:(?:please|can you|could you|can we|could we|let's|i want you to)\s+)*(?:make|set|turn|change|update|replace|modify|adjust|simplify|space)\b.{0,80}\b(?:gateway|service|worker|database|cache|queue|component|connection|arrow|label|group|diagram|canvas|layout|spacing|async|sync|resilient|available|scalable|secure|faster|slower)\b/i.test(message);
+}
+
+function isArchitectureDescription(text: string): boolean {
+  return /\b(system|architecture|platform|backend|website|web app|application|rate.?limiter|url shortener|ride.?sharing|e.?commerce|video streaming|payment system|chat app)\b/i.test(text);
+}
+
+function architectureContext(draft: ArchitectureDraft): string {
+  const componentNames = new Map(draft.components.map((component) => [component.id, component.name]));
+  const context = {
+    title: draft.title,
+    summary: draft.summary,
+    components: draft.components.slice(0, 24).map((component) => ({
+      name: component.name,
+      type: component.type,
+      technology: component.technology,
+      description: component.description.slice(0, 120),
+    })),
+    connections: (draft.connections ?? []).slice(0, 32).map((connection) => ({
+      from: componentNames.get(connection.from) ?? connection.from,
+      to: componentNames.get(connection.to) ?? connection.to,
+      label: connection.label,
+      type: connection.type,
+    })),
+    omitted_components: Math.max(0, draft.components.length - 24),
+    omitted_connections: Math.max(0, (draft.connections?.length ?? 0) - 32),
+  };
+  return JSON.stringify(context).slice(0, 3800);
+}
+
+function buildUpdatePrompt(draft: ArchitectureDraft, request: string): string {
+  return [
+    'Apply the user request as a targeted update to the existing architecture below.',
+    'Do not redesign the system from scratch. Preserve existing component, connection, group, and requirement IDs and all unrelated design decisions.',
+    'Only change what the user asks for. If adding or removing an element, keep every reference valid and preserve the required schema fields.',
+    'Return the complete updated architecture object matching the supplied JSON Schema.',
+    '',
+    'Existing architecture JSON:',
+    JSON.stringify(draft),
+    '',
+    'User request:',
+    request,
+  ].join('\n');
+}
+
 export default function App() {
-  const initial = useMemo(() => parseMode(window.location.search, true), []);
+  const initial = useMemo(() => parseMode(window.location.search, false), []);
   const [theme, setTheme] = useState<ThemeName>(initial.theme);
   const [selection, setSelection] = useState<Selection>(null);
   const [committed, setCommitted] = useState<Committed>(blankDocument);
@@ -138,6 +216,9 @@ export default function App() {
   const [fitNonce, setFitNonce] = useState(0);
   const [overviewNonce, setOverviewNonce] = useState(0);
   const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth <= 760);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatBusy, setChatBusy] = useState(false);
 
   const pendingRef = useRef<PendingRun | null>(null);
   const runIdRef = useRef<string>('');
@@ -146,6 +227,9 @@ export default function App() {
   const generationRef = useRef(0);
   const documentRequestRef = useRef(0);
   const pollRef = useRef<() => Promise<void>>(async () => {});
+  const chatSequenceRef = useRef(0);
+  const activeChatRunRef = useRef<ActiveChatRun | null>(null);
+  const chatMessagesRef = useRef<HTMLDivElement>(null);
 
   const locked = pending !== null;
   const entry = committed.entry;
@@ -154,9 +238,20 @@ export default function App() {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
+  useEffect(() => {
+    const container = chatMessagesRef.current;
+    if (container !== null) container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+  }, [chatMessages]);
+
   const updatePending = useCallback((next: PendingRun | null): void => {
     pendingRef.current = next;
     setPending(next);
+  }, []);
+
+  const updateChatMessage = useCallback((id: string, patch: Partial<ChatMessage>): void => {
+    setChatMessages((messages) => messages.map((message) =>
+      message.id === id ? { ...message, ...patch } : message,
+    ));
   }, []);
 
   const stopTimers = useCallback((): void => {
@@ -178,8 +273,16 @@ export default function App() {
   const failRun = useCallback((code: RunErrorCode, message?: string): void => {
     generationRef.current += 1;
     setRunError({ code, message: message ?? errorMessage(code) });
+    const activeChatRun = activeChatRunRef.current;
+    if (activeChatRun !== null) {
+      updateChatMessage(activeChatRun.assistantId, {
+        status: 'failed',
+        text: 'I couldn’t complete that change. The current diagram is unchanged.',
+      });
+      activeChatRunRef.current = null;
+    }
     finishRun();
-  }, [finishRun]);
+  }, [finishRun, updateChatMessage]);
 
   const schedulePoll = useCallback((): void => {
     if (pollTimerRef.current !== null) window.clearTimeout(pollTimerRef.current);
@@ -228,12 +331,22 @@ export default function App() {
       setCommitted(prepareCommit(payload, layout));
       setSelection(null);
       setFitNonce((value) => value + 1);
+      const activeChatRun = activeChatRunRef.current;
+      if (activeChatRun !== null) {
+        updateChatMessage(activeChatRun.assistantId, {
+          status: 'complete',
+          text: activeChatRun.intent === 'update'
+            ? 'Done. I updated the existing diagram on the canvas.'
+            : 'Done. Your system design is on the canvas.',
+        });
+        activeChatRunRef.current = null;
+      }
       generationRef.current += 1;
       finishRun();
     } catch {
       if (generationRef.current === mine) failRun('internal_error', LAYOUT_FAILURE_MESSAGE);
     }
-  }, [failRun, finishRun, schedulePoll, updatePending]);
+  }, [failRun, finishRun, schedulePoll, updateChatMessage, updatePending]);
   pollRef.current = poll;
 
   const submit = useCallback(async (prompt: string): Promise<void> => {
@@ -386,25 +499,114 @@ export default function App() {
     setRunError(null);
     setLayoutError(null);
     setFitNonce((value) => value + 1);
+    setChatMessages([]);
+    activeChatRunRef.current = null;
   }, []);
+
+  const sendChatMessage = useCallback((text: string): void => {
+    const userMessage: ChatMessage = {
+      id: `chat-${chatSequenceRef.current++}`,
+      role: 'user',
+      text,
+    };
+    setRunError(null);
+    const hasArchitecture = entry.draft.components.length > 0;
+    const isNewDesign = startsNewDesignRequest(text)
+      || (!isConversationalMessage(text) && isArchitectureDescription(text));
+    const isUpdate = hasArchitecture && !isNewDesign && isArchitectureEditRequest(text);
+    const isDesign = isNewDesign || isUpdate || (!hasArchitecture && !isConversationalMessage(text));
+    const assistantId = `chat-${chatSequenceRef.current++}`;
+    const assistantMessage: ChatMessage = {
+      id: assistantId,
+      role: 'assistant',
+      text: isDesign ? isUpdate ? 'I’m updating the current diagram…' : 'I’m designing the system…' : '',
+      status: 'working',
+      activity: isDesign ? 'design' : 'chat',
+    };
+    setChatMessages((messages) => [...messages, userMessage, assistantMessage]);
+    if (isDesign) {
+      const intent: RunIntent = isUpdate ? 'update' : 'create';
+      activeChatRunRef.current = { assistantId, intent };
+      void submit(intent === 'update' ? buildUpdatePrompt(entry.draft, text) : text);
+      return;
+    }
+
+    const history: ChatTurn[] = [...chatMessages, userMessage]
+      .slice(-6)
+      .map((message) => ({ role: message.role, content: message.text.slice(0, 1200) }));
+    setChatBusy(true);
+    void sendChat(history, hasArchitecture ? architectureContext(entry.draft) : undefined)
+      .then(({ reply }) => updateChatMessage(assistantId, { text: reply, status: 'complete' }))
+      .catch((cause: unknown) => updateChatMessage(assistantId, {
+        text: cause instanceof ApiRequestError
+          ? `I couldn’t get a reply: ${cause.message}`
+          : 'I couldn’t connect to the chat service. Your diagram has not changed.',
+        status: 'failed',
+      }))
+      .finally(() => setChatBusy(false));
+  }, [chatMessages, entry.draft, submit, updateChatMessage]);
 
   useEffect(() => () => stopTimers(), [stopTimers]);
 
   return (
     <div className="app" data-theme={theme} data-fixture={entry.name}>
-      <Toolbar
-        theme={theme}
-        locked={locked}
-        onAddComponent={addComponent}
-        onNew={resetDocument}
-        onTheme={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
-        onFit={() => setOverviewNonce((value) => value + 1)}
-        onDownload={() => downloadSvg(committed.layout, theme)}
-        onCopy={() => navigator.clipboard.writeText(toMermaid(committed.layout))}
-      />
-
       <div className="workspace">
-        <main className="canvas-column">
+        <aside className={`app-sidebar${sidebarCollapsed ? ' is-collapsed' : ''}`} data-testid="app-sidebar">
+          <Toolbar
+            theme={theme}
+            locked={locked}
+            collapsed={sidebarCollapsed}
+            onToggleSidebar={() => setSidebarCollapsed((value) => !value)}
+            onAddComponent={addComponent}
+            onNew={resetDocument}
+            onTheme={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
+            onFit={() => setOverviewNonce((value) => value + 1)}
+            onDownload={() => downloadSvg(committed.layout, theme)}
+            onDownloadPng={() => downloadPng(committed.layout, theme)}
+            onCopy={() => navigator.clipboard.writeText(toMermaid(committed.layout))}
+          />
+          {!sidebarCollapsed ? (
+            <section id="architecture-chat" className="chat-sidebar" aria-label="Architecture chat">
+              <div className="chat-heading">
+                <h1>{committed.layout.title}</h1>
+                <p>{chatBusy ? 'Thinking…' : locked ? 'Working on your design' : chatMessages.length === 0 ? 'Architecture workspace' : 'Conversation'}</p>
+              </div>
+              <div ref={chatMessagesRef} className="chat-messages" aria-live="polite">
+                {chatMessages.length === 0 ? (
+                  <div className="chat-welcome">
+                    <span className="assistant-mark" aria-hidden="true">P</span>
+                    <p className="chat-message chat-message-assistant">Describe a system to design. I’ll map its components and connections onto the canvas.</p>
+                  </div>
+                ) : (
+                  chatMessages.map((message) => message.role === 'user' ? (
+                    <div key={message.id} className="chat-message chat-message-user">{message.text}</div>
+                  ) : (
+                    <div key={message.id} className="chat-response">
+                      <span className="assistant-mark" aria-hidden="true">P</span>
+                      <div className="chat-message chat-message-assistant">
+                        {message.text}
+                        {message.status === 'working' && message.activity === 'design' ? <RunStatus run={pending} error={null} /> : null}
+                        {message.status === 'working' && message.activity === 'chat' ? <span className="chat-thinking"><i aria-hidden="true" />Thinking</span> : null}
+                        {message.status === 'failed' && runError !== null ? <RunStatus run={null} error={runError} /> : null}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <PromptBox
+                disabled={locked || chatBusy}
+                onSubmit={sendChatMessage}
+              />
+            </section>
+          ) : null}
+        </aside>
+
+        <main className="canvas-column" data-theme={theme}>
+          <header className="canvas-header">
+            <div className="canvas-header-copy">
+              <span className="canvas-header-kicker">Canvas</span>
+            </div>
+          </header>
           <div className="canvas-stage">
             {layoutError !== null ? <div className="canvas-toast" role="alert">{layoutError}</div> : null}
             <ErrorBoundary>
@@ -420,6 +622,7 @@ export default function App() {
                 overviewNonce={overviewNonce}
                 fixtureName="canvas"
                 positions={positions}
+                selection={selection}
                 onSelect={(kind, id) => setSelection({ kind, id })}
                 onClearSelection={() => setSelection(null)}
                 onPositionChange={updatePosition}
@@ -429,19 +632,16 @@ export default function App() {
               />
             </ErrorBoundary>
           </div>
-          <PromptBox disabled={locked} onSubmit={(prompt) => void submit(prompt)} />
-          <RunStatus run={pending} error={runError} />
+          <SidePanel
+            entry={entry}
+            selection={selection}
+            onChangeComponent={updateComponent}
+            onChangeConnection={updateConnection}
+            onChangeGroup={updateGroup}
+            onClearSelection={() => setSelection(null)}
+            onDelete={() => selection !== null && deleteSelection(selection)}
+          />
         </main>
-
-        <SidePanel
-          entry={entry}
-          selection={selection}
-          onChangeComponent={updateComponent}
-          onChangeConnection={updateConnection}
-          onChangeGroup={updateGroup}
-          onClearSelection={() => setSelection(null)}
-          onDelete={() => selection !== null && deleteSelection(selection)}
-        />
       </div>
     </div>
   );

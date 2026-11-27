@@ -108,6 +108,7 @@ describe('prompt and live run', () => {
     expect(JSON.parse(String(calls[0].init?.body)).prompt).toBe(
       'Design a URL shortener with analytics.',
     );
+    expect(screen.getByTestId('prompt-input')).toHaveValue('');
     expect(screen.getByTestId('prompt-input')).toBeDisabled();
     expect(screen.getByTestId('fixture-select')).toBeDisabled();
     expect(screen.getByTestId('fit-button')).toBeDisabled();

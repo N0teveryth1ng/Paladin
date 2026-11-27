@@ -144,6 +144,26 @@ The default system prompt remains v1.1 (`architecture-v1.md`); this entry does n
   under the single-shot protocol.
 - Scratch evidence (2026-11-26, `nvidia/nemotron-3.5-super-vl:free`, `json_schema`, system prompt v1.3, fixed max_tokens 32768, call cap 10, 11 calls total: 6 official + 5 capture-only draft capture): 4/5 schema-valid on first attempt in official run (sc_01-03,05); sc_04 `transport_error` on retry after a schema-invalid/stop first attempt, no usable draft. No 429. Clean prompts sc_01/sc_02/sc_03 had 0 flags and included service + durable store. sc_05 (vague) raised 1 underspecified warning (not blocking), included service + durable store; assumptions array was empty (0) despite vague/unstated quantities/choices. sc_01/sc_02/sc_03 assumptions arrays empty. No structural regression observed on captured drafts; v1.3 did not reliably induce assumption-array entries for sc_05's unstated quantities/choices. No v1.3 wording or eval file changed.
 
+## Proposed v1.3.1 — 26 November 2026 (candidate, not frozen)
+
+Status: **proposed candidate**. Prompt file: `prompts/system/architecture-v1.3.1.md`.
+SHA-256: `B43D4E7E2B0D55CF8CBB8BA5E55462E819982CCAE4F0DD1720F8D28EA98B3870`.
+The active default system prompt remains v1.1; v1.3 remains the frozen versioned pair with eval set v3.0. This entry does not change the active hash or the frozen v3 pair.
+
+- Derived from: the **v1.3 scratch check** on `sc_05` (vague prompt) where an `underspecified` warning was raised but the top-level `assumptions` array was empty. **Scratch prompts are not held out**; this is scratch evidence only.
+- **Disclosed late change relative to v3 authoring:** this candidate is proposed after v3.0/v1.3 versioned freeze and before any v3 scored run. It is disclosed here for product-owner review; no eval file was changed.
+- Change: adds one generic paragraph in `## Assumptions and traceability`: "Every flag of kind underspecified must be accompanied by at least one entry in the top-level assumptions array that states the value or choice you assumed. Do not leave the assumptions array empty when you raise such a flag." No other wording changed. Generic wording; no eval id, domain, or v2/v3 artifact named.
+- Before/after scratch result: pending product-owner approval and a v1.3.1 scratch check.
+
+## Proposed v1.3.2 — 27 November 2026 (candidate, not active)
+
+Status: **candidate for product review**. Prompt file: `prompts/system/architecture-v1.3.2.md`.
+SHA-256: `DEA702353DDC4D8A74D381F077F2F7998F76897013D5C01E9BF98C78B2E49616`.
+The active default system prompt remains v1.1; v1.3 remains the frozen versioned pair with eval set v3.0. This candidate is registered for reproducibility and does not change the active prompt or frozen evaluation pair.
+
+- Change: adds generic rules for concise component names, meaningful groups and short action labels; protocols belong in the technology field. The rules contain no evaluation prompts or domain-specific examples.
+- Before/after scratch result: pending; no model call or evaluation run was made.
+
 <!--
 Format for a calibration revision:
 
