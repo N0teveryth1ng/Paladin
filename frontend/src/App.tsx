@@ -136,6 +136,7 @@ export default function App() {
   const [runError, setRunError] = useState<RunErrorView | null>(null);
   const [layoutError, setLayoutError] = useState<string | null>(null);
   const [fitNonce, setFitNonce] = useState(0);
+  const [overviewNonce, setOverviewNonce] = useState(0);
   const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
 
   const pendingRef = useRef<PendingRun | null>(null);
@@ -397,7 +398,7 @@ export default function App() {
         onAddComponent={addComponent}
         onNew={resetDocument}
         onTheme={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
-        onFit={() => setFitNonce((value) => value + 1)}
+        onFit={() => setOverviewNonce((value) => value + 1)}
         onDownload={() => downloadSvg(committed.layout, theme)}
         onCopy={() => navigator.clipboard.writeText(toMermaid(committed.layout))}
       />
@@ -416,6 +417,7 @@ export default function App() {
                 focus={initial.focus}
                 zoom={initial.zoom}
                 fitNonce={fitNonce}
+                overviewNonce={overviewNonce}
                 fixtureName="canvas"
                 positions={positions}
                 onSelect={(kind, id) => setSelection({ kind, id })}

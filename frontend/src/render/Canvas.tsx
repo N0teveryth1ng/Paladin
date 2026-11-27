@@ -41,6 +41,7 @@ export interface CanvasProps {
   focus: string | null;
   zoom: number | null;
   fitNonce: number;
+  overviewNonce?: number;
   fixtureName: string;
   positions?: Record<string, { x: number; y: number }>;
   onSelect: (kind: SelectionKind, id: string) => void;
@@ -67,6 +68,7 @@ function CanvasInner({
   focus,
   zoom,
   fitNonce,
+  overviewNonce = 0,
   fixtureName,
   positions = {},
   onSelect,
@@ -186,6 +188,13 @@ function CanvasInner({
     return result.nodes.find((node) => node.id === focus) ?? null;
   }, [focus, result]);
 
+  const primaryGroup = useMemo<LayoutNode | null>(() => {
+    return result.nodes
+      .filter((node) => node.kind === 'group' && (node.group?.members.length ?? 0) > 0)
+      .sort((a, b) => (b.group?.members.length ?? 0) - (a.group?.members.length ?? 0))[0] ?? null;
+  }, [result]);
+  const layoutCenter = useMemo(() => ({ x: result.width / 2, y: result.height / 2 }), [result.width, result.height]);
+
   return (
     <div
       className="canvas-wrap"
@@ -259,6 +268,10 @@ function CanvasInner({
           focusBox={focusBox}
           zoom={zoom}
           fitNonce={fitNonce}
+          overviewNonce={overviewNonce}
+          primaryGroup={primaryGroup}
+          layoutCenter={layoutCenter}
+          nodeCount={result.nodes.length}
           onReady={handleReady}
           onViewport={setViewport}
         />
@@ -272,6 +285,10 @@ function ViewController({
   focusBox,
   zoom,
   fitNonce,
+  overviewNonce,
+  primaryGroup,
+  layoutCenter,
+  nodeCount,
   onReady,
   onViewport,
 }: {
@@ -279,17 +296,25 @@ function ViewController({
   focusBox: LayoutNode | null;
   zoom: number | null;
   fitNonce: number;
+  overviewNonce: number;
+  primaryGroup: LayoutNode | null;
+  layoutCenter: { x: number; y: number };
+  nodeCount: number;
   onReady: () => void;
   onViewport: (viewport: { x: number; y: number; zoom: number }) => void;
 }) {
   const { fitView, setCenter, getViewport } = useReactFlow();
+  const previousOverviewNonce = useRef(overviewNonce);
 
   useEffect(() => {
     if (!initialised) {
       return;
     }
 
-    const apply = (): void => {
+    const showOverview = previousOverviewNonce.current !== overviewNonce;
+    previousOverviewNonce.current = overviewNonce;
+
+    const apply = async (): Promise<void> => {
       if (focusBox !== null && zoom !== null) {
         setCenter(
           focusBox.absoluteX + focusBox.width / 2,
@@ -297,7 +322,19 @@ function ViewController({
           { zoom, duration: 0 },
         );
       } else {
-        fitView({ padding: 0.12, duration: 0, maxZoom: 1.15 });
+        await fitView({ padding: 0.12, duration: 0, maxZoom: 1.15 });
+        if (!showOverview && getViewport().zoom < 0.52 && nodeCount > 12) {
+          if (primaryGroup !== null) {
+            await fitView({
+              nodes: [{ id: primaryGroup.id }],
+              padding: 0.16,
+              duration: 0,
+              maxZoom: 0.85,
+            });
+          } else {
+            setCenter(layoutCenter.x, layoutCenter.y, { zoom: 0.58, duration: 0 });
+          }
+        }
       }
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -314,6 +351,10 @@ function ViewController({
     focusBox,
     zoom,
     fitNonce,
+    overviewNonce,
+    primaryGroup,
+    layoutCenter,
+    nodeCount,
     fitView,
     setCenter,
     getViewport,
