@@ -11,6 +11,7 @@ export interface ComponentNodeData extends Record<string, unknown> {
   node: LayoutNode;
   issues: DisplayIssue[];
   theme: 'light' | 'dark';
+  connectedToSelection?: boolean;
 }
 
 export type ComponentFlowNode = Node<ComponentNodeData, 'component'>;
@@ -27,7 +28,7 @@ export function ComponentNode({ data }: NodeProps<ComponentFlowNode>) {
 
   return (
     <div
-      className={`component-node${component.assumed ? ' assumed' : ''}`}
+      className={`component-node${component.assumed ? ' assumed' : ''}${data.connectedToSelection ? ' connected-to-selection' : ''}`}
       data-testid="component-node"
       data-component-id={component.id}
       data-type={component.type}

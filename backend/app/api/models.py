@@ -6,15 +6,48 @@ system prompt. Only the health response exposes the selected model name.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from app.model.architecture import ArchitectureDraft
 
 
 class RunRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     prompt: str = Field(min_length=1)
+
+
+class UpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    request: str = Field(min_length=1, max_length=2000)
+    current_architecture: ArchitectureDraft
+
+
+class ChatTurn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=1600)
+
+
+class ChatRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    messages: list[ChatTurn] = Field(min_length=1, max_length=8)
+    architecture_context: str | None = Field(default=None, max_length=4000)
+
+    @model_validator(mode="after")
+    def _last_turn_is_user(self) -> "ChatRequest":
+        if self.messages[-1].role != "user":
+            raise ValueError("the last chat message must be from the user")
+        return self
+
+
+class ChatResponse(BaseModel):
+    reply: str = Field(min_length=1, max_length=4000)
 
 
 class IssueResponse(BaseModel):

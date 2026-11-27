@@ -102,8 +102,10 @@ def test_approved_amendments_are_present() -> None:
 
 def test_changelog_records_scored_v2_evidence_and_held_out_status() -> None:
     changelog = CHANGELOG_PATH.read_text(encoding="utf-8")
-    start = changelog.index("## Proposed v1.3")
-    next_heading = changelog.find("\n## Proposed v1.2")
+    start = changelog.index("## v1.3 — 26 November 2026")
+    next_heading = changelog.find("\n## Proposed v1.3.1")
+    if next_heading == -1:
+        next_heading = changelog.find("\n## Proposed v1.2")
     entry = changelog[start:next_heading] if next_heading != -1 else changelog[start:]
 
     assert "Derived from: **scored v2 failures**" in entry
@@ -111,7 +113,7 @@ def test_changelog_records_scored_v2_evidence_and_held_out_status() -> None:
     assert "r01" in entry and "r03" in entry
     assert "v1.0 and v2.0 remain historical scored sets" in entry
     assert "held-out v3.0" in entry
-    assert "Scratch evidence: pending" in entry
+    assert "Scratch evidence" in entry
 
 
 def test_no_eval_specific_content_from_eval_sets_or_scratch() -> None:

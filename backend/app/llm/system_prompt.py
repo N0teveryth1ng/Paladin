@@ -13,10 +13,14 @@ SYSTEM_PROMPT_VERSION = "1.1"
 #: active v1.1 path, version and digest above are deliberately unchanged.
 SYSTEM_PROMPT_V12_PATH = REPO_ROOT / "prompts" / "system" / "architecture-v1.2.md"
 SYSTEM_PROMPT_V13_PATH = REPO_ROOT / "prompts" / "system" / "architecture-v1.3.md"
+SYSTEM_PROMPT_V131_PATH = REPO_ROOT / "prompts" / "system" / "architecture-v1.3.1.md"
+SYSTEM_PROMPT_V132_PATH = REPO_ROOT / "prompts" / "system" / "architecture-v1.3.2.md"
 SYSTEM_PROMPT_VERSIONS: dict[str, Path] = {
     "1.1": SYSTEM_PROMPT_PATH,
     "1.2": SYSTEM_PROMPT_V12_PATH,
     "1.3": SYSTEM_PROMPT_V13_PATH,
+    "1.3.1": SYSTEM_PROMPT_V131_PATH,
+    "1.3.2": SYSTEM_PROMPT_V132_PATH,
 }
 
 

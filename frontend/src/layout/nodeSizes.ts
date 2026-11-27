@@ -17,6 +17,22 @@ export const GROUP_PADDING = {
 export const EDGE_LABEL_HEIGHT = 40;
 export const EDGE_LABEL_MAX_WIDTH = 440;
 export const ASSUMED_BADGE_WIDTH = 76;
+export const EDGE_LABEL_MAX_CHARS = 48;
+
+/** Keep diagram labels scannable while the original wording remains available on selection. */
+export function displayEdgeLabel(label: string): string {
+  const singleLine = label.replace(/\s+/g, ' ').trim();
+  if (singleLine.length <= EDGE_LABEL_MAX_CHARS) return singleLine;
+
+  const sentenceEnd = singleLine.indexOf('. ');
+  if (sentenceEnd > 0 && sentenceEnd < EDGE_LABEL_MAX_CHARS) {
+    return singleLine.slice(0, sentenceEnd + 1);
+  }
+
+  const boundary = singleLine.lastIndexOf(' ', EDGE_LABEL_MAX_CHARS);
+  const end = boundary >= EDGE_LABEL_MAX_CHARS / 2 ? boundary : EDGE_LABEL_MAX_CHARS;
+  return `${singleLine.slice(0, end).trimEnd()}…`;
+}
 
 export function edgeLabelWidth(text: string, assumed = false): number {
   return Math.min(

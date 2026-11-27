@@ -9,6 +9,7 @@ import type { LayoutResult } from '../layout/layoutTypes';
 import { Canvas } from '../render/Canvas';
 import { SidePanel } from '../render/SidePanel';
 import { Toolbar } from '../render/Toolbar';
+import type { Selection } from '../render/selection';
 
 afterEach(cleanup);
 
@@ -18,12 +19,14 @@ function Harness({
   locked = false,
   focus = null,
   zoom = null,
+  selection = null,
 }: {
   entry: FixtureEntry;
   theme?: ThemeName;
   locked?: boolean;
   focus?: string | null;
   zoom?: number | null;
+  selection?: Selection;
 }) {
   const [result, setResult] = useState<LayoutResult | null>(null);
   const [fitNonce, setFitNonce] = useState(0);
@@ -65,6 +68,7 @@ function Harness({
           zoom={zoom}
           fitNonce={fitNonce}
           fixtureName={entry.name}
+          selection={selection}
           onSelect={() => {}}
           onClearSelection={() => {}}
           onReady={() => {}}
@@ -149,6 +153,21 @@ describe('render', () => {
     expect(document.querySelectorAll('.edge-label')).toHaveLength(
       entry.draft.connections?.length ?? 0,
     );
+  });
+
+  it('highlights both endpoints when a connection is selected', async () => {
+    const entry = FIXTURES.full;
+    const connection = entry.draft.connections?.[0];
+    expect(connection).toBeDefined();
+    if (!connection) return;
+
+    render(<Harness entry={entry} selection={{ kind: 'edge', id: connection.id }} />);
+    await waitReady();
+
+    expect(document.querySelector(`[data-component-id="${connection.from}"]`)
+      ?.classList.contains('connected-to-selection')).toBe(true);
+    expect(document.querySelector(`[data-component-id="${connection.to}"]`)
+      ?.classList.contains('connected-to-selection')).toBe(true);
   });
 
   it('marks assumed components, groups and connections', async () => {

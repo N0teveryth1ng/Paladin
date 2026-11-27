@@ -120,6 +120,27 @@ describe('layoutArchitecture', () => {
     }
   });
 
+  it('keeps all routed endpoints on their nodes and bounds the dense overview width', async () => {
+    for (const name of ['small_architecture', 'full_coverage_architecture', 'large_architecture']) {
+      const { result } = await layout(name);
+      const byId = new Map(result.nodes.map((node) => [node.id, node]));
+      for (const edge of result.edges) {
+        expect(edge.section).not.toBeNull();
+        const source = byId.get(edge.from);
+        const target = byId.get(edge.to);
+        expect(source).toBeDefined();
+        expect(target).toBeDefined();
+        if (edge.section && source && target) {
+          expect(onNodeBoundary(edge.section[0], source)).toBe(true);
+          expect(onNodeBoundary(edge.section[edge.section.length - 1], target)).toBe(true);
+        }
+      }
+      if (name === 'large_architecture') {
+        expect(result.width / result.height).toBeLessThan(20);
+      }
+    }
+  });
+
   it('keeps every edge endpoint valid and every normalised connection exactly once', async () => {
     for (const name of [
       'small_architecture',
@@ -243,3 +264,16 @@ describe('layoutArchitecture', () => {
     }
   });
 });
+
+function onNodeBoundary(point: { x: number; y: number }, node: LayoutNode): boolean {
+  const tolerance = 6;
+  const inside = point.x >= node.absoluteX - tolerance
+    && point.x <= node.absoluteX + node.width + tolerance
+    && point.y >= node.absoluteY - tolerance
+    && point.y <= node.absoluteY + node.height + tolerance;
+  const onSide = Math.abs(point.x - node.absoluteX) <= tolerance
+    || Math.abs(point.x - (node.absoluteX + node.width)) <= tolerance
+    || Math.abs(point.y - node.absoluteY) <= tolerance
+    || Math.abs(point.y - (node.absoluteY + node.height)) <= tolerance;
+  return inside && onSide;
+}

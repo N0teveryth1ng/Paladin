@@ -6,7 +6,8 @@
  * transport failures and missing runs to their own error state.
  */
 
-import type { ApiErrorPayload, CreateRunResponse, GetRunResponse } from './types';
+import type { ApiErrorPayload, ChatResponse, ChatTurn, CreateRunResponse, GetRunResponse, UpdateRunRequest } from './types';
+import type { ArchitectureDraft } from '../types/architecture.generated';
 
 const LOCAL_BACKEND_ORIGIN = 'http://127.0.0.1:8000';
 const RUNS_PATH = '/api/runs';
@@ -55,6 +56,39 @@ export async function createRun(prompt: string): Promise<CreateRunResponse> {
     throw await readError(response);
   }
   return (await response.json()) as CreateRunResponse;
+}
+
+export async function createUpdateRun(
+  request: string,
+  currentArchitecture: ArchitectureDraft,
+): Promise<CreateRunResponse> {
+  const body: UpdateRunRequest = {
+    request,
+    current_architecture: currentArchitecture,
+  };
+  const response = await fetch(`${LOCAL_BACKEND_ORIGIN}/api/updates`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw await readError(response);
+  return (await response.json()) as CreateRunResponse;
+}
+
+export async function sendChat(
+  messages: ChatTurn[],
+  architectureContext?: string,
+): Promise<ChatResponse> {
+  const response = await fetch(`${LOCAL_BACKEND_ORIGIN}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messages,
+      ...(architectureContext ? { architecture_context: architectureContext } : {}),
+    }),
+  });
+  if (!response.ok) throw await readError(response);
+  return (await response.json()) as ChatResponse;
 }
 
 export async function getRun(runId: string): Promise<GetRunResponse> {

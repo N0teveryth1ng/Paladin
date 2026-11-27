@@ -23,6 +23,7 @@ import type { Selection } from './selection';
 import { ArchitectureEdge, type ArchitectureFlowEdge } from './edges/ArchitectureEdge';
 
 export type SelectionKind = 'component' | 'group' | 'edge';
+const EMPTY_POSITIONS: Record<string, { x: number; y: number }> = {};
 
 const nodeTypes = {
   component: ComponentNode,
@@ -44,6 +45,7 @@ export interface CanvasProps {
   overviewNonce?: number;
   fixtureName: string;
   positions?: Record<string, { x: number; y: number }>;
+  selection?: Selection;
   onSelect: (kind: SelectionKind, id: string) => void;
   onClearSelection: () => void;
   onPositionChange?: (id: string, position: { x: number; y: number }) => void;
@@ -70,7 +72,8 @@ function CanvasInner({
   fitNonce,
   overviewNonce = 0,
   fixtureName,
-  positions = {},
+  positions = EMPTY_POSITIONS,
+  selection = null,
   onSelect,
   onClearSelection,
   onPositionChange = () => {},
@@ -81,7 +84,7 @@ function CanvasInner({
   const [initialised, setInitialised] = useState(false);
   const [fitted, setFitted] = useState(false);
   const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
-  const { getViewport, zoomTo } = useReactFlow();
+  const { getViewport, zoomTo, fitView, setCenter } = useReactFlow();
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
 
@@ -92,6 +95,22 @@ function CanvasInner({
     const next = Math.max(0.08, Math.min(2.5, current * Math.exp(-event.deltaY * 0.0012)));
     void zoomTo(next, { duration: 0 });
   }, [getViewport, locked, zoomTo]);
+
+  const handleViewportMoveEnd = useCallback((
+    _event: unknown,
+    nextViewport: { x: number; y: number; zoom: number },
+  ): void => {
+    setViewport((current) => current.x === nextViewport.x
+      && current.y === nextViewport.y
+      && current.zoom === nextViewport.zoom
+      ? current
+      : nextViewport);
+  }, []);
+
+  const selectedEdge = selection?.kind === 'edge'
+    ? result.edges.find((edge) => edge.id === selection.id)
+    : undefined;
+  const selectedEndpointIds = new Set(selectedEdge ? [selectedEdge.from, selectedEdge.to] : []);
 
   const initialNodes = useMemo<Node[]>(
     () =>
@@ -107,6 +126,7 @@ function CanvasInner({
                   node: layoutNode,
                   issues: issuesFor(issues, layoutNode.id),
                   theme,
+                  connectedToSelection: selectedEndpointIds.has(layoutNode.id),
                 }
               : { node: layoutNode, theme },
           width: layoutNode.width,
@@ -118,7 +138,7 @@ function CanvasInner({
           zIndex: layoutNode.kind === 'group' ? 0 : 1,
         } satisfies Node;
       }),
-    [result, issues, theme, locked, positions],
+    [result, issues, theme, locked, positions, selection],
   );
 
   const initialEdges = useMemo<ArchitectureFlowEdge[]>(
@@ -181,6 +201,28 @@ function CanvasInner({
     onReadyRef.current();
   }, []);
 
+  const focusNode = useCallback((nodeId: string): void => {
+    const node = result.nodes.find((item) => item.id === nodeId);
+    if (node === undefined) return;
+    if (node.kind === 'group') {
+      void fitView({ nodes: [{ id: node.id }], padding: 0.18, duration: 220, maxZoom: 1.2 });
+      return;
+    }
+    setCenter(node.absoluteX + node.width / 2, node.absoluteY + node.height / 2, {
+      zoom: Math.min(2, Math.max(1, getViewport().zoom * 1.5)),
+      duration: 220,
+    });
+  }, [fitView, getViewport, result.nodes, setCenter]);
+
+  const focusEdge = useCallback((edgeId: string): void => {
+    const edge = result.edges.find((item) => item.id === edgeId);
+    if (edge === undefined) return;
+    setCenter(edge.labelBox.x + edge.labelBox.width / 2, edge.labelBox.y + edge.labelBox.height / 2, {
+      zoom: Math.min(2.2, Math.max(1.05, getViewport().zoom * 1.6)),
+      duration: 220,
+    });
+  }, [getViewport, result.edges, setCenter]);
+
   const focusBox = useMemo<LayoutNode | null>(() => {
     if (focus === null) {
       return null;
@@ -188,12 +230,7 @@ function CanvasInner({
     return result.nodes.find((node) => node.id === focus) ?? null;
   }, [focus, result]);
 
-  const primaryGroup = useMemo<LayoutNode | null>(() => {
-    return result.nodes
-      .filter((node) => node.kind === 'group' && (node.group?.members.length ?? 0) > 0)
-      .sort((a, b) => (b.group?.members.length ?? 0) - (a.group?.members.length ?? 0))[0] ?? null;
-  }, [result]);
-  const layoutCenter = useMemo(() => ({ x: result.width / 2, y: result.height / 2 }), [result.width, result.height]);
+  const simplifyEdgeLabels = result.edges.length >= 24 && viewport.zoom < 0.55;
 
   return (
     <div
@@ -211,6 +248,7 @@ function CanvasInner({
         data-draggable={locked ? '0' : '1'}
         data-connectable={locked ? '0' : '1'}
       data-viewport-zoom={viewport.zoom.toFixed(4)}
+      data-edge-labels={simplifyEdgeLabels ? 'overview' : 'detail'}
       data-viewport-transform={`translate(${viewport.x},${viewport.y}) scale(${viewport.zoom})`}
     >
       <div className="canvas-title" data-testid="canvas-title">
@@ -235,10 +273,13 @@ function CanvasInner({
         onNodeClick={(_event, node) =>
           onSelect(node.type === 'group' ? 'group' : 'component', node.id)
         }
+        onNodeDoubleClick={(_event, node) => { if (!locked) focusNode(node.id); }}
         onEdgeClick={(_event, edge) => onSelect('edge', edge.id)}
+        onEdgeDoubleClick={(_event, edge) => { if (!locked) focusEdge(edge.id); }}
         onPaneClick={onClearSelection}
         onNodeDragStop={(_event, node) => onPositionChange(node.id, node.position)}
         onConnect={handleConnect}
+        onMoveEnd={handleViewportMoveEnd}
         onNodesDelete={(deleted) => deleted.forEach((node) => {
           if (node.type === 'component' || node.type === 'group') {
             onDelete({ kind: node.type, id: node.id });
@@ -269,9 +310,6 @@ function CanvasInner({
           zoom={zoom}
           fitNonce={fitNonce}
           overviewNonce={overviewNonce}
-          primaryGroup={primaryGroup}
-          layoutCenter={layoutCenter}
-          nodeCount={result.nodes.length}
           onReady={handleReady}
           onViewport={setViewport}
         />
@@ -286,9 +324,6 @@ function ViewController({
   zoom,
   fitNonce,
   overviewNonce,
-  primaryGroup,
-  layoutCenter,
-  nodeCount,
   onReady,
   onViewport,
 }: {
@@ -297,22 +332,14 @@ function ViewController({
   zoom: number | null;
   fitNonce: number;
   overviewNonce: number;
-  primaryGroup: LayoutNode | null;
-  layoutCenter: { x: number; y: number };
-  nodeCount: number;
   onReady: () => void;
   onViewport: (viewport: { x: number; y: number; zoom: number }) => void;
 }) {
   const { fitView, setCenter, getViewport } = useReactFlow();
-  const previousOverviewNonce = useRef(overviewNonce);
-
   useEffect(() => {
     if (!initialised) {
       return;
     }
-
-    const showOverview = previousOverviewNonce.current !== overviewNonce;
-    previousOverviewNonce.current = overviewNonce;
 
     const apply = async (): Promise<void> => {
       if (focusBox !== null && zoom !== null) {
@@ -323,18 +350,6 @@ function ViewController({
         );
       } else {
         await fitView({ padding: 0.12, duration: 0, maxZoom: 1.15 });
-        if (!showOverview && getViewport().zoom < 0.52 && nodeCount > 12) {
-          if (primaryGroup !== null) {
-            await fitView({
-              nodes: [{ id: primaryGroup.id }],
-              padding: 0.16,
-              duration: 0,
-              maxZoom: 0.85,
-            });
-          } else {
-            setCenter(layoutCenter.x, layoutCenter.y, { zoom: 0.58, duration: 0 });
-          }
-        }
       }
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -352,9 +367,6 @@ function ViewController({
     zoom,
     fitNonce,
     overviewNonce,
-    primaryGroup,
-    layoutCenter,
-    nodeCount,
     fitView,
     setCenter,
     getViewport,
