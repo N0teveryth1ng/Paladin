@@ -120,8 +120,12 @@ function CanvasInner({
   );
 
   const initialEdges = useMemo<ArchitectureFlowEdge[]>(
-    () =>
-      result.edges.map((layoutEdge, parallelIndex) => ({
+    () => {
+      const nodeById = new Map(result.nodes.map((node) => [node.id, node]));
+      return result.edges.map((layoutEdge, parallelIndex) => {
+        const source = nodeById.get(layoutEdge.from);
+        const target = nodeById.get(layoutEdge.to);
+        return ({
         id: layoutEdge.id,
         source: layoutEdge.from,
         target: layoutEdge.to,
@@ -139,10 +143,24 @@ function CanvasInner({
           edge: layoutEdge,
           issues: issuesFor(issues, layoutEdge.id),
           parallelIndex,
+          sourceBounds: source === undefined ? null : {
+            x: source.absoluteX,
+            y: source.absoluteY,
+            width: source.width,
+            height: source.height,
+          },
+          targetBounds: target === undefined ? null : {
+            x: target.absoluteX,
+            y: target.absoluteY,
+            width: target.width,
+            height: target.height,
+          },
         },
         selectable: !locked,
         focusable: !locked,
-      })),
+        });
+      });
+    },
     [result, issues, locked],
   );
 

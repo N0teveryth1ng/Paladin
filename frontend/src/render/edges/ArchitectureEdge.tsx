@@ -6,7 +6,7 @@ import {
   type EdgeProps,
 } from '@xyflow/react';
 
-import type { LayoutEdge, LayoutPoint } from '../../layout/layoutTypes';
+import type { LayoutBox, LayoutEdge, LayoutPoint } from '../../layout/layoutTypes';
 import type { DisplayIssue } from '../../types/issues';
 import { worstSeverity } from '../../types/issues';
 
@@ -14,9 +14,26 @@ export interface ArchitectureEdgeData extends Record<string, unknown> {
   edge: LayoutEdge;
   issues: DisplayIssue[];
   parallelIndex: number;
+  sourceBounds: LayoutBox | null;
+  targetBounds: LayoutBox | null;
 }
 
 export type ArchitectureFlowEdge = Edge<ArchitectureEdgeData, 'architecture'>;
+
+const HANDLE_ALIGNMENT_TOLERANCE = 6;
+
+function isOnNodeBoundary(point: LayoutPoint, bounds: LayoutBox): boolean {
+  const tolerance = HANDLE_ALIGNMENT_TOLERANCE;
+  const insideX = point.x >= bounds.x - tolerance
+    && point.x <= bounds.x + bounds.width + tolerance;
+  const insideY = point.y >= bounds.y - tolerance
+    && point.y <= bounds.y + bounds.height + tolerance;
+  const onVerticalSide = Math.abs(point.x - bounds.x) <= tolerance
+    || Math.abs(point.x - (bounds.x + bounds.width)) <= tolerance;
+  const onHorizontalSide = Math.abs(point.y - bounds.y) <= tolerance
+    || Math.abs(point.y - (bounds.y + bounds.height)) <= tolerance;
+  return insideX && insideY && (onVerticalSide || onHorizontalSide);
+}
 
 export function ArchitectureEdge(props: EdgeProps<ArchitectureFlowEdge>) {
   const {
@@ -36,11 +53,22 @@ export function ArchitectureEdge(props: EdgeProps<ArchitectureFlowEdge>) {
   const edge = data.edge;
   const severity = worstSeverity(data.issues);
   const section = edge.section;
+  const sourceBounds = data.sourceBounds;
+  const targetBounds = data.targetBounds;
   const routeMatchesNodes = section !== null && section.length >= 2
-    && Math.abs(section[0].x - sourceX) < 2
-    && Math.abs(section[0].y - sourceY) < 2
-    && Math.abs(section[section.length - 1].x - targetX) < 2
-    && Math.abs(section[section.length - 1].y - targetY) < 2;
+    && sourceBounds !== null && targetBounds !== null
+    // ELK fans parallel links out across a node's edge. React Flow reports
+    // the center handle, so compare against the node boundary and allow any
+    // routed attachment point along that boundary.
+    && isOnNodeBoundary(section[0], sourceBounds)
+    && isOnNodeBoundary(section[section.length - 1], targetBounds)
+    // Reject the saved route after either endpoint has been dragged.
+    && Math.abs(sourceX - (sourceBounds.x + sourceBounds.width)) <= HANDLE_ALIGNMENT_TOLERANCE
+    && Math.abs(targetX - targetBounds.x) <= HANDLE_ALIGNMENT_TOLERANCE
+    && sourceY >= sourceBounds.y - HANDLE_ALIGNMENT_TOLERANCE
+    && sourceY <= sourceBounds.y + sourceBounds.height + HANDLE_ALIGNMENT_TOLERANCE
+    && targetY >= targetBounds.y - HANDLE_ALIGNMENT_TOLERANCE
+    && targetY <= targetBounds.y + targetBounds.height + HANDLE_ALIGNMENT_TOLERANCE;
   const [fallbackPath, fallbackLabelX, fallbackLabelY] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -77,6 +105,7 @@ export function ArchitectureEdge(props: EdgeProps<ArchitectureFlowEdge>) {
       <EdgeLabelRenderer>
         <div
           className={`edge-label${selected ? ' selected' : ''}`}
+          data-edge-id={edge.id}
           style={{
             width: Math.max(96, edge.labelBox.width),
             minHeight: Math.max(32, edge.labelBox.height),

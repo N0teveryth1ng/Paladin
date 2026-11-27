@@ -10,21 +10,24 @@ function mermaidId(value: string): string {
   return `n_${value.replace(/[^a-zA-Z0-9_]/g, '_')}`;
 }
 
-function wrapLabel(text: string, width: number): string[] {
+function wrapLabel(text: string, width: number, assumed = false): string[] {
   const maxChars = Math.max(12, Math.floor((width - 28) / 7));
+  const firstLineChars = Math.max(8, maxChars - (assumed ? 11 : 0));
   const words = text.split(/\s+/);
   const lines: string[] = [];
   let line = '';
   for (const word of words) {
-    if (word.length > maxChars) {
+    const limit = lines.length === 0 ? firstLineChars : maxChars;
+    if (word.length > limit) {
       if (line) lines.push(line);
       line = '';
-      for (let index = 0; index < word.length; index += maxChars) {
-        const chunk = word.slice(index, index + maxChars);
-        if (index + maxChars < word.length) lines.push(chunk);
+      const chunkLimit = lines.length === 0 ? firstLineChars : maxChars;
+      for (let index = 0; index < word.length; index += chunkLimit) {
+        const chunk = word.slice(index, index + chunkLimit);
+        if (index + chunkLimit < word.length) lines.push(chunk);
         else line = chunk;
       }
-    } else if (line.length + word.length + (line ? 1 : 0) <= maxChars) {
+    } else if (line.length + word.length + (line ? 1 : 0) <= limit) {
       line += `${line ? ' ' : ''}${word}`;
     } else {
       lines.push(line);
@@ -70,11 +73,11 @@ export function toSvg(layout: LayoutResult, theme: 'light' | 'dark'): string {
     if (!node) return undefined;
     return { x: node.absoluteX + padding, y: node.absoluteY + padding };
   };
-  const renderedEdges = layout.edges.map((item) => {
+  const edgeParts = layout.edges.map((item) => {
     const source = nodes.find((node) => node.id === item.from);
     const target = nodes.find((node) => node.id === item.to);
     const a = point(item.from); const b = point(item.to);
-    if (!source || !target || !a || !b) return '';
+    if (!source || !target || !a || !b) return { path: '', label: '' };
     const sx = a.x + source.width; const sy = a.y + source.height / 2;
     const tx = b.x; const ty = b.y + target.height / 2;
     const route = item.section?.length
@@ -85,11 +88,21 @@ export function toSvg(layout: LayoutResult, theme: 'light' | 'dark'): string {
     const labelY = item.labelBox.y + padding;
     const labelWidth = item.labelBox.width;
     const labelHeight = item.labelBox.height;
-    const lines = wrapLabel(item.label, labelWidth);
+    const lines = wrapLabel(item.label, labelWidth, item.assumed);
     const firstLineY = labelY + labelHeight / 2 - ((lines.length - 1) * 15) / 2 + 4;
-    const labelText = lines.map((line, index) => `<tspan x="${labelX + labelWidth / 2}" dy="${index === 0 ? 0 : 15}">${escapeXml(line)}</tspan>`).join('');
-    return `<path d="${path}" fill="none" stroke="${edge}" stroke-width="2"${item.type === 'async' ? ' stroke-dasharray="7 5"' : ''} marker-end="url(#arrow)"/><rect x="${labelX}" y="${labelY}" width="${labelWidth}" height="${labelHeight}" rx="8" fill="${nodeBg}" stroke="${border}"/><text x="${labelX + labelWidth / 2}" y="${firstLineY}" text-anchor="middle" fill="${fg}" font-size="12" font-weight="500">${labelText}</text>`;
-  }).join('');
+    const badge = item.assumed
+      ? `<rect x="${labelX + 8}" y="${labelY + labelHeight / 2 - 10}" width="66" height="20" rx="6" fill="${dark ? '#55442c' : '#f4e7cb'}"/><text x="${labelX + 41}" y="${labelY + labelHeight / 2 + 4}" text-anchor="middle" fill="${dark ? '#f5b85f' : '#93621e'}" font-size="10" font-weight="600">Assumed</text>`
+      : '';
+    const textX = labelX + (item.assumed ? 82 : 0);
+    const textWidth = labelWidth - (item.assumed ? 82 : 0);
+    const labelText = lines.map((line, index) => `<tspan x="${textX + textWidth / 2}" dy="${index === 0 ? 0 : 15}">${escapeXml(line)}</tspan>`).join('');
+    return {
+      path: `<path d="${path}" fill="none" stroke="${edge}" stroke-width="2"${item.type === 'async' ? ' stroke-dasharray="7 5"' : ''} marker-end="url(#arrow)"/>`,
+      label: `<rect x="${labelX}" y="${labelY}" width="${labelWidth}" height="${labelHeight}" rx="8" fill="${nodeBg}" stroke="${border}"/>${badge}<text x="${textX + textWidth / 2}" y="${firstLineY}" text-anchor="middle" fill="${fg}" font-size="12" font-weight="500">${labelText}</text>`,
+    };
+  });
+  const renderedEdgePaths = edgeParts.map((item) => item.path).join('');
+  const renderedEdgeLabels = edgeParts.map((item) => item.label).join('');
   const renderedNodes = nodes.map((node) => {
     const p = point(node.id);
     if (!p) return '';
@@ -105,7 +118,7 @@ export function toSvg(layout: LayoutResult, theme: 'light' | 'dark'): string {
     const second = [component.type.replaceAll('_', ' '), component.technology].filter(Boolean).join(' · ');
     return `${shape}<text x="${p.x + 14}" y="${p.y + 29}" fill="${fg}" font-size="13" font-weight="600">${escapeXml(component.name)}</text><text x="${p.x + 14}" y="${p.y + 49}" fill="${muted}" font-size="10">${escapeXml(second)}</text>`;
   }).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="${edge}"/></marker></defs><rect width="100%" height="100%" fill="${bg}"/><text x="${padding}" y="28" fill="${fg}" font-size="16" font-weight="600">${escapeXml(layout.title)}</text>${renderedEdges}${renderedNodes}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="${edge}"/></marker></defs><rect width="100%" height="100%" fill="${bg}"/><text x="${padding}" y="28" fill="${fg}" font-size="16" font-weight="600">${escapeXml(layout.title)}</text>${renderedEdgePaths}${renderedNodes}${renderedEdgeLabels}</svg>`;
 }
 
 export function downloadSvg(layout: LayoutResult, theme: 'light' | 'dark'): void {
