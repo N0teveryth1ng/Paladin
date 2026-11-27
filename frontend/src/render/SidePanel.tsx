@@ -1,293 +1,82 @@
+import type { Component, ComponentType, Connection, ConnectionType, Group } from '../types/architecture.generated';
 import type { Entry, ThemeName } from '../app/modes';
-import type { LayoutResult } from '../layout/layoutTypes';
-import { issuesFor } from '../types/issues';
-import { AdjustmentsPanel } from './AdjustmentsPanel';
-import { IssuesPanel } from './IssuesPanel';
-import { Legend } from './Legend';
-import { typeLabel } from './theme';
+import type { Selection } from './selection';
 
-export type Selection =
-  | { kind: 'component'; id: string }
-  | { kind: 'group'; id: string }
-  | { kind: 'edge'; id: string }
-  | null;
+const COMPONENT_TYPES: ComponentType[] = [
+  'client', 'api_gateway', 'load_balancer', 'service', 'worker', 'database', 'cache',
+  'message_queue', 'object_storage', 'cdn', 'auth_provider', 'search_index', 'scheduler',
+  'external_service',
+];
 
 export function SidePanel({
   entry,
-  result,
-  selection,
-  onSelect,
-  theme,
+  selection = null,
+  onChangeComponent = () => {},
+  onChangeConnection = () => {},
+  onChangeGroup = () => {},
+  onClearSelection = () => {},
+  onDelete = () => {},
 }: {
   entry: Entry;
-  result: LayoutResult;
-  selection: Selection;
-  onSelect: (selection: Selection) => void;
-  theme: ThemeName;
+  selection?: Selection;
+  result?: unknown;
+  theme?: ThemeName;
+  onSelect?: (selection: Selection) => void;
+  onChangeComponent?: (id: string, patch: Partial<Component>) => void;
+  onChangeConnection?: (id: string, patch: Partial<Connection>) => void;
+  onChangeGroup?: (id: string, patch: Partial<Group>) => void;
+  onClearSelection?: () => void;
+  onDelete?: () => void;
 }) {
-  const draft = entry.draft;
-  const issues = entry.issues.issues;
+  if (selection === null) return null;
+
+  const component = selection.kind === 'component'
+    ? entry.draft.components.find((item) => item.id === selection.id)
+    : undefined;
+  const connection = selection.kind === 'edge'
+    ? (entry.draft.connections ?? []).find((item) => item.id === selection.id)
+    : undefined;
+  const group = selection.kind === 'group'
+    ? (entry.draft.groups ?? []).find((item) => item.id === selection.id)
+    : undefined;
 
   return (
-    <aside className="side-panel" data-testid="side-panel">
-      <div className="side-panel-header">
-        <h2>{draft.title}</h2>
-        <p className="panel-note">{draft.summary}</p>
+    <aside className="inspector" data-testid="side-panel" aria-label="Selection inspector">
+      <div className="inspector-heading">
+        <span>{selection.kind === 'edge' ? 'Connection' : selection.kind === 'group' ? 'Group' : 'Box'}</span>
+        <button type="button" className="icon-button" onClick={onClearSelection} aria-label="Close inspector">×</button>
       </div>
 
-      <section className="panel-section" data-testid="overview-panel">
-        <h3>Overview</h3>
-        <dl className="count-grid">
-          <div>
-            <dt>Components</dt>
-            <dd>{draft.components.length}</dd>
-          </div>
-          <div>
-            <dt>Connections</dt>
-            <dd>{draft.connections?.length ?? 0}</dd>
-          </div>
-          <div>
-            <dt>Groups</dt>
-            <dd>{draft.groups?.length ?? 0}</dd>
-          </div>
-          <div>
-            <dt>Requirements</dt>
-            <dd>{draft.requirements.length}</dd>
-          </div>
-          <div>
-            <dt>Assumptions</dt>
-            <dd>{draft.assumptions?.length ?? 0}</dd>
-          </div>
-          <div>
-            <dt>Flags</dt>
-            <dd>{draft.flags?.length ?? 0}</dd>
-          </div>
-        </dl>
-      </section>
-
-      <SelectedDetails
-        entry={entry}
-        result={result}
-        selection={selection}
-        onSelect={onSelect}
-      />
-
-      <details className="panel-section" open>
-        <summary>
-          Requirements <span className="count">{draft.requirements.length}</span>
-        </summary>
-        <ul className="detail-list">
-          {draft.requirements.map((requirement) => (
-            <li key={requirement.id}>
-              <div className="detail-head">
-                <span className="mono">{requirement.id}</span>
-                <span className="tag">
-                  {requirement.kind} · {requirement.source}
-                </span>
-              </div>
-              <p>{requirement.text}</p>
-            </li>
-          ))}
-        </ul>
-      </details>
-
-      <details className="panel-section" open>
-        <summary>
-          Assumptions <span className="count">{draft.assumptions?.length ?? 0}</span>
-        </summary>
-        {(draft.assumptions?.length ?? 0) === 0 ? (
-          <p className="empty">No assumptions</p>
-        ) : (
-          <ul className="detail-list">
-            {(draft.assumptions ?? []).map((assumption) => (
-              <li key={assumption.id}>
-                <div className="detail-head">
-                  <span className="mono">{assumption.id}</span>
-                  <span className="tag">{assumption.scope}</span>
-                </div>
-                <p>{assumption.text}</p>
-                <p className="muted">{assumption.rationale}</p>
-                {(assumption.element_refs?.length ?? 0) > 0 ? (
-                  <p className="mono muted">refs: {(assumption.element_refs ?? []).join(', ')}</p>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </details>
-
-      <details className="panel-section" open>
-        <summary>
-          Flags <span className="count">{draft.flags?.length ?? 0}</span>
-        </summary>
-        {(draft.flags?.length ?? 0) === 0 ? (
-          <p className="empty">No flags</p>
-        ) : (
-          <ul className="detail-list">
-            {(draft.flags ?? []).map((flag) => (
-              <li key={flag.id} data-testid="flag-row" data-severity={flag.severity}>
-                <div className="detail-head">
-                  <span className={`severity-badge severity-${flag.severity}`}>{flag.severity}</span>
-                  <span className="mono">{flag.kind}</span>
-                </div>
-                <p>{flag.description}</p>
-                <p className="mono muted">refs: {(flag.requirement_refs ?? []).join(', ') || '—'}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </details>
-
-      <AdjustmentsPanel adjustments={result.adjustments} />
-
-      <details className="panel-section" open>
-        <summary>Legend</summary>
-        <Legend theme={theme} />
-      </details>
-
-      <IssuesPanel artifact={entry.issues} />
-
-      <p className="panel-footer">
-        Layout {Math.round(result.width)} × {Math.round(result.height)} · {result.nodes.length}{' '}
-        nodes · {result.edges.length} edges · {issues.length} issues
-      </p>
-    </aside>
-  );
-}
-
-function SelectedDetails({
-  entry,
-  result,
-  selection,
-  onSelect,
-}: {
-  entry: Entry;
-  result: LayoutResult;
-  selection: Selection;
-  onSelect: (selection: Selection) => void;
-}) {
-  if (selection === null) {
-    return (
-      <section className="panel-section">
-        <h3>Selected</h3>
-        <p className="empty">Click a component, group or edge to inspect it.</p>
-      </section>
-    );
-  }
-
-  const issues = entry.issues.issues;
-  const elementIssues = issuesFor(issues, selection.id);
-
-  if (selection.kind === 'edge') {
-    const edge = result.edges.find((candidate) => candidate.id === selection.id);
-    if (edge === undefined) {
-      return null;
-    }
-    return (
-      <section className="panel-section selected-panel" data-testid="selected-panel">
-        <h3>
-          Selected edge <button className="link-button" onClick={() => onSelect(null)}>clear</button>
-        </h3>
-        <dl className="kv">
-          <dt>id</dt>
-          <dd className="mono">{edge.id}</dd>
-          <dt>from → to</dt>
-          <dd className="mono">
-            {edge.from} → {edge.to}
-          </dd>
-          <dt>type</dt>
-          <dd>{edge.type}</dd>
-          <dt>label</dt>
-          <dd>{edge.label}</dd>
-          <dt>technology</dt>
-          <dd>{edge.technology ?? '—'}</dd>
-          <dt>assumed</dt>
-          <dd>{edge.assumed ? 'yes' : 'no'}</dd>
-        </dl>
-        <IssueSummary issues={elementIssues} />
-      </section>
-    );
-  }
-
-  const node = result.nodes.find(
-    (candidate) => candidate.id === selection.id && candidate.kind === selection.kind,
-  );
-  if (node === undefined) {
-    return null;
-  }
-
-  if (node.kind === 'group' && node.group !== undefined) {
-    const group = node.group;
-    return (
-      <section className="panel-section selected-panel" data-testid="selected-panel">
-        <h3>
-          Selected group <button className="link-button" onClick={() => onSelect(null)}>clear</button>
-        </h3>
-        <dl className="kv">
-          <dt>id</dt>
-          <dd className="mono">{group.id}</dd>
-          <dt>name</dt>
-          <dd>{group.name}</dd>
-          <dt>members</dt>
-          <dd>{group.members.join(', ')}</dd>
-          <dt>parent</dt>
-          <dd className="mono">{group.parent_id ?? '—'}</dd>
-          <dt>assumed</dt>
-          <dd>{group.assumed ? 'yes' : 'no'}</dd>
-        </dl>
-        <p>{group.description}</p>
-        {group.rationale !== null && group.rationale !== undefined ? (
-          <p className="muted">{group.rationale}</p>
-        ) : null}
-        <IssueSummary issues={elementIssues} />
-      </section>
-    );
-  }
-
-  const component = node.component;
-  if (component === undefined) {
-    return null;
-  }
-
-  return (
-    <section className="panel-section selected-panel" data-testid="selected-panel">
-      <h3>
-        Selected component <button className="link-button" onClick={() => onSelect(null)}>clear</button>
-      </h3>
-      <dl className="kv">
-        <dt>id</dt>
-        <dd className="mono">{component.id}</dd>
-        <dt>type</dt>
-        <dd>{typeLabel(component.type)}</dd>
-        <dt>technology</dt>
-        <dd>{component.technology ?? '—'}</dd>
-        <dt>assumed</dt>
-        <dd>{component.assumed ? 'yes' : 'no'}</dd>
-        <dt>requirements</dt>
-        <dd className="mono">{(component.requirement_refs ?? []).join(', ') || '—'}</dd>
-      </dl>
-      <p>{component.description}</p>
-      {component.rationale !== null && component.rationale !== undefined ? (
-        <p className="muted">{component.rationale}</p>
+      {component ? (
+        <div className="inspector-fields">
+          <label>Name<input autoFocus value={component.name} onChange={(event) => onChangeComponent(component.id, { name: event.target.value })} /></label>
+          <label>Kind<select value={component.type} onChange={(event) => onChangeComponent(component.id, { type: event.target.value as ComponentType })}>{COMPONENT_TYPES.map((type) => <option key={type} value={type}>{type.replaceAll('_', ' ')}</option>)}</select></label>
+          <label>Technology<input value={component.technology ?? ''} placeholder="Optional" onChange={(event) => onChangeComponent(component.id, { technology: event.target.value || null })} /></label>
+          <label>Description<textarea rows={3} value={component.description} onChange={(event) => onChangeComponent(component.id, { description: event.target.value })} /></label>
+          <button type="button" className="delete-button" onClick={onDelete}>Delete box</button>
+        </div>
       ) : null}
-      <IssueSummary issues={elementIssues} />
-    </section>
-  );
-}
 
-function IssueSummary({ issues }: { issues: ReturnType<typeof issuesFor> }) {
-  if (issues.length === 0) {
-    return <p className="empty">No validator issues name this element.</p>;
-  }
-  return (
-    <ul className="detail-list">
-      {issues.map((issue, index) => (
-        <li key={`${issue.kind}-${index}`}>
-          <span className={`severity-badge severity-${issue.severity}`}>{issue.severity}</span>{' '}
-          <span className="mono">{issue.kind}</span>
-          <p>{issue.message}</p>
-        </li>
-      ))}
-    </ul>
+      {connection ? (
+        <div className="inspector-fields">
+          <div className="connection-endpoints">
+            {entry.draft.components.find((item) => item.id === connection.from)?.name ?? connection.from}
+            <span aria-hidden="true">→</span>
+            {entry.draft.components.find((item) => item.id === connection.to)?.name ?? connection.to}
+          </div>
+          <label>Label<input autoFocus value={connection.label} onChange={(event) => onChangeConnection(connection.id, { label: event.target.value })} /></label>
+          <label>Flow<select value={connection.type} onChange={(event) => onChangeConnection(connection.id, { type: event.target.value as ConnectionType })}><option value="sync">Request / response</option><option value="async">Async</option></select></label>
+          <button type="button" className="delete-button" onClick={onDelete}>Delete connection</button>
+        </div>
+      ) : null}
+
+      {group ? (
+        <div className="inspector-fields">
+          <label>Name<input autoFocus value={group.name} onChange={(event) => onChangeGroup(group.id, { name: event.target.value })} /></label>
+          <label>Description<textarea rows={3} value={group.description} onChange={(event) => onChangeGroup(group.id, { description: event.target.value })} /></label>
+          <button type="button" className="delete-button" onClick={onDelete}>Delete group</button>
+        </div>
+      ) : null}
+    </aside>
   );
 }

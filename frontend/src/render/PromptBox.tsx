@@ -1,8 +1,7 @@
 import { useState, type FormEvent } from 'react';
 
 /**
- * The prompt is local input only. Empty input is rejected here, before any
- * request is made. There is deliberately no cancel control.
+ * A small canvas composer for turning a plain-language idea into a first draft.
  */
 export function PromptBox({
   disabled,
@@ -25,17 +24,21 @@ export function PromptBox({
 
   return (
     <form className="prompt-box" data-testid="prompt-box" onSubmit={submit}>
-      <label className="prompt-label" htmlFor="run-prompt">
-        Prompt
-      </label>
       <textarea
         id="run-prompt"
         className="prompt-input"
         data-testid="prompt-input"
         value={value}
-        placeholder="Describe the architecture to generate…"
+        placeholder="Describe a system to draw… e.g. Design Netflix"
         disabled={disabled}
         onChange={(event) => setValue(event.target.value)}
+        rows={1}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            if (canSubmit) onSubmit(trimmed);
+          }
+        }}
       />
       <button
         className="generate-button"
@@ -43,7 +46,7 @@ export function PromptBox({
         data-testid="generate-button"
         disabled={!canSubmit}
       >
-        Generate
+        Draw
       </button>
     </form>
   );

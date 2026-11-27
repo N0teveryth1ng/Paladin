@@ -4,14 +4,14 @@
  * clipped in the renderer.
  */
 
-export const COMPONENT_WIDTH = 220;
-export const COMPONENT_HEIGHT = 88;
+export const COMPONENT_WIDTH = 216;
+export const COMPONENT_HEIGHT = 76;
 
 export const GROUP_PADDING = {
-  top: 44,
-  left: 28,
-  bottom: 28,
-  right: 28,
+  top: 38,
+  left: 24,
+  bottom: 20,
+  right: 24,
 } as const;
 
 export const EDGE_LABEL_HEIGHT = 18;

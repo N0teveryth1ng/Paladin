@@ -1,22 +1,25 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type WheelEvent as ReactWheelEvent } from 'react';
 import {
   Background,
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
   type Edge,
-  type EdgeTypes,
+  MarkerType,
   type Node,
   type NodeTypes,
+  useEdgesState,
+  useNodesState,
+  type Connection as FlowConnection,
 } from '@xyflow/react';
 
 import type { ThemeName } from '../app/modes';
 import type { LayoutNode, LayoutResult } from '../layout/layoutTypes';
 import type { DisplayIssue } from '../types/issues';
 import { issuesFor } from '../types/issues';
-import { ArchitectureEdge } from './edges/ArchitectureEdge';
 import { ComponentNode } from './nodes/ComponentNode';
 import { GroupNode } from './nodes/GroupNode';
+import type { Selection } from './selection';
 
 export type SelectionKind = 'component' | 'group' | 'edge';
 
@@ -24,10 +27,6 @@ const nodeTypes = {
   component: ComponentNode,
   group: GroupNode,
 } as unknown as NodeTypes;
-
-const edgeTypes = {
-  architecture: ArchitectureEdge,
-} as unknown as EdgeTypes;
 
 export interface CanvasProps {
   result: LayoutResult;
@@ -38,8 +37,12 @@ export interface CanvasProps {
   zoom: number | null;
   fitNonce: number;
   fixtureName: string;
+  positions?: Record<string, { x: number; y: number }>;
   onSelect: (kind: SelectionKind, id: string) => void;
   onClearSelection: () => void;
+  onPositionChange?: (id: string, position: { x: number; y: number }) => void;
+  onConnect?: (source: string, target: string) => void;
+  onDelete?: (selection: Exclude<Selection, null>) => void;
   onReady: () => void;
 }
 
@@ -60,22 +63,35 @@ function CanvasInner({
   zoom,
   fitNonce,
   fixtureName,
+  positions = {},
   onSelect,
   onClearSelection,
+  onPositionChange = () => {},
+  onConnect = () => {},
+  onDelete = () => {},
   onReady,
 }: CanvasProps) {
   const [initialised, setInitialised] = useState(false);
   const [fitted, setFitted] = useState(false);
   const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
+  const { getViewport, zoomTo } = useReactFlow();
 
-  const nodes = useMemo<Node[]>(
+  const handleWheel = useCallback((event: ReactWheelEvent<HTMLDivElement>) => {
+    if (locked || event.ctrlKey || event.metaKey) return;
+    event.preventDefault();
+    const current = getViewport().zoom;
+    const next = Math.max(0.08, Math.min(2.5, current * Math.exp(-event.deltaY * 0.0012)));
+    void zoomTo(next, { duration: 0 });
+  }, [getViewport, locked, zoomTo]);
+
+  const initialNodes = useMemo<Node[]>(
     () =>
       result.nodes.map((layoutNode) => {
         const parentId = layoutNode.parentId ?? undefined;
         return {
           id: layoutNode.id,
           type: layoutNode.kind,
-          position: { x: layoutNode.x, y: layoutNode.y },
+          position: positions[layoutNode.id] ?? { x: layoutNode.x, y: layoutNode.y },
           data:
             layoutNode.kind === 'component'
               ? {
@@ -87,34 +103,54 @@ function CanvasInner({
           width: layoutNode.width,
           height: layoutNode.height,
           style: { width: layoutNode.width, height: layoutNode.height },
-          draggable: false,
+          draggable: !locked,
           selectable: !locked,
           parentId,
           zIndex: layoutNode.kind === 'group' ? 0 : 1,
         } satisfies Node;
       }),
-    [result, issues, theme, locked],
+    [result, issues, theme, locked, positions],
   );
 
-  const edges = useMemo<Edge[]>(
+  const initialEdges = useMemo<Edge[]>(
     () =>
-      result.edges.map((layoutEdge, index) => ({
+      result.edges.map((layoutEdge) => ({
         id: layoutEdge.id,
         source: layoutEdge.from,
         target: layoutEdge.to,
         sourceHandle: 's',
         targetHandle: 't',
-        type: 'architecture',
+        type: 'smoothstep',
+        label: layoutEdge.displayLabel,
+        labelStyle: { fill: 'var(--muted)', fontSize: 10 },
+        labelBgStyle: { fill: 'var(--bg)', fillOpacity: 1, stroke: 'var(--border)', strokeWidth: 0.7 },
+        labelBgPadding: [6, 3] as [number, number],
+        markerEnd: { type: layoutEdge.type === 'sync' ? MarkerType.ArrowClosed : MarkerType.Arrow, color: 'var(--edge)' },
+        className: `edge-${layoutEdge.type}`,
+        style: {
+          stroke: 'var(--edge)',
+          strokeWidth: 1.7,
+          strokeDasharray: layoutEdge.type === 'async' ? '5 4' : undefined,
+        },
         data: {
           edge: layoutEdge,
           issues: issuesFor(issues, layoutEdge.id),
-          parallelIndex: index,
         },
         selectable: !locked,
         focusable: !locked,
       })),
     [result, issues, locked],
   );
+
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initialEdges);
+
+  useEffect(() => setNodes(initialNodes), [initialNodes, setNodes]);
+  useEffect(() => setEdges(initialEdges), [initialEdges, setEdges]);
+
+  const handleConnect = useCallback((connection: FlowConnection) => {
+    if (connection.source && connection.target) onConnect(connection.source, connection.target);
+  }, [onConnect]);
 
   const handleReady = useCallback(() => {
     setFitted(true);
@@ -131,6 +167,7 @@ function CanvasInner({
   return (
     <div
       className="canvas-wrap"
+      onWheel={handleWheel}
       data-testid="canvas"
       data-fixture={fixtureName}
       data-theme={theme}
@@ -140,36 +177,56 @@ function CanvasInner({
       data-zoom-enabled={locked ? '0' : '1'}
       data-selectable={locked ? '0' : '1'}
       data-focusable={locked ? '0' : '1'}
-      data-draggable="0"
-      data-connectable="0"
+        data-draggable={locked ? '0' : '1'}
+        data-connectable={locked ? '0' : '1'}
       data-viewport-zoom={viewport.zoom.toFixed(4)}
       data-viewport-transform={`translate(${viewport.x},${viewport.y}) scale(${viewport.zoom})`}
     >
+      <div className="canvas-title" data-testid="canvas-title">
+        <span aria-hidden="true">⌑</span>
+        {result.title}
+      </div>
+      {result.nodes.length === 0 ? (
+        <div className="empty-state" aria-hidden="true">
+          <span className="empty-mark">＋</span>
+          <span>Your canvas is ready</span>
+          <small>Add a box or describe a system below</small>
+        </div>
+      ) : null}
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
         onInit={() => setInitialised(true)}
         onNodeClick={(_event, node) =>
           onSelect(node.type === 'group' ? 'group' : 'component', node.id)
         }
         onEdgeClick={(_event, edge) => onSelect('edge', edge.id)}
         onPaneClick={onClearSelection}
-        nodesDraggable={false}
-        nodesConnectable={false}
+        onNodeDragStop={(_event, node) => onPositionChange(node.id, node.position)}
+        onConnect={handleConnect}
+        onNodesDelete={(deleted) => deleted.forEach((node) => {
+          if (node.type === 'component' || node.type === 'group') {
+            onDelete({ kind: node.type, id: node.id });
+          }
+        })}
+        onEdgesDelete={(deleted) => deleted.forEach((edge) => onDelete({ kind: 'edge', id: edge.id }))}
+        nodesDraggable={!locked}
+        nodesConnectable={!locked}
         edgesReconnectable={false}
         elementsSelectable={!locked}
         nodesFocusable={!locked}
         edgesFocusable={!locked}
         disableKeyboardA11y={locked}
         panOnDrag={!locked}
-        zoomOnScroll={!locked}
+        zoomOnScroll={false}
         zoomOnPinch={!locked}
         zoomOnDoubleClick={!locked}
         preventScrolling={!locked}
-        minZoom={0.01}
-        maxZoom={2}
+        minZoom={0.08}
+        maxZoom={2.5}
         fitView={false}
         attributionPosition="bottom-left"
       >
@@ -217,7 +274,7 @@ function ViewController({
           { zoom, duration: 0 },
         );
       } else {
-        fitView({ padding: 0.12, duration: 0 });
+        fitView({ padding: 0.12, duration: 0, maxZoom: 1.15 });
       }
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
