@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type WheelEvent as ReactWheelEvent } from 'react';
 import {
   Background,
+  MiniMap,
   ReactFlow,
   ReactFlowProvider,
+  SelectionMode,
   useReactFlow,
   MarkerType,
   type Node,
@@ -50,7 +52,11 @@ export interface CanvasProps {
   onClearSelection: () => void;
   onPositionChange?: (id: string, position: { x: number; y: number }) => void;
   onConnect?: (source: string, target: string) => void;
+  onReconnect?: (edgeId: string, source: string, target: string) => void;
   onDelete?: (selection: Exclude<Selection, null>) => void;
+  onDeleteMany?: (selections: Array<Exclude<Selection, null>>) => void;
+  onDuplicate?: (ids: string[]) => void;
+  onAlign?: (mode: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom' | 'distribute-h' | 'distribute-v', ids: string[]) => void;
   onReady: () => void;
 }
 
@@ -78,12 +84,19 @@ function CanvasInner({
   onClearSelection,
   onPositionChange = () => {},
   onConnect = () => {},
+  onReconnect = () => {},
   onDelete = () => {},
+  onDeleteMany = () => {},
+  onDuplicate = () => {},
+  onAlign = () => {},
   onReady,
 }: CanvasProps) {
   const [initialised, setInitialised] = useState(false);
   const [fitted, setFitted] = useState(false);
   const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
+  const [showMinimap, setShowMinimap] = useState(false);
+  const [snapToGrid, setSnapToGrid] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { getViewport, zoomTo, fitView, setCenter } = useReactFlow();
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
@@ -106,6 +119,26 @@ function CanvasInner({
       ? current
       : nextViewport);
   }, []);
+
+  const handleSelectionChange = useCallback(({ nodes: selectedNodes, edges: selectedEdges }: { nodes: Node[]; edges: { id: string }[] }) => {
+    const ids = [...selectedNodes.map((n) => n.id), ...selectedEdges.map((e) => e.id)];
+    setSelectedIds(ids);
+  }, []);
+
+  useEffect(() => {
+    if (locked) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const tag = (event.target as HTMLElement | null)?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || (event.target as HTMLElement | null)?.isContentEditable) return;
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'd') {
+        event.preventDefault();
+        const nodeIds = selectedIds.filter((id) => result.nodes.some((n) => n.id === id && n.kind !== 'group'));
+        if (nodeIds.length > 0) onDuplicate(nodeIds);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [locked, selectedIds, result.nodes, onDuplicate]);
 
   const selectedEdge = selection?.kind === 'edge'
     ? result.edges.find((edge) => edge.id === selection.id)
@@ -196,6 +229,9 @@ function CanvasInner({
     if (connection.source && connection.target) onConnect(connection.source, connection.target);
   }, [onConnect]);
 
+  const handleReconnect = useCallback((oldEdge: any, newConnection: FlowConnection) => {
+    if (oldEdge?.id && newConnection.source && newConnection.target) onReconnect(oldEdge.id, newConnection.source, newConnection.target);
+  }, [onReconnect]);
   const handleReady = useCallback(() => {
     setFitted(true);
     onReadyRef.current();
@@ -279,16 +315,22 @@ function CanvasInner({
         onPaneClick={onClearSelection}
         onNodeDragStop={(_event, node) => onPositionChange(node.id, node.position)}
         onConnect={handleConnect}
+        onReconnect={handleReconnect}
+        onSelectionChange={handleSelectionChange}
         onMoveEnd={handleViewportMoveEnd}
-        onNodesDelete={(deleted) => deleted.forEach((node) => {
-          if (node.type === 'component' || node.type === 'group') {
-            onDelete({ kind: node.type, id: node.id });
-          }
-        })}
-        onEdgesDelete={(deleted) => deleted.forEach((edge) => onDelete({ kind: 'edge', id: edge.id }))}
+        onNodesDelete={(deleted) => {
+          const targets = deleted.filter((n) => n.type === 'component' || n.type === 'group').map((n) => ({ kind: n.type as 'component' | 'group', id: n.id }));
+          if (targets.length > 1) onDeleteMany(targets);
+          else if (targets[0]) onDelete(targets[0]);
+        }}
+        onEdgesDelete={(deleted) => {
+          const targets = deleted.map((e) => ({ kind: 'edge' as const, id: e.id }));
+          if (targets.length > 1) onDeleteMany(targets);
+          else if (targets[0]) onDelete(targets[0]);
+        }}
         nodesDraggable={!locked}
         nodesConnectable={!locked}
-        edgesReconnectable={false}
+        edgesReconnectable={!locked}
         elementsSelectable={!locked}
         nodesFocusable={!locked}
         edgesFocusable={!locked}
@@ -298,12 +340,18 @@ function CanvasInner({
         zoomOnPinch={!locked}
         zoomOnDoubleClick={!locked}
         preventScrolling={!locked}
+        selectionOnDrag={false}
+        selectionMode={SelectionMode.Partial}
+        multiSelectionKeyCode="Shift"
+        snapToGrid={snapToGrid}
+        snapGrid={[16, 16]}
         minZoom={0.08}
         maxZoom={2.5}
         fitView={false}
         attributionPosition="bottom-left"
       >
         <Background gap={24} size={1} color="var(--canvas-dot)" />
+        {showMinimap ? <MiniMap pannable zoomable nodeColor={(n) => n.type === 'group' ? 'rgba(122,162,247,.35)' : 'rgba(255,255,255,.25)'} /> : null}
         <ViewController
           initialised={initialised}
           focusBox={focusBox}
@@ -314,6 +362,21 @@ function CanvasInner({
           onViewport={setViewport}
         />
       </ReactFlow>
+      <div className="canvas-overlay-controls" aria-label="Canvas controls">
+        <button type="button" onClick={() => setShowMinimap((v) => !v)}>{showMinimap ? 'Hide minimap' : 'Minimap'}</button>
+        <button type="button" onClick={() => setSnapToGrid((v) => !v)}>{snapToGrid ? 'Snap: on' : 'Snap: off'}</button>
+        <button type="button" onClick={() => void zoomTo(0.5, { duration: 120 })}>50%</button>
+        <button type="button" onClick={() => void zoomTo(1, { duration: 120 })}>100%</button>
+        <button type="button" onClick={() => void zoomTo(1.5, { duration: 120 })}>150%</button>
+      </div>
+      {selectedIds.filter((id) => result.nodes.some((n) => n.id === id && n.kind === 'component')).length >= 2 ? (
+        <div className="canvas-align-bar" aria-label="Alignment tools">
+          {(['left','center','right','top','middle','bottom','distribute-h','distribute-v'] as const).map((mode) => (
+            <button key={mode} type="button" onClick={() => onAlign(mode, selectedIds.filter((id) => result.nodes.some((n) => n.id === id && n.kind === 'component')))}>{mode}</button>
+          ))}
+          <button type="button" onClick={() => onDuplicate(selectedIds.filter((id) => result.nodes.some((n) => n.id === id && n.kind === 'component')))}>Duplicate</button>
+        </div>
+      ) : null}
     </div>
   );
 }

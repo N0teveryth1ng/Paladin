@@ -20,9 +20,12 @@ from app.api.config import (
     load_freeze,
     startup_check,
 )
+from app.api.assistant import run_assistant
 from app.api.chat import respond_to_chat
 from app.api.generation import RATE_LIMIT_MESSAGE
 from app.api.models import (
+    AssistantRequest,
+    AssistantResponse,
     ChatRequest,
     ChatResponse,
     ErrorDetail,
@@ -273,6 +276,27 @@ def create_app(
             if not reply:
                 return _error_response(502, "empty_chat_reply", "The assistant returned an empty reply.")
             return ChatResponse(reply=reply)
+        except RateLimitedError:
+            return _error_response(429, "rate_limited", RATE_LIMIT_MESSAGE)
+        except LLMTimeoutError:
+            return _error_response(504, "provider_timeout", "The assistant reply timed out. Your diagram was not changed.")
+        except TruncatedError:
+            return _error_response(502, "truncated", "The assistant reply was cut off. Your diagram was not changed.")
+        except TransportError:
+            return _error_response(502, "transport_error", "The assistant could not reach the configured model. Your diagram was not changed.")
+        except Exception:
+            return _error_response(500, "internal_error", "The assistant could not reply. Your diagram was not changed.")
+
+    @app.post("/api/assist", response_model=AssistantResponse)
+    def assist(
+        payload: AssistantRequest,
+        client_factory_dependency: Callable[[], Any] = Depends(get_client_factory),
+    ):
+        if selected is None:
+            return _error_response(503, "no_model_selected", NO_MODEL_MESSAGE)
+        try:
+            result = run_assistant(payload, client_factory_dependency(), selected.config)
+            return result
         except RateLimitedError:
             return _error_response(429, "rate_limited", RATE_LIMIT_MESSAGE)
         except LLMTimeoutError:

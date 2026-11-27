@@ -50,6 +50,50 @@ class ChatResponse(BaseModel):
     reply: str = Field(min_length=1, max_length=4000)
 
 
+class AssistantRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    message: str = Field(min_length=1, max_length=2000)
+    messages: list[ChatTurn] = Field(default_factory=list, max_length=8)
+    current_architecture: ArchitectureDraft | None = None
+    selected_id: str | None = Field(default=None, max_length=200)
+    selected_kind: Literal["component", "connection", "group"] | None = None
+
+
+class PatchOperation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    op: Literal[
+        "set_title",
+        "set_summary",
+        "add_component",
+        "update_component",
+        "remove_component",
+        "add_connection",
+        "update_connection",
+        "remove_connection",
+        "add_group",
+        "update_group",
+        "remove_group",
+        "bulk",
+    ]
+    id: str | None = None
+    name: str | None = None
+    summary: str | None = None
+    component: dict[str, Any] | None = None
+    connection: dict[str, Any] | None = None
+    group: dict[str, Any] | None = None
+    patch: dict[str, Any] | None = None
+    operations: list[dict[str, Any]] | None = None
+
+
+class AssistantResponse(BaseModel):
+    kind: Literal["chat", "small_edit", "major_redesign", "review"]
+    reply: str = Field(min_length=1, max_length=4000)
+    operations: list[PatchOperation] = Field(default_factory=list)
+    redesign_prompt: str | None = Field(default=None, max_length=2000)
+
+
 class IssueResponse(BaseModel):
     kind: str
     severity: str

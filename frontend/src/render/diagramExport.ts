@@ -66,11 +66,11 @@ export function toSvg(layout: LayoutResult, theme: 'light' | 'dark'): string {
   const markerSize = 12;
   const dark = theme === 'dark';
   const bg = dark ? '#151718' : '#f7f8fa';
-  const nodeBg = dark ? '#1b1d1f' : '#ffffff';
-  const fg = dark ? '#edf0f2' : '#20262e';
-  const muted = dark ? '#aeb5bb' : '#78818c';
-  const border = dark ? '#758087' : '#cfd5dc';
-  const edge = dark ? '#d5d9dc' : '#68727e';
+  const nodeBg = dark ? '#232a31' : '#ffffff';
+  const fg = dark ? '#f3f6f8' : '#1a2129';
+  const muted = dark ? '#c2cad1' : '#5f6975';
+  const border = dark ? '#90a4b8' : '#8fa0b5';
+  const edge = dark ? '#dbe4ec' : '#4f6075';
   const nodes = layout.nodes;
   const point = (nodeId: string): { x: number; y: number } | undefined => {
     const node = nodes.find((item) => item.id === nodeId);
@@ -110,7 +110,7 @@ export function toSvg(layout: LayoutResult, theme: 'light' | 'dark'): string {
   const renderedGroups = nodes.filter((node) => node.kind === 'group').map((node) => {
     const p = point(node.id);
     if (!p || !node.group) return '';
-    return `<rect x="${p.x}" y="${p.y}" width="${node.width}" height="${node.height}" rx="8" fill="${dark ? '#243342' : '#e9f1fb'}" stroke="${dark ? '#4c86c4' : '#6c9bd0'}"/><text x="${p.x + 12}" y="${p.y + 22}" fill="${fg}" font-size="13">${escapeXml(node.group.name)}</text>`;
+    return `<rect x="${p.x}" y="${p.y}" width="${node.width}" height="${node.height}" rx="8" fill="${dark ? '#263848' : '#e3eefb'}" stroke="${dark ? '#6fa6de' : '#5f93cc'}" stroke-width="1.5"/><text x="${p.x + 12}" y="${p.y + 22}" fill="${fg}" font-size="13" font-weight="600">${escapeXml(node.group.name)}</text>`;
   }).join('');
   const renderedComponents = nodes.filter((node) => node.kind === 'component').map((node) => {
     const p = point(node.id);
@@ -132,34 +132,113 @@ export function downloadSvg(layout: LayoutResult, theme: 'light' | 'dark'): void
   downloadBlob(blob, `${fileName(layout.title)}.svg`);
 }
 
+function renderPngBlob(layout: LayoutResult, theme: 'light' | 'dark'): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    const svgBlob = new Blob([toSvg(layout, theme)], { type: 'image/svg+xml;charset=utf-8' });
+    const sourceUrl = URL.createObjectURL(svgBlob);
+    const image = new Image();
+    image.onload = () => {
+      const maxDimension = 8192;
+      const requestedScale = 2;
+      const scale = Math.min(requestedScale, maxDimension / Math.max(image.width, image.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) { URL.revokeObjectURL(sourceUrl); resolve(null); return; }
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => { URL.revokeObjectURL(sourceUrl); resolve(blob); }, 'image/png');
+    };
+    image.onerror = () => { URL.revokeObjectURL(sourceUrl); resolve(null); };
+    image.src = sourceUrl;
+  });
+}
+
 export function downloadPng(layout: LayoutResult, theme: 'light' | 'dark'): void {
-  const svgBlob = new Blob([toSvg(layout, theme)], { type: 'image/svg+xml;charset=utf-8' });
-  const sourceUrl = URL.createObjectURL(svgBlob);
-  const image = new Image();
-  image.onload = () => {
-    const maxDimension = 8192;
-    const requestedScale = 2;
-    const scale = Math.min(requestedScale, maxDimension / Math.max(image.width, image.height));
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(image.width * scale));
-    canvas.height = Math.max(1, Math.round(image.height * scale));
-    const context = canvas.getContext('2d');
-    if (!context) {
-      URL.revokeObjectURL(sourceUrl);
-      return;
-    }
-    context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    canvas.toBlob((blob) => {
-      URL.revokeObjectURL(sourceUrl);
-      if (blob) downloadBlob(blob, `${fileName(layout.title)}.png`);
-    }, 'image/png');
-  };
-  image.onerror = () => URL.revokeObjectURL(sourceUrl);
-  image.src = sourceUrl;
+  void renderPngBlob(layout, theme).then((blob) => { if (blob) downloadBlob(blob, `${fileName(layout.title)}.png`); });
+}
+
+export async function copyPngToClipboard(layout: LayoutResult, theme: 'light' | 'dark'): Promise<boolean> {
+  const blob = await renderPngBlob(layout, theme);
+  if (!blob) return false;
+  try {
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function downloadWorkspaceBundle(
+  layout: LayoutResult,
+  theme: 'light' | 'dark',
+  draft: unknown,
+  positions: Record<string, { x: number; y: number }>,
+  name: string,
+): Promise<void> {
+  const base = fileName(name);
+  const payload: WorkspaceFile = { version: 1, saved_at: new Date().toISOString(), name, draft, positions };
+  downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' }), `${base}.paladin.json`);
+  const png = await renderPngBlob(layout, theme);
+  if (png) downloadBlob(png, `${base}.png`);
 }
 
 function fileName(title: string): string {
   return title.trim().replace(/[^a-z0-9-_]+/gi, '-').replace(/^-|-$/g, '') || 'paladin-diagram';
+}
+
+export interface WorkspaceFile {
+  version: number;
+  saved_at?: string;
+  name?: string;
+  draft: unknown;
+  positions?: Record<string, { x: number; y: number }>;
+}
+
+export function downloadWorkspaceFile(
+  draft: unknown,
+  positions: Record<string, { x: number; y: number }>,
+  name: string,
+): void {
+  const payload: WorkspaceFile = {
+    version: 1,
+    saved_at: new Date().toISOString(),
+    name,
+    draft,
+    positions,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+  downloadBlob(blob, `${fileName(name)}.paladin.json`);
+}
+
+export async function openWorkspaceFile(): Promise<WorkspaceFile | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,.paladin.json,application/json';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) { resolve(null); return; }
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text) as Partial<WorkspaceFile>;
+        if (!parsed || typeof parsed !== 'object' || !('draft' in parsed)) {
+          resolve(null);
+          return;
+        }
+        resolve({
+          version: typeof parsed.version === 'number' ? parsed.version : 1,
+          saved_at: typeof parsed.saved_at === 'string' ? parsed.saved_at : undefined,
+          name: typeof parsed.name === 'string' ? parsed.name : file.name.replace(/\.paladin\.json$|\.json$/i, ''),
+          draft: parsed.draft,
+          positions: parsed.positions && typeof parsed.positions === 'object' ? parsed.positions as Record<string, { x: number; y: number }> : {},
+        });
+      } catch {
+        resolve(null);
+      }
+    };
+    input.click();
+  });
 }
 
 function downloadBlob(blob: Blob, fileName: string): void {

@@ -6,7 +6,7 @@
  * transport failures and missing runs to their own error state.
  */
 
-import type { ApiErrorPayload, ChatResponse, ChatTurn, CreateRunResponse, GetRunResponse, UpdateRunRequest } from './types';
+import type { ApiErrorPayload, AssistantRequest, AssistantResponse, ChatResponse, ChatTurn, CreateRunResponse, GetRunResponse, UpdateRunRequest } from './types';
 import type { ArchitectureDraft } from '../types/architecture.generated';
 
 const LOCAL_BACKEND_ORIGIN = 'http://127.0.0.1:8000';
@@ -89,6 +89,16 @@ export async function sendChat(
   });
   if (!response.ok) throw await readError(response);
   return (await response.json()) as ChatResponse;
+}
+
+export async function sendAssistant(request: AssistantRequest): Promise<AssistantResponse> {
+  const response = await fetch(`${LOCAL_BACKEND_ORIGIN}/api/assist`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) throw await readError(response);
+  return (await response.json()) as AssistantResponse;
 }
 
 export async function getRun(runId: string): Promise<GetRunResponse> {

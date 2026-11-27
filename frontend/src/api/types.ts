@@ -52,6 +52,45 @@ export interface ChatResponse {
   reply: string;
 }
 
+export interface AssistantRequest {
+  message: string;
+  messages: ChatTurn[];
+  current_architecture?: ArchitectureDraft | null;
+  selected_id?: string | null;
+  selected_kind?: 'component' | 'connection' | 'group' | null;
+}
+
+export interface PatchOperation {
+  op:
+    | 'set_title'
+    | 'set_summary'
+    | 'add_component'
+    | 'update_component'
+    | 'remove_component'
+    | 'add_connection'
+    | 'update_connection'
+    | 'remove_connection'
+    | 'add_group'
+    | 'update_group'
+    | 'remove_group'
+    | 'bulk';
+  id?: string | null;
+  name?: string | null;
+  summary?: string | null;
+  component?: Record<string, unknown> | null;
+  connection?: Record<string, unknown> | null;
+  group?: Record<string, unknown> | null;
+  patch?: Record<string, unknown> | null;
+  operations?: PatchOperation[] | null;
+}
+
+export interface AssistantResponse {
+  kind: 'chat' | 'small_edit' | 'major_redesign' | 'review';
+  reply: string;
+  operations: PatchOperation[];
+  redesign_prompt?: string | null;
+}
+
 export interface CreateRunResponse {
   run_id: string;
   state: RunState;
