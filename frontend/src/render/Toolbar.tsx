@@ -1,6 +1,6 @@
 import type { ThemeName } from '../app/modes';
 import type { Entry, FixtureName } from '../app/modes';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type ToolIconName = 'new' | 'open' | 'undo' | 'redo' | 'box' | 'fit' | 'export' | 'copy' | 'check' | 'theme' | 'moon' | 'image' | 'history' | 'template' | 'import' | 'review';
 
@@ -88,6 +88,27 @@ export function Toolbar({
   const [copiedImage, setCopiedImage] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const exportButton = useRef<HTMLButtonElement>(null);
+  const exportMenu = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!exportOpen) return;
+    // Capture phase: the canvas stops mousedown propagation, so a bubble listener
+    // would never see clicks outside the sidebar.
+    const onOutsidePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (exportButton.current?.contains(target) || exportMenu.current?.contains(target)) return;
+      setExportOpen(false);
+    };
+    const onLayoutChange = () => setExportOpen(false);
+    document.addEventListener('mousedown', onOutsidePointerDown, true);
+    window.addEventListener('resize', onLayoutChange);
+    window.addEventListener('scroll', onLayoutChange, true);
+    return () => {
+      document.removeEventListener('mousedown', onOutsidePointerDown, true);
+      window.removeEventListener('resize', onLayoutChange);
+      window.removeEventListener('scroll', onLayoutChange, true);
+    };
+  }, [exportOpen]);
   const copyDiagram = async (): Promise<void> => {
     await onCopy?.();
     setCopied(true);
@@ -99,99 +120,113 @@ export function Toolbar({
     window.setTimeout(() => setCopiedImage(false), 1600);
   };
 
+  const exportMenuStyle = (() => {
+    const rect = exportButton.current?.getBoundingClientRect();
+    if (!rect) return undefined;
+    const top = Math.min(rect.top, window.innerHeight - 280);
+    return { top: Math.max(8, top), left: rect.right + 8 };
+  })();
+
   return (
     <header className="toolbar" data-testid="toolbar">
       <div className="brand">
         <span className="brand-mark" aria-label="Paladin" title="Paladin">P</span>
-        <button
-          className="sidebar-toggle"
-          type="button"
-          onClick={onToggleSidebar}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          aria-expanded={!collapsed}
-          aria-controls="architecture-chat"
-          data-testid="sidebar-toggle"
-        >
-          {collapsed ? '›' : '‹'}
-        </button>
       </div>
 
       <nav className="toolbar-actions" aria-label="Canvas tools">
-        {onNew ? <button type="button" onClick={onNew} disabled={locked} data-testid="new-design" title="New design" aria-label="New design"><span className="tool-icon"><ToolIcon name="new" /></span><span className="tool-label">New</span></button> : null}
-        {onOpen ? <button type="button" onClick={onOpen} disabled={locked} data-testid="open-design" title="Open saved design" aria-label="Open saved design"><span className="tool-icon"><ToolIcon name="open" /></span><span className="tool-label">Open</span></button> : null}
-        {onUndo ? <button type="button" onClick={onUndo} disabled={locked || !canUndo} data-testid="undo-button" title="Undo (Ctrl+Z)" aria-label="Undo"><span className="tool-icon"><ToolIcon name="undo" /></span><span className="tool-label">Undo</span></button> : null}
-        {onRedo ? <button type="button" onClick={onRedo} disabled={locked || !canRedo} data-testid="redo-button" title="Redo (Ctrl+Y)" aria-label="Redo"><span className="tool-icon"><ToolIcon name="redo" /></span><span className="tool-label">Redo</span></button> : null}
-        {onAddComponent ? <button type="button" onClick={onAddComponent} disabled={locked} data-testid="add-component" title="Add box" aria-label="Add box">
-          <span className="tool-icon"><ToolIcon name="box" /></span><span className="tool-label">Add box</span>
-        </button> : null}
-        {onTemplates ? <button type="button" onClick={onTemplates} disabled={locked} data-testid="templates-button" title="Templates and remix" aria-label="Templates"><span className="tool-icon"><ToolIcon name="template" /></span><span className="tool-label">Templates</span></button> : null}
-        {onImportSource ? <button type="button" onClick={onImportSource} disabled={locked} data-testid="import-source-button" title="Generate from source" aria-label="Import source"><span className="tool-icon"><ToolIcon name="import" /></span><span className="tool-label">Import</span></button> : null}
-        {onReview ? <button type="button" onClick={onReview} disabled={locked} data-testid="review-button" title="Critique / review architecture" aria-label="Review architecture"><span className="tool-icon"><ToolIcon name="review" /></span><span className="tool-label">Review</span></button> : null}
-        {onCheckpoint ? <button type="button" onClick={onCheckpoint} disabled={locked} data-testid="checkpoint-button" title="Save checkpoint" aria-label="Save checkpoint"><span className="tool-icon"><ToolIcon name="check" /></span><span className="tool-label">Checkpoint</span></button> : null}
-        {onHistory ? <button type="button" onClick={onHistory} data-testid="history-button" title="Version history" aria-label="Version history"><span className="tool-icon"><ToolIcon name="history" /></span><span className="tool-label">History</span></button> : null}
-        <button type="button" onClick={onFit} disabled={locked} data-testid="fit-button" title="Fit canvas" aria-label="Fit canvas">
-          <span className="tool-icon"><ToolIcon name="fit" /></span><span className="tool-label">Fit</span>
-        </button>
-        {onDownload || onSave || onDownloadBundle || onCopyImage ? (
-          <div className="toolbar-export">
-            <button
-              ref={exportButton}
-              type="button"
-              onClick={() => setExportOpen((open) => !open)}
-              disabled={locked}
-              data-testid="export-menu-button"
-              aria-expanded={exportOpen}
-              title="Export / Save"
-              aria-label="Export or save"
-            >
-              <span className="tool-icon"><ToolIcon name="export" /></span><span className="tool-label">Export</span>
-            </button>
-            {exportOpen ? (
-              <div
-                className="toolbar-export-menu"
-                role="group"
+        <div className="toolbar-group" role="group" aria-label="File">
+          {onNew ? <button type="button" onClick={onNew} disabled={locked} data-testid="new-design" title="New design" aria-label="New design"><span className="tool-icon"><ToolIcon name="new" /></span></button> : null}
+          {onOpen ? <button type="button" onClick={onOpen} disabled={locked} data-testid="open-design" title="Open saved design" aria-label="Open saved design"><span className="tool-icon"><ToolIcon name="open" /></span></button> : null}
+        </div>
+        <div className="toolbar-group" role="group" aria-label="Edit">
+          {onUndo ? <button type="button" onClick={onUndo} disabled={locked || !canUndo} data-testid="undo-button" title="Undo (Ctrl+Z)" aria-label="Undo"><span className="tool-icon"><ToolIcon name="undo" /></span></button> : null}
+          {onRedo ? <button type="button" onClick={onRedo} disabled={locked || !canRedo} data-testid="redo-button" title="Redo (Ctrl+Y)" aria-label="Redo"><span className="tool-icon"><ToolIcon name="redo" /></span></button> : null}
+        </div>
+        <div className="toolbar-group" role="group" aria-label="Design">
+          {onAddComponent ? <button type="button" onClick={onAddComponent} disabled={locked} data-testid="add-component" title="Add box" aria-label="Add box"><span className="tool-icon"><ToolIcon name="box" /></span></button> : null}
+          {onTemplates ? <button type="button" onClick={onTemplates} disabled={locked} data-testid="templates-button" title="Templates and remix" aria-label="Templates"><span className="tool-icon"><ToolIcon name="template" /></span></button> : null}
+          {onImportSource ? <button type="button" onClick={onImportSource} disabled={locked} data-testid="import-source-button" title="Generate from source" aria-label="Import source"><span className="tool-icon"><ToolIcon name="import" /></span></button> : null}
+          {onReview ? <button type="button" onClick={onReview} disabled={locked} data-testid="review-button" title="Critique / review architecture" aria-label="Review architecture"><span className="tool-icon"><ToolIcon name="review" /></span></button> : null}
+        </div>
+        <div className="toolbar-group" role="group" aria-label="History">
+          {onCheckpoint ? <button type="button" onClick={onCheckpoint} disabled={locked} data-testid="checkpoint-button" title="Save checkpoint" aria-label="Save checkpoint"><span className="tool-icon"><ToolIcon name="check" /></span></button> : null}
+          {onHistory ? <button type="button" onClick={onHistory} data-testid="history-button" title="Version history" aria-label="Version history"><span className="tool-icon"><ToolIcon name="history" /></span></button> : null}
+        </div>
+        <div className="toolbar-group" role="group" aria-label="View and export">
+          <button type="button" onClick={onFit} disabled={locked} data-testid="fit-button" title="Fit canvas" aria-label="Fit canvas"><span className="tool-icon"><ToolIcon name="fit" /></span></button>
+          {onDownload || onSave || onDownloadBundle || onCopyImage ? (
+            <div className="toolbar-export">
+              <button
+                ref={exportButton}
+                type="button"
+                onClick={() => setExportOpen((open) => !open)}
+                disabled={locked}
+                data-testid="export-menu-button"
+                aria-expanded={exportOpen}
+                title="Export / Save"
                 aria-label="Export or save"
-                onKeyDown={(event) => {
-                  if (event.key === 'Escape') {
-                    setExportOpen(false);
-                    exportButton.current?.focus();
-                  }
-                }}
               >
-                {onDownload ? (
-                  <button type="button" onClick={() => { onDownload(); setExportOpen(false); }} data-testid="download-diagram">
-                    SVG <small>Scalable vector</small>
-                  </button>
-                ) : null}
-                {onDownloadPng ? (
-                  <button type="button" onClick={() => { onDownloadPng(); setExportOpen(false); }} data-testid="download-png">
-                    PNG <small>High resolution</small>
-                  </button>
-                ) : null}
-                {onDownloadBundle ? (
-                  <button type="button" onClick={() => { onDownloadBundle(); setExportOpen(false); }} data-testid="download-bundle">
-                    JSON+PNG bundle <small>Design + image</small>
-                  </button>
-                ) : null}
-                {onSave ? (
-                  <button type="button" onClick={() => { onSave(); setExportOpen(false); }} data-testid="save-file">
-                    Save <small>Local .paladin.json</small>
-                  </button>
-                ) : null}
-                <div className="toolbar-export-note">Shareable read-only link: coming when hosted sharing is available.</div>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-        {onCopy ? <button type="button" onClick={() => void copyDiagram()} disabled={locked} data-testid="copy-diagram" title="Copy as Mermaid" aria-label="Copy as Mermaid"><span className="tool-icon"><ToolIcon name={copied ? 'check' : 'copy'} /></span><span className="tool-label">{copied ? 'Copied' : 'Copy'}</span></button> : null}
-        {onCopyImage ? <button type="button" onClick={() => void copyImage()} disabled={locked} data-testid="copy-image" title="Copy as image" aria-label="Copy as image"><span className="tool-icon"><ToolIcon name={copiedImage ? 'check' : 'image'} /></span><span className="tool-label">{copiedImage ? 'Copied' : 'Copy image'}</span></button> : null}
-        <button type="button" onClick={onTheme} data-testid="theme-button" aria-label="Toggle theme" title="Toggle theme">
-          <span className="tool-icon"><ToolIcon name={theme === 'light' ? 'moon' : 'theme'} /></span><span className="tool-label">Theme</span>
-        </button>
-        {locked ? (
-          <span className="run-indicator" data-testid="lock-indicator">Drawing…</span>
-        ) : null}
+                <span className="tool-icon"><ToolIcon name="export" /></span>
+              </button>
+              {exportOpen ? (
+                <div
+                  ref={exportMenu}
+                  className="toolbar-export-menu"
+                  role="group"
+                  aria-label="Export or save"
+                  style={exportMenuStyle}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape') {
+                      setExportOpen(false);
+                      exportButton.current?.focus();
+                    }
+                  }}
+                >
+                  {onDownload ? (
+                    <button type="button" onClick={() => { onDownload(); setExportOpen(false); }} data-testid="download-diagram">
+                      SVG <small>Scalable vector</small>
+                    </button>
+                  ) : null}
+                  {onDownloadPng ? (
+                    <button type="button" onClick={() => { onDownloadPng(); setExportOpen(false); }} data-testid="download-png">
+                      PNG <small>High resolution</small>
+                    </button>
+                  ) : null}
+                  {onDownloadBundle ? (
+                    <button type="button" onClick={() => { onDownloadBundle(); setExportOpen(false); }} data-testid="download-bundle">
+                      JSON+PNG bundle <small>Design + image</small>
+                    </button>
+                  ) : null}
+                  {onSave ? (
+                    <button type="button" onClick={() => { onSave(); setExportOpen(false); }} data-testid="save-file">
+                      Save <small>Local .paladin.json</small>
+                    </button>
+                  ) : null}
+                  <div className="toolbar-export-note">Shareable read-only link: coming when hosted sharing is available.</div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {onCopy ? <button type="button" onClick={() => void copyDiagram()} disabled={locked} data-testid="copy-diagram" title="Copy as Mermaid" aria-label="Copy as Mermaid"><span className="tool-icon"><ToolIcon name={copied ? 'check' : 'copy'} /></span></button> : null}
+          {onCopyImage ? <button type="button" onClick={() => void copyImage()} disabled={locked} data-testid="copy-image" title="Copy as image" aria-label="Copy as image"><span className="tool-icon"><ToolIcon name={copiedImage ? 'check' : 'image'} /></span></button> : null}
+        </div>
+        <div className="toolbar-group" role="group" aria-label="Settings">
+          <button type="button" onClick={onTheme} data-testid="theme-button" aria-label="Toggle theme" title="Toggle theme"><span className="tool-icon"><ToolIcon name={theme === 'light' ? 'moon' : 'theme'} /></span></button>
+        </div>
+        {locked ? <span className="run-indicator" data-testid="lock-indicator" title="Drawing…">…</span> : null}
       </nav>
+
+      <button
+        className="sidebar-toggle"
+        type="button"
+        onClick={onToggleSidebar}
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-expanded={!collapsed}
+        aria-controls="architecture-chat"
+        data-testid="sidebar-toggle"
+      >
+        {collapsed ? '›' : '‹'}
+      </button>
     </header>
   );
 }
