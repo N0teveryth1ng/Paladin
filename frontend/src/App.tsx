@@ -89,6 +89,15 @@ function chatTitle(messages: ChatMessage[], fallback: string): string {
   return messages.find((m) => m.role === 'user')?.text.slice(0, 60) || fallback || 'New chat';
 }
 
+function normalizeChatMessages(messages: ChatMessage[]): ChatMessage[] {
+  const seen = new Set<string>();
+  return messages.map((message) => {
+    const id = typeof message.id === 'string' && message.id && !seen.has(message.id) ? message.id : newId('chat');
+    seen.add(id);
+    return id === message.id ? message : { ...message, id };
+  });
+}
+
 function loadWorkspaceSnapshot(): WorkspaceSnapshot | null {
   try {
     const raw = localStorage.getItem(WORKSPACE_KEY);
@@ -115,8 +124,9 @@ function loadWorkspaceSnapshot(): WorkspaceSnapshot | null {
       };
     }
 
-    const chatMessages = Array.isArray(parsed.chatMessages) ? parsed.chatMessages.slice(-100) as ChatMessage[] : [];
-    let chatSessions = Array.isArray(parsed.chatSessions) ? parsed.chatSessions.slice(0, MAX_CHAT_SESSIONS) as ChatSession[] : [];
+    const chatMessages = normalizeChatMessages(Array.isArray(parsed.chatMessages) ? parsed.chatMessages.slice(-100) as ChatMessage[] : []);
+    let chatSessions = (Array.isArray(parsed.chatSessions) ? parsed.chatSessions.slice(0, MAX_CHAT_SESSIONS) as ChatSession[] : [])
+      .map((session) => ({ ...session, messages: normalizeChatMessages(Array.isArray(session.messages) ? session.messages : []) }));
     let activeChatId = typeof parsed.activeChatId === 'string' ? parsed.activeChatId : null;
     if (!activeChatId || !chatSessions.some((s) => s.id === activeChatId)) {
       const id = activeChatId ?? newChatSessionId();
@@ -392,7 +402,6 @@ export default function App() {
   const generationRef = useRef(0);
   const documentRequestRef = useRef(0);
   const pollRef = useRef<() => Promise<void>>(async () => {});
-  const chatSequenceRef = useRef(0);
   const activeChatRunRef = useRef<ActiveChatRun | null>(null);
   const chatMessagesRef = useRef<HTMLDivElement>(null);
   const chatMessagesStateRef = useRef<ChatMessage[]>(restored?.chatMessages ?? []);
@@ -1096,14 +1105,14 @@ export default function App() {
 
   const sendChatMessage = useCallback((text: string): void => {
     const userMessage: ChatMessage = {
-      id: `chat-${chatSequenceRef.current++}`,
+      id: newId('chat'),
       role: 'user',
       text,
     };
     setRunError(null);
     setPendingProposal(null);
     const hasArchitecture = entry.draft.components.length > 0;
-    const assistantId = `chat-${chatSequenceRef.current++}`;
+    const assistantId = newId('chat');
     setChatMessages((messages) => [...messages, userMessage, {
       id: assistantId,
       role: 'assistant',
