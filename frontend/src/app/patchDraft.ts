@@ -1,5 +1,6 @@
 import type { ArchitectureDraft, Component, Connection, Group } from '../types/architecture.generated';
 import type { PatchOperation } from '../api/types';
+import { fillSimulationAttributes } from './simulationDefaults';
 
 const COMPONENT_TYPES = new Set(['client','api_gateway','load_balancer','service','worker','database','cache','message_queue','object_storage','cdn','auth_provider','search_index','scheduler','external_service']);
 const CONNECTION_TYPES = new Set(['sync', 'async']);
@@ -24,15 +25,17 @@ function asStringArray(value: unknown): string[] {
 function normalizeComponent(rawIn: Record<string, unknown>, id: string, fallbackReq: string, prev?: Component): Component {
   const reqRefs = asStringArray(rawIn.requirement_refs);
   const type = String(rawIn.type ?? prev?.type ?? 'service');
+  const resolvedType = (COMPONENT_TYPES.has(type) ? type : (prev?.type ?? 'service')) as Component['type'];
+  const rawAttributes = (rawIn.attributes && typeof rawIn.attributes === 'object' && !Array.isArray(rawIn.attributes))
+    ? rawIn.attributes as Component['attributes']
+    : (prev?.attributes ?? {});
   return {
     id,
     name: String(rawIn.name ?? prev?.name ?? 'New component').trim() || prev?.name || 'New component',
-    type: (COMPONENT_TYPES.has(type) ? type : (prev?.type ?? 'service')) as Component['type'],
+    type: resolvedType,
     technology: (typeof rawIn.technology === 'string' ? rawIn.technology : (rawIn.technology === null ? null : (prev?.technology ?? null))),
     description: String(rawIn.description ?? prev?.description ?? '').trim(),
-    attributes: (rawIn.attributes && typeof rawIn.attributes === 'object' && !Array.isArray(rawIn.attributes))
-      ? rawIn.attributes as Component['attributes']
-      : (prev?.attributes ?? {}),
+    attributes: fillSimulationAttributes(resolvedType, rawAttributes),
     requirement_refs: reqRefs.length > 0 ? reqRefs : (prev?.requirement_refs?.length ? prev.requirement_refs : [fallbackReq]),
     assumed: typeof rawIn.assumed === 'boolean' ? rawIn.assumed : Boolean(prev?.assumed),
     rationale: typeof rawIn.rationale === 'string' ? rawIn.rationale : (rawIn.rationale === null ? null : (prev?.rationale ?? null)),

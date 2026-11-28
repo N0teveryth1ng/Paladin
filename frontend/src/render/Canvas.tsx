@@ -27,6 +27,7 @@ import { ArchitectureEdge, type ArchitectureFlowEdge } from './edges/Architectur
 
 export type SelectionKind = 'component' | 'group' | 'edge';
 const EMPTY_POSITIONS: Record<string, { x: number; y: number }> = {};
+const EMPTY_BOTTLENECK_IDS: string[] = [];
 
 const nodeTypes = {
   component: ComponentNode,
@@ -49,6 +50,7 @@ export interface CanvasProps {
   fixtureName: string;
   positions?: Record<string, { x: number; y: number }>;
   selection?: Selection;
+  bottleneckIds?: string[];
   onSelect: (kind: SelectionKind, id: string) => void;
   onClearSelection: () => void;
   onPositionChange?: (id: string, position: { x: number; y: number }) => void;
@@ -81,6 +83,7 @@ function CanvasInner({
   fixtureName,
   positions = EMPTY_POSITIONS,
   selection = null,
+  bottleneckIds = EMPTY_BOTTLENECK_IDS,
   onSelect,
   onClearSelection,
   onPositionChange = () => {},
@@ -145,6 +148,7 @@ function CanvasInner({
     ? result.edges.find((edge) => edge.id === selection.id)
     : undefined;
   const selectedEndpointIds = new Set(selectedEdge ? [selectedEdge.from, selectedEdge.to] : []);
+  const bottleneckSet = useMemo(() => new Set(bottleneckIds), [bottleneckIds]);
 
   const initialNodes = useMemo<Node[]>(
     () =>
@@ -161,6 +165,7 @@ function CanvasInner({
                   issues: issuesFor(issues, layoutNode.id),
                   theme,
                   connectedToSelection: selectedEndpointIds.has(layoutNode.id),
+                  bottleneck: bottleneckSet.has(layoutNode.id),
                 }
               : { node: layoutNode, theme },
           width: layoutNode.width,
@@ -172,7 +177,7 @@ function CanvasInner({
           zIndex: layoutNode.kind === 'group' ? 0 : 1,
         } satisfies Node;
       }),
-    [result, issues, theme, locked, positions, selection],
+    [result, issues, theme, locked, positions, selection, bottleneckSet],
   );
 
   const initialEdges = useMemo<ArchitectureFlowEdge[]>(

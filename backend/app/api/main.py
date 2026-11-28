@@ -20,6 +20,7 @@ from app.api.config import (
     load_freeze,
     startup_check,
 )
+from app.api.analysis import analyze_cost, analyze_security, simulate
 from app.api.assistant import run_assistant
 from app.api.chat import respond_to_chat
 from app.api.generation import RATE_LIMIT_MESSAGE
@@ -28,12 +29,15 @@ from app.api.models import (
     AssistantResponse,
     ChatRequest,
     ChatResponse,
+    CostRequest,
     ErrorDetail,
     HealthResponse,
     RunAccepted,
     RunRequest,
     RunResult,
     RunStatus,
+    SecurityRequest,
+    SimulationRequest,
     UpdateRequest,
 )
 from app.api.runs import Clock, RunInProgress, RunRegistry
@@ -162,7 +166,17 @@ def create_app(
     # including CORS preflights and error responses, gets no-store.
     @app.middleware("http")
     async def _security_middleware(request: Request, call_next):
-        body_limit = MAX_UPDATE_BODY_BYTES if request.url.path == "/api/updates" else MAX_BODY_BYTES
+        large_body_paths = {
+            "/api/updates",
+            "/api/simulate",
+            "/api/cost",
+            "/api/security",
+        }
+        body_limit = (
+            MAX_UPDATE_BODY_BYTES
+            if request.url.path in large_body_paths
+            else MAX_BODY_BYTES
+        )
         declared = request.headers.get("content-length")
         oversized = declared is not None and declared.isdigit() and int(declared) > body_limit
         if not oversized:
@@ -307,6 +321,30 @@ def create_app(
             return _error_response(502, "transport_error", "The assistant could not reach the configured model. Your diagram was not changed.")
         except Exception:
             return _error_response(500, "internal_error", "The assistant could not reply. Your diagram was not changed.")
+
+    @app.post("/api/simulate")
+    async def simulate_architecture(request: Request):
+        try:
+            payload = SimulationRequest.model_validate(json.loads(await request.body()))
+        except ValueError:
+            return _error_response(400, "invalid_request", "invalid simulation request")
+        return simulate(payload)
+
+    @app.post("/api/cost")
+    async def cost_analysis(request: Request):
+        try:
+            payload = CostRequest.model_validate(json.loads(await request.body()))
+        except ValueError:
+            return _error_response(400, "invalid_request", "invalid cost request")
+        return analyze_cost(payload)
+
+    @app.post("/api/security")
+    async def security_analysis(request: Request):
+        try:
+            payload = SecurityRequest.model_validate(json.loads(await request.body()))
+        except ValueError:
+            return _error_response(400, "invalid_request", "invalid security request")
+        return analyze_security(payload)
 
     @app.get("/api/runs/{run_id}")
     def get_run(run_id: str, request: Request):

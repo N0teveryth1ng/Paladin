@@ -31,6 +31,7 @@ export interface ComponentNodeData extends Record<string, unknown> {
   issues: DisplayIssue[];
   theme: 'light' | 'dark';
   connectedToSelection?: boolean;
+  bottleneck?: boolean;
 }
 
 export type ComponentFlowNode = Node<ComponentNodeData, 'component'>;
@@ -75,14 +76,20 @@ export function ComponentNode({ data }: NodeProps<ComponentFlowNode>) {
       data-component-id={component.id}
       data-type={component.type}
       data-severity={severity ?? ''}
+      data-bottleneck={data.bottleneck ? '1' : undefined}
       role="group"
       aria-label={`${component.name}, ${typeLabel(component.type)}, ${
         component.technology ?? 'no technology'
-      }`}
+      }${data.bottleneck ? ', bottleneck' : ''}`}
       style={{
         width: node.width,
         height: node.height,
         '--component-accent': accent,
+        ...(data.bottleneck ? {
+          borderColor: '#ef4444',
+          background: 'rgba(127,29,29,0.55)',
+          boxShadow: '0 0 0 2px rgba(239,68,68,0.75), 0 0 28px rgba(239,68,68,0.35)',
+        } : {}),
       } as CSSProperties}
     >
       <Handle

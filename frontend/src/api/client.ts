@@ -6,7 +6,22 @@
  * transport failures and missing runs to their own error state.
  */
 
-import type { ApiErrorPayload, AssistantRequest, AssistantResponse, ChatResponse, ChatTurn, CreateRunResponse, GetRunResponse, UpdateRunRequest } from './types';
+import type {
+  ApiErrorPayload,
+  AssistantRequest,
+  AssistantResponse,
+  ChatResponse,
+  ChatTurn,
+  CostRequest,
+  CostResult,
+  CreateRunResponse,
+  GetRunResponse,
+  SecurityRequest,
+  SecurityResult,
+  SimulationRequest,
+  SimulationResult,
+  UpdateRunRequest,
+} from './types';
 import type { ArchitectureDraft } from '../types/architecture.generated';
 
 const LOCAL_BACKEND_ORIGIN = 'http://127.0.0.1:8000';
@@ -99,6 +114,47 @@ export async function sendAssistant(request: AssistantRequest): Promise<Assistan
   });
   if (!response.ok) throw await readError(response);
   return (await response.json()) as AssistantResponse;
+}
+
+export async function runSimulation(
+  currentArchitecture: ArchitectureDraft,
+  peakRps: number,
+  durationS: number,
+): Promise<SimulationResult> {
+  const body: SimulationRequest = {
+    current_architecture: currentArchitecture,
+    peak_rps: peakRps,
+    duration_s: durationS,
+  };
+  const response = await fetch(`${LOCAL_BACKEND_ORIGIN}/api/simulate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw await readError(response);
+  return (await response.json()) as SimulationResult;
+}
+
+export async function analyzeCost(currentArchitecture: ArchitectureDraft): Promise<CostResult> {
+  const body: CostRequest = { current_architecture: currentArchitecture };
+  const response = await fetch(`${LOCAL_BACKEND_ORIGIN}/api/cost`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw await readError(response);
+  return (await response.json()) as CostResult;
+}
+
+export async function analyzeSecurity(currentArchitecture: ArchitectureDraft): Promise<SecurityResult> {
+  const body: SecurityRequest = { current_architecture: currentArchitecture };
+  const response = await fetch(`${LOCAL_BACKEND_ORIGIN}/api/security`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw await readError(response);
+  return (await response.json()) as SecurityResult;
 }
 
 export async function getRun(runId: string): Promise<GetRunResponse> {

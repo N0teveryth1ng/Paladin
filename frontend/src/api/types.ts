@@ -58,6 +58,7 @@ export interface AssistantRequest {
   current_architecture?: ArchitectureDraft | null;
   selected_id?: string | null;
   selected_kind?: 'component' | 'connection' | 'group' | null;
+  simulation?: SimulationResult | null;
 }
 
 export interface PatchOperation {
@@ -89,6 +90,94 @@ export interface AssistantResponse {
   reply: string;
   operations: PatchOperation[];
   redesign_prompt?: string | null;
+}
+
+export interface SimulationRequest {
+  current_architecture: ArchitectureDraft;
+  peak_rps: number;
+  duration_s: number;
+}
+
+export interface SimulationEvent {
+  t_s: number;
+  severity: 'info' | 'warning' | 'error';
+  component_id: string | null;
+  connection_id: string | null;
+  message: string;
+}
+
+export interface NodeLoad {
+  component_id: string;
+  name: string;
+  type: string;
+  load_rps: number;
+  capacity_rps: number;
+  utilization: number;
+  bottleneck: boolean;
+  replicas: number;
+  latency_ms: number;
+  hourly_cost_usd: number;
+}
+
+export interface Bottleneck {
+  component_id: string;
+  component_name: string;
+  utilization: number;
+  dropped_rps: number;
+  recommendation: string;
+}
+
+export interface SimulationResult {
+  ok: boolean;
+  peak_rps: number;
+  duration_s: number;
+  total_dropped_rps: number;
+  estimated_cost_usd: number;
+  node_loads: NodeLoad[];
+  events: SimulationEvent[];
+  bottlenecks: Bottleneck[];
+}
+
+export interface CostRequest {
+  current_architecture: ArchitectureDraft;
+}
+
+export interface CostItem {
+  component_id: string;
+  name: string;
+  type: string;
+  replicas: number;
+  unit_cost_usd: number;
+  hourly_cost_usd: number;
+  monthly_cost_usd: number;
+  basis: string;
+}
+
+export interface CostResult {
+  currency: string;
+  monthly_hours: number;
+  hourly_total_usd: number;
+  monthly_total_usd: number;
+  items: CostItem[];
+}
+
+export interface SecurityRequest {
+  current_architecture: ArchitectureDraft;
+}
+
+export interface SecurityFinding {
+  rule: string;
+  severity: 'critical' | 'warning' | 'info';
+  title: string;
+  message: string;
+  recommendation: string;
+  component_id: string | null;
+  connection_id: string | null;
+}
+
+export interface SecurityResult {
+  passed: boolean;
+  findings: SecurityFinding[];
 }
 
 export interface CreateRunResponse {

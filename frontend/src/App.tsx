@@ -3,9 +3,17 @@ import { History, MessagesSquare, Pencil, Plus, Sparkles, Star, Trash2, X } from
 
 import { Button } from '../components/ui/button';
 import { Input, Textarea } from '../components/ui/input';
-import { ApiRequestError, createRun, getRun, sendAssistant } from './api/client';
+import {
+  ApiRequestError,
+  analyzeCost as analyzeCostApi,
+  analyzeSecurity as analyzeSecurityApi,
+  createRun,
+  getRun,
+  runSimulation as runSimulationApi,
+  sendAssistant,
+} from './api/client';
 import type { ChatTurn, PatchOperation } from './api/types';
-import type { GetRunResponse, RunErrorCode, RunResult } from './api/types';
+import type { CostResult, GetRunResponse, RunErrorCode, RunResult, SecurityResult, SimulationResult } from './api/types';
 import {
   ELAPSED_TICK_MS,
   LAYOUT_FAILURE_MESSAGE,
@@ -20,6 +28,7 @@ import {
 import { parseMode, type LiveEntry, type ThemeName } from './app/modes';
 import type { ArchitectureDraft, Component, Connection, Group } from './types/architecture.generated';
 import { applyPatchOperations } from './app/patchDraft';
+import { withSimulationDefaults } from './app/simulationDefaults';
 import { layoutArchitecture, type LayoutResult } from './layout/layout';
 import { displayEdgeLabel } from './layout/nodeSizes';
 import { Canvas } from './render/Canvas';
@@ -45,6 +54,7 @@ interface ChatMessage {
 }
 
 type RunIntent = 'create' | 'update';
+type DashboardTab = 'canvas' | 'simulation' | 'cost' | 'security';
 
 interface ActiveChatRun {
   assistantId: string;
@@ -87,6 +97,12 @@ const MAX_CHAT_SESSIONS = 30;
 
 function chatTitle(messages: ChatMessage[], fallback: string): string {
   return messages.find((m) => m.role === 'user')?.text.slice(0, 60) || fallback || 'New chat';
+}
+
+function analysisErrorMessage(cause: unknown): string {
+  return cause instanceof ApiRequestError
+    ? cause.message
+    : 'Could not connect to the local analysis backend.';
 }
 
 function normalizeChatMessages(messages: ChatMessage[]): ChatMessage[] {
@@ -393,6 +409,14 @@ export default function App() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [importText, setImportText] = useState('');
   const [importKind, setImportKind] = useState<'readme' | 'openapi' | 'terraform' | 'docker-compose' | 'repo-tree' | 'other'>('readme');
+  const [dashboardTab, setDashboardTab] = useState<DashboardTab>('canvas');
+  const [simulation, setSimulation] = useState<SimulationResult | null>(null);
+  const [costAnalysis, setCostAnalysis] = useState<CostResult | null>(null);
+  const [securityAnalysis, setSecurityAnalysis] = useState<SecurityResult | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [simulationBusy, setSimulationBusy] = useState(false);
+  const [peakRps, setPeakRps] = useState(1000);
+  const [durationS, setDurationS] = useState(60);
 
   const pendingRef = useRef<PendingRun | null>(null);
   const splitDragRef = useRef<{ startX: number; startWidth: number } | null>(null);
@@ -479,6 +503,19 @@ export default function App() {
     setPending(next);
   }, []);
 
+  // Analysis is intentionally outside WorkspaceSnapshot: it must never leak
+  // between chat sessions, restored checkpoints or a newly committed draft.
+  const clearAnalysis = useCallback((): void => {
+    setSimulation(null);
+    setCostAnalysis(null);
+    setSecurityAnalysis(null);
+    setAnalysisError(null);
+  }, []);
+
+  useEffect(() => {
+    clearAnalysis();
+  }, [entry.draft, clearAnalysis]);
+
   const updateChatMessage = useCallback((id: string, patch: Partial<ChatMessage>): void => {
     setChatMessages((messages) => messages.map((message) =>
       message.id === id ? { ...message, ...patch } : message,
@@ -555,11 +592,14 @@ export default function App() {
     }
 
     const payload: RunResult = response.result;
+    // Builder Agent output gets the pinned simulation attributes without
+    // touching its issues or validator metadata.
+    const enriched: RunResult = { ...payload, draft: withSimulationDefaults(payload.draft) };
     try {
-      const layout = await layoutArchitecture(payload.draft);
+      const layout = await layoutArchitecture(enriched.draft);
       if (generationRef.current !== mine) return;
       setPositions({});
-      setCommitted(prepareCommit(payload, layout));
+      setCommitted(prepareCommit(enriched, layout));
       setSelection(null);
       setFitNonce((value) => value + 1);
       const activeChatRun = activeChatRunRef.current;
@@ -909,7 +949,8 @@ export default function App() {
     setPendingProposal(null);
     setPlanStep('idle');
     activeChatRunRef.current = null;
-  }, [persistActiveChat, entry.draft, positions]);
+    clearAnalysis();
+  }, [persistActiveChat, entry.draft, positions, clearAnalysis]);
 
   const switchToChat = useCallback((id: string): void => {
     if (id === activeChatId) { setChatHistoryOpen(false); return; }
@@ -942,7 +983,8 @@ export default function App() {
     setPendingProposal(null);
     setPlanStep('idle');
     activeChatRunRef.current = null;
-  }, [activeChatId, entry.draft, positions]);
+    clearAnalysis();
+  }, [activeChatId, entry.draft, positions, clearAnalysis]);
 
   const renameChat = useCallback((id: string, title: string) => {
     const next = title.trim().slice(0, 80);
@@ -975,11 +1017,12 @@ export default function App() {
         setPendingProposal(null);
         setPlanStep('idle');
         activeChatRunRef.current = null;
+        clearAnalysis();
         return nextList.slice(0, MAX_CHAT_SESSIONS);
       }
       return remaining;
     });
-  }, [activeChatId, entry.draft, positions]);
+  }, [activeChatId, entry.draft, positions, clearAnalysis]);
 
   const resetDocument = useCallback((): void => {
     startNewChat();
@@ -1038,6 +1081,7 @@ export default function App() {
     const cp = checkpoints.find((c) => c.id === id);
     if (!cp) return;
     pushHistory();
+    clearAnalysis();
     const requestId = ++documentRequestRef.current;
     setPositions(cp.positions ?? {});
     void layoutArchitecture(cp.draft).then((nextLayout) => {
@@ -1046,7 +1090,7 @@ export default function App() {
       setFitNonce((v) => v + 1);
       setHistoryOpen(false);
     }).catch(() => {});
-  }, [checkpoints, pushHistory]);
+  }, [checkpoints, pushHistory, clearAnalysis]);
 
   const deleteCheckpoint = useCallback((id: string) => {
     if (!window.confirm('Delete this checkpoint?')) return;
@@ -1084,6 +1128,7 @@ export default function App() {
     try {
       const nextDraft = applyPatchOperations(entry.draft, operations);
       setPlanStep('applying');
+      clearAnalysis();
       commitStructure(nextDraft);
       setSelection(null);
       updateChatMessage(assistantId, { text: reply || 'Applied the update to the current diagram.', status: 'complete', activity: 'chat' });
@@ -1094,7 +1139,7 @@ export default function App() {
       setPlanStep('idle');
     }
     setPendingProposal(null);
-  }, [pendingProposal, entry.draft, commitStructure, updateChatMessage]);
+  }, [pendingProposal, entry.draft, commitStructure, updateChatMessage, clearAnalysis]);
 
   const rejectProposal = useCallback(() => {
     if (!pendingProposal) return;
@@ -1133,6 +1178,7 @@ export default function App() {
       current_architecture: hasArchitecture ? entry.draft : null,
       selected_id: selection?.id ?? null,
       selected_kind: selection?.kind === 'edge' ? 'connection' : (selection?.kind ?? null),
+      simulation: simulation !== null && !simulation.ok ? simulation : null,
     })
       .then((response) => {
         setPlanStep('planning');
@@ -1181,8 +1227,50 @@ export default function App() {
         setPlanStep('idle');
       })
       .finally(() => setChatBusy(false));
-  }, [chatMessages, entry.draft, selection, submit, updateChatMessage]);
+  }, [chatMessages, entry.draft, selection, simulation, submit, updateChatMessage]);
   sendChatMessageRef.current = sendChatMessage;
+
+  const handleRunSimulation = useCallback(async (): Promise<void> => {
+    setSimulationBusy(true);
+    setAnalysisError(null);
+    try {
+      const result = await runSimulationApi(entry.draft, peakRps, durationS);
+      setSimulation(result);
+      setDashboardTab('simulation');
+    } catch (cause) {
+      setAnalysisError(analysisErrorMessage(cause));
+    } finally {
+      setSimulationBusy(false);
+    }
+  }, [entry.draft, peakRps, durationS]);
+
+  const handleRunCost = useCallback(async (): Promise<void> => {
+    setSimulationBusy(true);
+    setAnalysisError(null);
+    try {
+      const result = await analyzeCostApi(entry.draft);
+      setCostAnalysis(result);
+      setDashboardTab('cost');
+    } catch (cause) {
+      setAnalysisError(analysisErrorMessage(cause));
+    } finally {
+      setSimulationBusy(false);
+    }
+  }, [entry.draft]);
+
+  const handleRunSecurity = useCallback(async (): Promise<void> => {
+    setSimulationBusy(true);
+    setAnalysisError(null);
+    try {
+      const result = await analyzeSecurityApi(entry.draft);
+      setSecurityAnalysis(result);
+      setDashboardTab('security');
+    } catch (cause) {
+      setAnalysisError(analysisErrorMessage(cause));
+    } finally {
+      setSimulationBusy(false);
+    }
+  }, [entry.draft]);
 
   useEffect(() => () => stopTimers(), [stopTimers]);
 
@@ -1398,6 +1486,15 @@ export default function App() {
               Local workspace
             </span>
           </header>
+          <nav aria-label="Architecture dashboard" data-testid="dashboard-tabs">
+            <Button type="button" size="xs" variant={dashboardTab === 'canvas' ? 'default' : 'ghost'} data-testid="dashboard-tab-canvas" onClick={() => setDashboardTab('canvas')}>Canvas</Button>
+            <Button type="button" size="xs" variant={dashboardTab === 'simulation' ? 'default' : 'ghost'} data-testid="dashboard-tab-simulation" onClick={() => setDashboardTab('simulation')}>Simulation</Button>
+            <Button type="button" size="xs" variant={dashboardTab === 'cost' ? 'default' : 'ghost'} data-testid="dashboard-tab-cost" onClick={() => setDashboardTab('cost')}>Cost</Button>
+            <Button type="button" size="xs" variant={dashboardTab === 'security' ? 'default' : 'ghost'} data-testid="dashboard-tab-security" onClick={() => setDashboardTab('security')}>Security</Button>
+            <Button type="button" size="xs" variant="secondary" data-testid="run-simulation" onClick={() => void handleRunSimulation()} disabled={simulationBusy || locked}>Run Simulation</Button>
+          </nav>
+          {analysisError !== null ? <p role="alert" data-testid="analysis-error">{analysisError}</p> : null}
+          {dashboardTab === 'canvas' ? (
           <div className="canvas-stage relative min-h-0 flex-1">
             {layoutError !== null ? (
               <div className="canvas-toast absolute left-1/2 top-3 z-30 -translate-x-1/2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-[11px] text-red-200 shadow-xl backdrop-blur-xl" role="alert">
@@ -1418,6 +1515,7 @@ export default function App() {
                 fixtureName="canvas"
                 positions={positions}
                 selection={selection}
+                bottleneckIds={simulation?.bottlenecks.map((b) => b.component_id) ?? []}
                 onSelect={(kind, id) => setSelection({ kind, id })}
                 onClearSelection={() => setSelection(null)}
                 onPositionChange={updatePosition}
@@ -1431,6 +1529,140 @@ export default function App() {
               />
             </ErrorBoundary>
           </div>
+          ) : dashboardTab === 'simulation' ? (
+          <section data-testid="dashboard-panel-simulation" aria-label="Simulation results">
+            <h2>Simulation</h2>
+            <label htmlFor="simulation-peak-rps">Peak RPS</label>
+            <Input
+              id="simulation-peak-rps"
+              data-testid="peak-rps-input"
+              type="number"
+              min={1}
+              max={10000000}
+              value={peakRps}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                setPeakRps(Number.isFinite(value) ? Math.min(10000000, Math.max(1, value)) : 1);
+              }}
+            />
+            <label htmlFor="simulation-duration-s">Duration (s)</label>
+            <Input
+              id="simulation-duration-s"
+              data-testid="duration-s-input"
+              type="number"
+              min={1}
+              max={86400}
+              value={durationS}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                setDurationS(Number.isFinite(value) ? Math.min(86400, Math.max(1, Math.round(value))) : 1);
+              }}
+            />
+            {simulation === null ? (
+              <p>No simulation has been run for this design.</p>
+            ) : (
+              <>
+                <p data-testid="simulation-summary">
+                  Status: {simulation.ok ? 'passed' : 'bottlenecks found'} · Peak RPS: {simulation.peak_rps} ·
+                  Duration: {simulation.duration_s}s · Dropped RPS: {simulation.total_dropped_rps} ·
+                  Estimated cost: {simulation.estimated_cost_usd} USD
+                </p>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="default"
+                  data-testid="fix-bottlenecks"
+                  disabled={chatBusy || locked || simulation.bottlenecks.length === 0}
+                  onClick={() => sendChatMessage('Fix the bottlenecks.')}
+                >
+                  Fix bottlenecks
+                </Button>
+                <h3>Bottlenecks</h3>
+                <ul>
+                  {simulation.bottlenecks.length === 0 ? <li>None.</li> : simulation.bottlenecks.map((bottleneck) => (
+                    <li key={bottleneck.component_id}>
+                      {bottleneck.component_name}: {Math.round(bottleneck.utilization * 100)}% utilization,
+                      {' '}{bottleneck.dropped_rps} RPS dropped. {bottleneck.recommendation}
+                    </li>
+                  ))}
+                </ul>
+                <h3>Node loads</h3>
+                <ul>
+                  {simulation.node_loads.map((load) => (
+                    <li key={load.component_id}>
+                      {load.name}: {load.load_rps}/{load.capacity_rps} RPS ({Math.round(load.utilization * 100)}%),
+                      {' '}{load.replicas} replica(s), {load.latency_ms} ms, {load.hourly_cost_usd} USD/h
+                    </li>
+                  ))}
+                </ul>
+                <h3>Events</h3>
+                <ol>
+                  {simulation.events.map((event, index) => (
+                    <li key={`${event.t_s}-${index}`}>
+                      {event.t_s}s [{event.severity}] {event.message}
+                    </li>
+                  ))}
+                </ol>
+              </>
+            )}
+          </section>
+          ) : dashboardTab === 'cost' ? (
+          <section data-testid="dashboard-panel-cost" aria-label="Cost analysis">
+            <h2>Cost</h2>
+            <Button type="button" size="xs" variant="secondary" data-testid="run-cost" onClick={() => void handleRunCost()} disabled={simulationBusy || locked}>
+              Run cost analysis
+            </Button>
+            {costAnalysis === null ? (
+              <p>No cost analysis has been run for this design.</p>
+            ) : (
+              <>
+                <p data-testid="cost-summary">
+                  Currency: {costAnalysis.currency} · Monthly hours: {costAnalysis.monthly_hours} ·
+                  Hourly: {costAnalysis.hourly_total_usd} · Monthly: {costAnalysis.monthly_total_usd}
+                </p>
+                <table>
+                  <thead>
+                    <tr><th>Component</th><th>Type</th><th>Replicas</th><th>Unit</th><th>Hourly</th><th>Monthly</th><th>Basis</th></tr>
+                  </thead>
+                  <tbody>
+                    {costAnalysis.items.map((item) => (
+                      <tr key={item.component_id}>
+                        <td>{item.name}</td>
+                        <td>{item.type}</td>
+                        <td>{item.replicas}</td>
+                        <td>{item.unit_cost_usd}</td>
+                        <td>{item.hourly_cost_usd}</td>
+                        <td>{item.monthly_cost_usd}</td>
+                        <td>{item.basis}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+          </section>
+          ) : (
+          <section data-testid="dashboard-panel-security" aria-label="Security analysis">
+            <h2>Security</h2>
+            <Button type="button" size="xs" variant="secondary" data-testid="run-security" onClick={() => void handleRunSecurity()} disabled={simulationBusy || locked}>
+              Run security analysis
+            </Button>
+            {securityAnalysis === null ? (
+              <p>No security analysis has been run for this design.</p>
+            ) : (
+              <>
+                <p data-testid="security-summary">Result: {securityAnalysis.passed ? 'passed' : 'findings to review'}</p>
+                <ul>
+                  {securityAnalysis.findings.length === 0 ? <li>No findings.</li> : securityAnalysis.findings.map((finding, index) => (
+                    <li key={`${finding.rule}-${finding.component_id ?? finding.connection_id ?? index}`}>
+                      [{finding.severity}] {finding.title} ({finding.rule}): {finding.message} {finding.recommendation}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </section>
+          )}
           <SidePanel
             entry={entry}
             selection={selection}

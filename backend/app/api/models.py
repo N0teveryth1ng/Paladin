@@ -50,6 +50,116 @@ class ChatResponse(BaseModel):
     reply: str = Field(min_length=1, max_length=4000)
 
 
+class SimulationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    current_architecture: ArchitectureDraft
+    peak_rps: float = Field(default=1000, gt=0, le=10_000_000)
+    duration_s: int = Field(default=60, ge=1, le=86400)
+
+
+class SimulationEvent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    t_s: float
+    severity: Literal["info", "warning", "error"]
+    component_id: str | None = None
+    connection_id: str | None = None
+    message: str
+
+
+class NodeLoad(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    component_id: str
+    name: str
+    type: str
+    load_rps: float
+    capacity_rps: float
+    utilization: float
+    bottleneck: bool
+    replicas: int
+    latency_ms: float
+    hourly_cost_usd: float
+
+
+class Bottleneck(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    component_id: str
+    component_name: str
+    utilization: float
+    dropped_rps: float
+    recommendation: str
+
+
+class SimulationResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    ok: bool
+    peak_rps: float
+    duration_s: int
+    total_dropped_rps: float
+    estimated_cost_usd: float
+    node_loads: list[NodeLoad]
+    events: list[SimulationEvent]
+    bottlenecks: list[Bottleneck]
+
+
+class CostRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    current_architecture: ArchitectureDraft
+
+
+class CostItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    component_id: str
+    name: str
+    type: str
+    replicas: int
+    unit_cost_usd: float
+    hourly_cost_usd: float
+    monthly_cost_usd: float
+    basis: str
+
+
+class CostResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    currency: str = "USD"
+    monthly_hours: int = 730
+    hourly_total_usd: float
+    monthly_total_usd: float
+    items: list[CostItem]
+
+
+class SecurityRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    current_architecture: ArchitectureDraft
+
+
+class SecurityFinding(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    rule: str
+    severity: Literal["critical", "warning", "info"]
+    title: str
+    message: str
+    recommendation: str
+    component_id: str | None = None
+    connection_id: str | None = None
+
+
+class SecurityResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    passed: bool
+    findings: list[SecurityFinding]
+
+
 class AssistantRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -58,6 +168,7 @@ class AssistantRequest(BaseModel):
     current_architecture: ArchitectureDraft | None = None
     selected_id: str | None = Field(default=None, max_length=200)
     selected_kind: Literal["component", "connection", "group"] | None = None
+    simulation: SimulationResult | None = None
 
 
 class PatchOperation(BaseModel):
