@@ -1242,7 +1242,7 @@ export default function App() {
               </div>
 
               {chatHistoryOpen ? (
-                <div className="chat-history mx-3 mb-2 max-h-52 overflow-y-auto rounded-xl border border-white/[0.08] bg-white/[0.02] p-2" aria-label="Chat history">
+                <div className="chat-scrollbar chat-history mx-3 mb-2 max-h-52 overflow-y-auto rounded-xl border border-white/[0.08] bg-white/[0.02] p-2" aria-label="Chat history">
                   <div className="chat-history-header mb-2 flex items-center justify-between gap-2 text-[12px] font-semibold text-zinc-200">
                     <strong>Chats</strong>
                     <Button type="button" variant="ghost" size="icon-sm" onClick={() => setChatHistoryOpen(false)} aria-label="Close chat history">
@@ -1308,7 +1308,7 @@ export default function App() {
                 </div>
               ) : null}
 
-              <div ref={chatMessagesRef} className="chat-messages flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-6" aria-live="polite">
+              <div ref={chatMessagesRef} className="chat-scrollbar chat-messages flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-6" aria-live="polite">
                 {chatMessages.length === 0 ? (
                   <div className="chat-welcome flex items-start gap-3">
                     <span className="assistant-mark grid h-7 w-7 shrink-0 place-items-center rounded-full border border-indigo-300/30 bg-indigo-500/15 text-[11px] font-bold text-indigo-200" aria-hidden="true">P</span>
@@ -1346,7 +1346,7 @@ export default function App() {
                     <strong className="font-semibold text-zinc-100">Proposed edit</strong>
                     <span className="text-[10px] text-zinc-500">Review before applying</span>
                   </div>
-                  <ul className="patch-proposal-list mb-2 max-h-36 overflow-auto pl-4 text-[12px] leading-relaxed text-zinc-300">
+                  <ul className="chat-scrollbar patch-proposal-list mb-2 max-h-36 overflow-auto pl-4 text-[12px] leading-relaxed text-zinc-300">
                     {pendingProposal.summary.map((s, i) => <li key={i}>{s}</li>)}
                   </ul>
                   <div className="patch-proposal-actions flex gap-2">

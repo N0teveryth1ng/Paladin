@@ -12,6 +12,35 @@
   color-scheme: dark;
 }
 
+@layer utilities {
+  .chat-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--color-zinc-600) 50%, transparent) transparent;
+  }
+
+  .chat-scrollbar:hover {
+    scrollbar-color: var(--color-zinc-600) transparent;
+  }
+
+  .chat-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .chat-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .chat-scrollbar::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklab, var(--color-zinc-600) 50%, transparent);
+    border-radius: 9999px;
+  }
+
+  .chat-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: var(--color-zinc-600);
+  }
+}
+
 [data-theme="light"] {
   color-scheme: light;
 
