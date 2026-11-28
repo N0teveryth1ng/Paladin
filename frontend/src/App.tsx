@@ -1,5 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
+import { History, MessagesSquare, Pencil, Plus, Sparkles, Star, Trash2, X } from 'lucide-react';
 
+import { Button } from '../components/ui/button';
+import { Input, Textarea } from '../components/ui/input';
 import { ApiRequestError, createRun, getRun, sendAssistant } from './api/client';
 import type { ChatTurn, PatchOperation } from './api/types';
 import type { GetRunResponse, RunErrorCode, RunResult } from './api/types';
@@ -108,7 +111,7 @@ function loadWorkspaceSnapshot(): WorkspaceSnapshot | null {
         activeChatId: freshId,
         checkpoints,
         theme: parsed.theme === 'dark' ? 'dark' : 'light',
-        sidebarWidth: typeof parsed.sidebarWidth === 'number' ? parsed.sidebarWidth : 520,
+        sidebarWidth: typeof parsed.sidebarWidth === 'number' ? parsed.sidebarWidth : 400,
       };
     }
 
@@ -133,7 +136,7 @@ function loadWorkspaceSnapshot(): WorkspaceSnapshot | null {
       activeChatId,
       checkpoints,
       theme: parsed.theme === 'dark' ? 'dark' : 'light',
-      sidebarWidth: typeof parsed.sidebarWidth === 'number' ? parsed.sidebarWidth : 520,
+      sidebarWidth: typeof parsed.sidebarWidth === 'number' ? parsed.sidebarWidth : 400,
     };
   } catch {
     return null;
@@ -360,8 +363,8 @@ export default function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth <= 760);
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const w = restored?.sidebarWidth;
-    if (typeof w === 'number') return Math.min(680, Math.max(360, Math.round(w)));
-    return Math.min(680, Math.max(360, Math.round(window.innerWidth * 0.38)));
+    if (typeof w === 'number') return Math.min(560, Math.max(320, Math.round(w)));
+    return 400;
   });
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(restored?.chatMessages ?? []);
   const [chatSessions, setChatSessions] = useState<ChatSession[]>(restored?.chatSessions ?? []);
@@ -880,7 +883,7 @@ export default function App() {
   const onSidebarResize = useCallback((event: PointerEvent<HTMLDivElement>): void => {
     const drag = splitDragRef.current;
     if (!drag) return;
-    const next = Math.min(Math.round(window.innerWidth * 0.72), Math.max(320, drag.startWidth + (event.clientX - drag.startX)));
+    const next = Math.min(Math.min(560, Math.round(window.innerWidth * 0.72)), Math.max(320, drag.startWidth + (event.clientX - drag.startX)));
     setSidebarWidth(next);
   }, []);
 
@@ -1192,141 +1195,197 @@ export default function App() {
   useEffect(() => () => stopTimers(), [stopTimers]);
 
   return (
-    <div className="app" data-theme={theme} data-fixture={entry.name}>
-      <div className="workspace">
+    <div
+      className="relative h-screen w-screen overflow-hidden bg-[#0A0A0A] font-sans text-zinc-100 antialiased before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-[520px] before:bg-[radial-gradient(ellipse_at_50%_0%,rgba(79,70,229,0.28),rgba(124,58,237,0.10)_38%,transparent_72%)]"
+      data-theme={theme}
+      data-fixture={entry.name}
+      style={{ '--paladin-sidebar-width': sidebarCollapsed ? '3.5rem' : `${sidebarWidth}px` } as CSSProperties}
+    >
+      <div className="relative h-full w-full pl-[calc(var(--paladin-sidebar-width)+2rem)] pt-[4.5rem]">
+        <Toolbar
+          theme={theme}
+          locked={locked}
+          collapsed={sidebarCollapsed}
+          onToggleSidebar={() => setSidebarCollapsed((value) => !value)}
+          onAddComponent={addComponent}
+          onNew={resetDocument}
+          onOpen={() => void openDocument()}
+          onUndo={undo}
+          onRedo={redo}
+          canUndo={historyTick >= 0 && undoStackRef.current.length > 0}
+          canRedo={historyTick >= 0 && redoStackRef.current.length > 0}
+          onTheme={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
+          onFit={() => setOverviewNonce((value) => value + 1)}
+          onDownload={() => downloadSvg(committed.layout, theme)}
+          onDownloadPng={() => downloadPng(committed.layout, theme)}
+          onDownloadBundle={() => void downloadWorkspaceBundle(committed.layout, theme, entry.draft, positions, committed.layout.title?.trim() || 'paladin-design')}
+          onSave={() => {
+            const suggested = committed.layout.title?.trim() || 'paladin-design';
+            const name = window.prompt('Save file as (local):', suggested);
+            if (name === null) return;
+            const trimmed = name.trim() || suggested;
+            downloadWorkspaceFile(entry.draft, positions, trimmed);
+          }}
+          onCopy={() => navigator.clipboard.writeText(toMermaid(committed.layout))}
+          onCopyImage={() => { void copyPngToClipboard(committed.layout, theme); }}
+          onCheckpoint={createCheckpoint}
+          onHistory={() => setHistoryOpen((v) => !v)}
+          onTemplates={() => setTemplatesOpen(true)}
+          onImportSource={() => setImportOpen(true)}
+          onReview={runReview}
+        />
         <aside
-          className={`app-sidebar${sidebarCollapsed ? ' is-collapsed' : ''}`}
+          className="fixed bottom-4 left-4 top-4 z-40 flex w-[var(--paladin-sidebar-width)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-2xl backdrop-blur-2xl"
           data-testid="app-sidebar"
-          style={sidebarCollapsed ? undefined : { width: sidebarWidth, minWidth: sidebarWidth, maxWidth: sidebarWidth }}
         >
-          <Toolbar
-            theme={theme}
-            locked={locked}
-            collapsed={sidebarCollapsed}
-            onToggleSidebar={() => setSidebarCollapsed((value) => !value)}
-            onAddComponent={addComponent}
-            onNew={resetDocument}
-            onOpen={() => void openDocument()}
-            onUndo={undo}
-            onRedo={redo}
-            canUndo={historyTick >= 0 && undoStackRef.current.length > 0}
-            canRedo={historyTick >= 0 && redoStackRef.current.length > 0}
-            onTheme={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
-            onFit={() => setOverviewNonce((value) => value + 1)}
-            onDownload={() => downloadSvg(committed.layout, theme)}
-            onDownloadPng={() => downloadPng(committed.layout, theme)}
-            onDownloadBundle={() => void downloadWorkspaceBundle(committed.layout, theme, entry.draft, positions, committed.layout.title?.trim() || 'paladin-design')}
-            onSave={() => {
-              const suggested = committed.layout.title?.trim() || 'paladin-design';
-              const name = window.prompt('Save file as (local):', suggested);
-              if (name === null) return;
-              const trimmed = name.trim() || suggested;
-              downloadWorkspaceFile(entry.draft, positions, trimmed);
-            }}
-            onCopy={() => navigator.clipboard.writeText(toMermaid(committed.layout))}
-            onCopyImage={() => { void copyPngToClipboard(committed.layout, theme); }}
-            onCheckpoint={createCheckpoint}
-            onHistory={() => setHistoryOpen((v) => !v)}
-            onTemplates={() => setTemplatesOpen(true)}
-            onImportSource={() => setImportOpen(true)}
-            onReview={runReview}
-          />
           {!sidebarCollapsed ? (
-            <section id="architecture-chat" className="chat-sidebar" aria-label="Architecture chat">
-              <div className="chat-heading">
-                <div className="chat-heading-row">
-                  <div>
-                    <h1>{committed.layout.title}</h1>
-                    <p>{chatBusy ? 'Thinking…' : locked ? 'Working on your design' : chatMessages.length === 0 ? 'Architecture workspace' : 'Conversation'}</p>
+            <section id="architecture-chat" className="chat-sidebar flex min-h-0 min-w-0 flex-1 flex-col" aria-label="Architecture chat">
+              <div className="shrink-0 border-b border-white/[0.08] px-5 py-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h1 className="m-0 truncate text-[15px] font-semibold tracking-tight text-zinc-100">{committed.layout.title}</h1>
+                    <p className="m-0 mt-1 text-[11px] leading-relaxed text-zinc-500">
+                      {chatBusy ? 'Thinking…' : locked ? 'Working on your design' : chatMessages.length === 0 ? 'Architecture workspace' : 'Conversation'}
+                    </p>
                   </div>
-                  <div className="chat-heading-actions">
-                    <button type="button" className="chat-heading-btn" onClick={startNewChat} disabled={chatBusy || locked} title="New chat">New chat</button>
-                    <button type="button" className="chat-heading-btn" onClick={() => setChatHistoryOpen((v) => !v)} title="Chat history">Chats</button>
+                  <div className="flex shrink-0 gap-1.5">
+                    <Button type="button" variant="ghost" size="xs" onClick={startNewChat} disabled={chatBusy || locked} title="New chat" className="gap-1">
+                      <Plus className="h-3 w-3" aria-hidden="true" /> New chat
+                    </Button>
+                    <Button type="button" variant="ghost" size="xs" onClick={() => setChatHistoryOpen((v) => !v)} title="Chat history" className="gap-1">
+                      <MessagesSquare className="h-3 w-3" aria-hidden="true" /> Chats
+                    </Button>
                   </div>
                 </div>
               </div>
+
               {chatHistoryOpen ? (
-                <div className="chat-history" aria-label="Chat history">
-                  <div className="chat-history-header">
+                <div className="chat-history mx-3 mb-2 max-h-52 overflow-y-auto rounded-xl border border-white/[0.08] bg-white/[0.02] p-2" aria-label="Chat history">
+                  <div className="chat-history-header mb-2 flex items-center justify-between gap-2 text-[12px] font-semibold text-zinc-200">
                     <strong>Chats</strong>
-                    <button type="button" className="chat-heading-btn" onClick={() => setChatHistoryOpen(false)}>Close</button>
+                    <Button type="button" variant="ghost" size="icon-sm" onClick={() => setChatHistoryOpen(false)} aria-label="Close chat history">
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                  <div className="chat-history-tools">
-                    <input className="chat-history-search" placeholder="Search chats..." value={chatSearch} onChange={(e) => setChatSearch(e.target.value)} />
+                  <div className="chat-history-tools mb-2">
+                    <Input className="chat-history-search h-8 text-[11px]" placeholder="Search chats..." value={chatSearch} onChange={(e) => setChatSearch(e.target.value)} />
                   </div>
-                  <div className="chat-history-list">
+                  <div className="chat-history-list flex flex-col gap-1.5">
                     {[...chatSessions]
                       .filter((s) => !chatSearch.trim() || (s.title || '').toLowerCase().includes(chatSearch.toLowerCase()) || s.messages.some((m) => m.text.toLowerCase().includes(chatSearch.toLowerCase())))
                       .sort((a, b) => (Number(Boolean(b.pinned)) - Number(Boolean(a.pinned))) || (b.updatedAt || '').localeCompare(a.updatedAt || ''))
                       .map((session) => (
-                      <div key={session.id} className={`chat-history-item${session.id === activeChatId ? ' is-active' : ''}`}>
-                        {renamingChatId === session.id ? (
-                          <div className="chat-history-rename">
-                            <input value={renameValue} onChange={(e) => setRenameValue(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { renameChat(session.id, renameValue); setRenamingChatId(null); } if (e.key === 'Escape') setRenamingChatId(null); }} autoFocus />
-                            <button type="button" className="chat-history-small" onClick={() => { renameChat(session.id, renameValue); setRenamingChatId(null); }}>Save</button>
-                          </div>
-                        ) : (
-                          <>
-                            <button type="button" className="chat-history-select" onClick={() => switchToChat(session.id)}>
-                              <span className="chat-history-title">{session.pinned ? <span className="chat-pin">★</span> : null}{session.id === activeChatId ? '• ' : ''}{session.title || 'New chat'}</span>
-                              <span className="chat-history-date">{session.updatedAt ? new Date(session.updatedAt).toLocaleString() : ''}{session.draft ? ' · design attached' : ''}</span>
-                            </button>
-                            <div className="chat-history-actions">
-                              <button type="button" className="chat-history-small" title="Pin/unpin" onClick={(e) => { e.stopPropagation(); togglePinChat(session.id); }}>{session.pinned ? 'Unpin' : 'Pin'}</button>
-                              <button type="button" className="chat-history-small" title="Rename" onClick={(e) => { e.stopPropagation(); setRenamingChatId(session.id); setRenameValue(session.title || ''); }}>Rename</button>
-                              <button type="button" className="chat-history-delete" title="Delete chat" aria-label="Delete chat" onClick={(e) => { e.stopPropagation(); deleteChat(session.id); }}>Delete</button>
+                        <div
+                          key={session.id}
+                          className={`chat-history-item flex items-stretch gap-1.5 rounded-xl border p-1.5 transition-colors ${session.id === activeChatId ? 'is-active border-indigo-400/40 bg-indigo-400/10' : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05]'}`}
+                        >
+                          {renamingChatId === session.id ? (
+                            <div className="chat-history-rename flex w-full gap-1 p-0.5">
+                              <Input
+                                className="h-7 min-w-0 flex-1 text-[11px]"
+                                value={renameValue}
+                                onChange={(e) => setRenameValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') { renameChat(session.id, renameValue); setRenamingChatId(null); }
+                                  if (e.key === 'Escape') setRenamingChatId(null);
+                                }}
+                                autoFocus
+                              />
+                              <Button type="button" variant="secondary" size="xs" className="chat-history-small" onClick={() => { renameChat(session.id, renameValue); setRenamingChatId(null); }}>
+                                Save
+                              </Button>
                             </div>
-                          </>
-                        )}
-                      </div>
-                    ))}
+                          ) : (
+                            <>
+                              <button type="button" className="chat-history-select flex min-w-0 flex-1 flex-col items-start gap-0.5 rounded-lg px-2 py-1 text-left transition-colors hover:bg-white/[0.04]" onClick={() => switchToChat(session.id)}>
+                                <span className="chat-history-title flex min-w-0 items-center gap-1 truncate text-[12px] font-medium text-zinc-200">
+                                  {session.pinned ? <span className="chat-pin text-amber-300">★</span> : null}
+                                  {session.id === activeChatId ? <span className="text-indigo-300">•</span> : null}
+                                  <span className="truncate">{session.title || 'New chat'}</span>
+                                </span>
+                                <span className="chat-history-date text-[10px] text-zinc-600">
+                                  {session.updatedAt ? new Date(session.updatedAt).toLocaleString() : ''}{session.draft ? ' · design attached' : ''}
+                                </span>
+                              </button>
+                              <div className="chat-history-actions flex shrink-0 items-center gap-1">
+                                <Button type="button" variant="ghost" size="xs" className="chat-history-small h-6 px-1.5 text-[10px]" title="Pin/unpin" onClick={(e) => { e.stopPropagation(); togglePinChat(session.id); }}>
+                                  {session.pinned ? <Star className="h-3 w-3 fill-amber-300 text-amber-300" /> : <Star className="h-3 w-3" />}
+                                </Button>
+                                <Button type="button" variant="ghost" size="xs" className="chat-history-small h-6 px-1.5 text-[10px]" title="Rename" onClick={(e) => { e.stopPropagation(); setRenamingChatId(session.id); setRenameValue(session.title || ''); }}>
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button type="button" variant="ghost" size="xs" className="chat-history-delete h-6 px-1.5 text-[10px] text-red-300/70 hover:text-red-300" title="Delete chat" aria-label="Delete chat" onClick={(e) => { e.stopPropagation(); deleteChat(session.id); }}>
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      ))}
                   </div>
                 </div>
               ) : null}
-              <div ref={chatMessagesRef} className="chat-messages" aria-live="polite">
+
+              <div ref={chatMessagesRef} className="chat-messages flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-6" aria-live="polite">
                 {chatMessages.length === 0 ? (
-                  <div className="chat-welcome">
-                    <span className="assistant-mark" aria-hidden="true">P</span>
-                    <p className="chat-message chat-message-assistant">Describe a system to design. I’ll map its components and connections onto the canvas.</p>
+                  <div className="chat-welcome flex items-start gap-3">
+                    <span className="assistant-mark grid h-7 w-7 shrink-0 place-items-center rounded-full border border-indigo-300/30 bg-indigo-500/15 text-[11px] font-bold text-indigo-200" aria-hidden="true">P</span>
+                    <p className="chat-message chat-message-assistant m-0 max-w-[94%] rounded-2xl rounded-bl-md border border-white/[0.06] bg-white/[0.035] px-4 py-3 text-[13px] leading-relaxed text-zinc-200">
+                      Describe a system to design. I’ll map its components and connections onto the canvas.
+                    </p>
                   </div>
                 ) : (
                   chatMessages.map((message) => message.role === 'user' ? (
-                    <div key={message.id} className="chat-message chat-message-user">{message.text}</div>
+                    <div key={message.id} className="chat-message chat-message-user ml-auto max-w-[86%] rounded-2xl rounded-br-md bg-zinc-800/80 px-4 py-3 text-[13px] leading-relaxed text-zinc-100">
+                      {message.text}
+                    </div>
                   ) : (
-                    <div key={message.id} className="chat-response">
-                      <span className="assistant-mark" aria-hidden="true">P</span>
-                      <div className="chat-message chat-message-assistant">
+                    <div key={message.id} className="chat-response flex items-start gap-3">
+                      <span className="assistant-mark grid h-7 w-7 shrink-0 place-items-center rounded-full border border-indigo-300/30 bg-indigo-500/15 text-[11px] font-bold text-indigo-200" aria-hidden="true">P</span>
+                      <div className="chat-message chat-message-assistant mr-auto max-w-[94%] rounded-2xl rounded-bl-md border border-white/[0.06] bg-white/[0.035] px-4 py-3 text-[13px] leading-relaxed text-zinc-200">
                         {message.text}
                         {message.status === 'working' && message.activity === 'design' ? <RunStatus run={pending} error={null} /> : null}
-                        {message.status === 'working' && message.activity === 'chat' ? <span className="chat-thinking"><i aria-hidden="true" />{planStep !== 'idle' && planStep !== 'done' ? PLAN_LABELS[planStep] : 'Thinking'}</span> : null}
+                        {message.status === 'working' && message.activity === 'chat' ? (
+                          <span className="chat-thinking mt-2 inline-flex items-center gap-2 text-[11px] text-zinc-500">
+                            <i className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-300" aria-hidden="true" />
+                            {planStep !== 'idle' && planStep !== 'done' ? PLAN_LABELS[planStep] : 'Thinking'}
+                          </span>
+                        ) : null}
                         {message.status === 'failed' && runError !== null ? <RunStatus run={null} error={runError} /> : null}
                       </div>
                     </div>
                   ))
                 )}
               </div>
+
               {pendingProposal ? (
-                <div className="patch-proposal" role="region" aria-label="Proposed diagram edit">
-                  <div className="patch-proposal-head"><strong>Proposed edit</strong><span>Review before applying</span></div>
-                  <ul className="patch-proposal-list">{pendingProposal.summary.map((s, i) => <li key={i}>{s}</li>)}</ul>
-                  <div className="patch-proposal-actions">
-                    <button type="button" className="chat-heading-btn" onClick={acceptProposal}>Accept</button>
-                    <button type="button" className="chat-heading-btn" onClick={rejectProposal}>Reject</button>
+                <div className="patch-proposal mx-3 mb-2 rounded-xl border border-indigo-400/25 bg-indigo-400/[0.07] p-3.5 text-[12px] text-zinc-100" role="region" aria-label="Proposed diagram edit">
+                  <div className="patch-proposal-head mb-2 flex items-center justify-between gap-2">
+                    <strong className="font-semibold text-zinc-100">Proposed edit</strong>
+                    <span className="text-[10px] text-zinc-500">Review before applying</span>
+                  </div>
+                  <ul className="patch-proposal-list mb-2 max-h-36 overflow-auto pl-4 text-[12px] leading-relaxed text-zinc-300">
+                    {pendingProposal.summary.map((s, i) => <li key={i}>{s}</li>)}
+                  </ul>
+                  <div className="patch-proposal-actions flex gap-2">
+                    <Button type="button" variant="default" size="xs" onClick={acceptProposal}>Accept</Button>
+                    <Button type="button" variant="ghost" size="xs" onClick={rejectProposal}>Reject</Button>
                   </div>
                 </div>
               ) : null}
-              {planStep !== 'idle' && planStep !== 'done' && !pendingProposal ? <div className="plan-status" aria-live="polite">{PLAN_LABELS[planStep]}</div> : null}
-              <PromptBox
-                disabled={locked || chatBusy}
-                onSubmit={sendChatMessage}
-              />
+              {planStep !== 'idle' && planStep !== 'done' && !pendingProposal ? (
+                <div className="plan-status mx-3 mb-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[10px] text-zinc-400" aria-live="polite">
+                  {PLAN_LABELS[planStep]}
+                </div>
+              ) : null}
+              <PromptBox disabled={locked || chatBusy} onSubmit={sendChatMessage} />
             </section>
           ) : null}
         </aside>
 
         {!sidebarCollapsed ? (
           <div
-            className="workspace-splitter"
+            className="absolute bottom-4 left-[calc(var(--paladin-sidebar-width)+0.75rem)] top-4 z-20 w-1 cursor-col-resize rounded-full bg-white/[0.06] transition-colors hover:bg-indigo-400/50"
             role="separator"
             aria-orientation="vertical"
             aria-label="Resize chat and canvas"
@@ -1337,14 +1396,23 @@ export default function App() {
           />
         ) : null}
 
-        <main className="canvas-column" data-theme={theme}>
-          <header className="canvas-header">
-            <div className="canvas-header-copy">
-              <span className="canvas-header-kicker">Canvas</span>
+        <main className="canvas-column relative flex h-full w-full flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0C0C0E]/80 shadow-[0_24px_80px_-32px_rgba(0,0,0,0.9)]" data-theme={theme}>
+          <header className="canvas-header flex h-14 shrink-0 items-center justify-between gap-4 border-b border-white/[0.08] bg-white/[0.02] px-5">
+            <div className="canvas-header-copy flex min-w-0 items-baseline gap-2.5">
+              <span className="canvas-header-kicker text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Canvas</span>
+              <span className="truncate text-[13px] font-medium text-zinc-200">{committed.layout.title}</span>
             </div>
+            <span className="flex items-center gap-2 text-[10px] text-zinc-600">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
+              Local workspace
+            </span>
           </header>
-          <div className="canvas-stage">
-            {layoutError !== null ? <div className="canvas-toast" role="alert">{layoutError}</div> : null}
+          <div className="canvas-stage relative min-h-0 flex-1">
+            {layoutError !== null ? (
+              <div className="canvas-toast absolute left-1/2 top-3 z-30 -translate-x-1/2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-[11px] text-red-200 shadow-xl backdrop-blur-xl" role="alert">
+                {layoutError}
+              </div>
+            ) : null}
             <ErrorBoundary>
               <Canvas
                 key="workbench"
@@ -1363,15 +1431,11 @@ export default function App() {
                 onClearSelection={() => setSelection(null)}
                 onPositionChange={updatePosition}
                 onConnect={connectComponents}
-                
-onReconnect={reconnectEdge}
+                onReconnect={reconnectEdge}
                 onDelete={deleteSelection}
-                
-onDeleteMany={deleteMany}
-                
-onDuplicate={duplicateSelected}
-                
-onAlign={alignSelected}
+                onDeleteMany={deleteMany}
+                onDuplicate={duplicateSelected}
+                onAlign={alignSelected}
                 onReady={() => {}}
               />
             </ErrorBoundary>
@@ -1389,22 +1453,27 @@ onAlign={alignSelected}
       </div>
 
       {templatesOpen ? (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Templates and remix" onClick={() => setTemplatesOpen(false)}>
-          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-head"><h2>Templates &amp; Remix</h2><button type="button" className="chat-heading-btn" onClick={() => setTemplatesOpen(false)}>Close</button></div>
-            <p style={{ marginTop: 0, color: '#aab4be', fontSize: 12 }}>Start from a template or remix the current design.</p>
-            <div className="modal-grid">
+        <div className="modal-overlay fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-5 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Templates and remix" onClick={() => setTemplatesOpen(false)}>
+          <div className="modal-panel max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-zinc-950/95 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head mb-4 flex items-center justify-between gap-3">
+              <h2 className="m-0 text-[15px] font-semibold text-zinc-100">Templates &amp; Remix</h2>
+              <Button type="button" variant="ghost" size="icon-sm" onClick={() => setTemplatesOpen(false)} aria-label="Close templates"><X className="h-3.5 w-3.5" /></Button>
+            </div>
+            <p className="m-0 text-[12px] text-zinc-500">Start from a template or remix the current design.</p>
+            <div className="modal-grid mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {DESIGN_TEMPLATES.map((t) => (
-                <button key={t.id} type="button" className="modal-card" onClick={() => applyTemplatePrompt(t.prompt)}>
-                  <h3>{t.name}</h3><p>{t.description}</p>
+                <button key={t.id} type="button" className="modal-card rounded-xl border border-white/[0.07] bg-white/[0.03] p-3.5 text-left transition-colors hover:border-indigo-400/35 hover:bg-indigo-400/[0.07]" onClick={() => applyTemplatePrompt(t.prompt)}>
+                  <h3 className="m-0 text-[13px] font-semibold text-zinc-100">{t.name}</h3>
+                  <p className="mt-1 m-0 text-[11px] leading-relaxed text-zinc-500">{t.description}</p>
                 </button>
               ))}
             </div>
-            <h3 style={{ fontSize: 13, margin: '14px 0 8px' }}>Remix current design</h3>
-            <div className="modal-grid">
+            <h3 className="mb-2 mt-5 text-[13px] font-semibold text-zinc-200">Remix current design</h3>
+            <div className="modal-grid grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {REMIX_ACTIONS.map((r) => (
-                <button key={r.id} type="button" className="modal-card" onClick={() => applyTemplatePrompt(r.prompt)} disabled={entry.draft.components.length === 0}>
-                  <h3>{r.label}</h3><p>Apply as an AI-assisted design update.</p>
+                <button key={r.id} type="button" className="modal-card rounded-xl border border-white/[0.07] bg-white/[0.03] p-3.5 text-left transition-colors hover:border-indigo-400/35 hover:bg-indigo-400/[0.07] disabled:opacity-40" onClick={() => applyTemplatePrompt(r.prompt)} disabled={entry.draft.components.length === 0}>
+                  <h3 className="m-0 text-[13px] font-semibold text-zinc-100">{r.label}</h3>
+                  <p className="mt-1 m-0 text-[11px] leading-relaxed text-zinc-500">Apply as an AI-assisted design update.</p>
                 </button>
               ))}
             </div>
@@ -1413,12 +1482,15 @@ onAlign={alignSelected}
       ) : null}
 
       {importOpen ? (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Import source" onClick={() => setImportOpen(false)}>
-          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-head"><h2>Generate from source</h2><button type="button" className="chat-heading-btn" onClick={() => setImportOpen(false)}>Close</button></div>
-            <p style={{ marginTop: 0, color: '#aab4be', fontSize: 12 }}>Paste README, OpenAPI, Terraform, docker-compose, or a repo tree. Paladin will generate an editable typed diagram.</p>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-              <select className="modal-select" value={importKind} onChange={(e) => setImportKind(e.target.value as any)}>
+        <div className="modal-overlay fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-5 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Import source" onClick={() => setImportOpen(false)}>
+          <div className="modal-panel max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-zinc-950/95 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head mb-4 flex items-center justify-between gap-3">
+              <h2 className="m-0 text-[15px] font-semibold text-zinc-100">Generate from source</h2>
+              <Button type="button" variant="ghost" size="icon-sm" onClick={() => setImportOpen(false)} aria-label="Close import"><X className="h-3.5 w-3.5" /></Button>
+            </div>
+            <p className="m-0 text-[12px] text-zinc-500">Paste README, OpenAPI, Terraform, docker-compose, or a repo tree. Paladin will generate an editable typed diagram.</p>
+            <div className="mb-3 mt-4 flex gap-2">
+              <select className="modal-select h-9 rounded-xl border border-white/10 bg-zinc-900/60 px-3 text-xs text-zinc-100 outline-none focus-visible:border-indigo-400/50" value={importKind} onChange={(e) => setImportKind(e.target.value as any)}>
                 <option value="readme">README</option>
                 <option value="openapi">OpenAPI</option>
                 <option value="terraform">Terraform</option>
@@ -1427,30 +1499,38 @@ onAlign={alignSelected}
                 <option value="other">Other</option>
               </select>
             </div>
-            <textarea className="modal-textarea" value={importText} onChange={(e) => setImportText(e.target.value)} placeholder="Paste source here..." />
-            <div className="modal-actions">
-              <button type="button" className="chat-heading-btn" onClick={runImportSource} disabled={!importText.trim()}>Generate diagram</button>
-              <button type="button" className="chat-heading-btn" onClick={() => setImportOpen(false)}>Cancel</button>
+            <Textarea className="modal-textarea min-h-48 font-mono text-[12px]" value={importText} onChange={(e) => setImportText(e.target.value)} placeholder="Paste source here..." />
+            <div className="modal-actions mt-3 flex flex-wrap gap-2">
+              <Button type="button" variant="default" onClick={runImportSource} disabled={!importText.trim()} className="gap-1.5"><Sparkles className="h-3.5 w-3.5" /> Generate diagram</Button>
+              <Button type="button" variant="ghost" onClick={() => setImportOpen(false)}>Cancel</Button>
             </div>
           </div>
         </div>
       ) : null}
 
       {historyOpen ? (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Version history" onClick={() => setHistoryOpen(false)}>
-          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-head"><h2>Version history / checkpoints</h2><button type="button" className="chat-heading-btn" onClick={() => setHistoryOpen(false)}>Close</button></div>
-            <p style={{ marginTop: 0, color: '#aab4be', fontSize: 12 }}>Local checkpoints for the current design. Restore creates an undo point.</p>
-            <div className="modal-actions" style={{ marginTop: 0, marginBottom: 12 }}>
-              <button type="button" className="chat-heading-btn" onClick={createCheckpoint}>Save checkpoint</button>
+        <div className="modal-overlay fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-5 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Version history" onClick={() => setHistoryOpen(false)}>
+          <div className="modal-panel max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-zinc-950/95 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head mb-4 flex items-center justify-between gap-3">
+              <h2 className="m-0 flex items-center gap-2 text-[15px] font-semibold text-zinc-100"><History className="h-4 w-4 text-indigo-300" /> Version history / checkpoints</h2>
+              <Button type="button" variant="ghost" size="icon-sm" onClick={() => setHistoryOpen(false)} aria-label="Close history"><X className="h-3.5 w-3.5" /></Button>
             </div>
-            <div className="modal-list">
-              {checkpoints.length === 0 ? <div style={{ color: '#9fa6a8', fontSize: 12 }}>No checkpoints yet.</div> : checkpoints.map((cp) => (
-                <div key={cp.id} className="modal-list-item">
-                  <div><strong>{cp.name}</strong><small>{new Date(cp.createdAt).toLocaleString()} · {cp.draft.components.length} components</small></div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button type="button" className="chat-heading-btn" onClick={() => restoreCheckpoint(cp.id)}>Restore</button>
-                    <button type="button" className="chat-heading-btn" onClick={() => deleteCheckpoint(cp.id)}>Delete</button>
+            <p className="m-0 text-[12px] text-zinc-500">Local checkpoints for the current design. Restore creates an undo point.</p>
+            <div className="modal-actions mb-3 mt-4 flex flex-wrap gap-2">
+              <Button type="button" variant="secondary" onClick={createCheckpoint}>Save checkpoint</Button>
+            </div>
+            <div className="modal-list flex flex-col gap-2">
+              {checkpoints.length === 0 ? (
+                <div className="text-[12px] text-zinc-600">No checkpoints yet.</div>
+              ) : checkpoints.map((cp) => (
+                <div key={cp.id} className="modal-list-item flex items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+                  <div className="min-w-0">
+                    <strong className="block truncate text-[12px] font-medium text-zinc-100">{cp.name}</strong>
+                    <small className="mt-0.5 block text-[10px] text-zinc-600">{new Date(cp.createdAt).toLocaleString()} · {cp.draft.components.length} components</small>
+                  </div>
+                  <div className="flex shrink-0 gap-1.5">
+                    <Button type="button" variant="ghost" size="xs" onClick={() => restoreCheckpoint(cp.id)}>Restore</Button>
+                    <Button type="button" variant="ghost" size="xs" className="text-red-300/70 hover:text-red-300" onClick={() => deleteCheckpoint(cp.id)}>Delete</Button>
                   </div>
                 </div>
               ))}

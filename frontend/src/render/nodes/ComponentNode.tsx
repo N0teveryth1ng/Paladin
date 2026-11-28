@@ -1,6 +1,25 @@
+'use client';
+
 import type { CSSProperties } from 'react';
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
+import {
+  Box,
+  Clock,
+  Cloud,
+  Cpu,
+  Database,
+  Globe,
+  HardDrive,
+  Layers,
+  MessageSquare,
+  Monitor,
+  Network,
+  Search,
+  ShieldCheck,
+  type LucideIcon,
+} from 'lucide-react';
 
+import { cn } from '../../../lib/utils';
 import type { LayoutNode } from '../../layout/layoutTypes';
 import type { ComponentType } from '../../types/architecture.generated';
 import type { DisplayIssue } from '../../types/issues';
@@ -16,6 +35,23 @@ export interface ComponentNodeData extends Record<string, unknown> {
 
 export type ComponentFlowNode = Node<ComponentNodeData, 'component'>;
 
+const TYPE_ICONS: Record<ComponentType, LucideIcon> = {
+  client: Monitor,
+  api_gateway: Network,
+  load_balancer: Network,
+  service: Box,
+  worker: Cpu,
+  database: Database,
+  cache: Layers,
+  message_queue: MessageSquare,
+  object_storage: HardDrive,
+  cdn: Globe,
+  auth_provider: ShieldCheck,
+  search_index: Search,
+  scheduler: Clock,
+  external_service: Cloud,
+};
+
 export function ComponentNode({ data }: NodeProps<ComponentFlowNode>) {
   const { node, issues, theme } = data;
   const component = node.component;
@@ -25,10 +61,16 @@ export function ComponentNode({ data }: NodeProps<ComponentFlowNode>) {
 
   const accent = accentFor(component.type, theme);
   const severity = worstSeverity(issues);
+  const Icon = TYPE_ICONS[component.type];
 
   return (
     <div
-      className={`component-node${component.assumed ? ' assumed' : ''}${data.connectedToSelection ? ' connected-to-selection' : ''}`}
+      className={cn(
+        'component-node group relative flex h-full w-full items-stretch overflow-hidden rounded-lg border text-white shadow-[0_12px_36px_-18px_rgba(0,0,0,0.95)] backdrop-blur-xl transition-all',
+        'border-[color-mix(in_srgb,var(--component-accent)_58%,#3f3f46)] bg-[color-mix(in_srgb,var(--component-accent)_8%,rgba(24,24,27,0.94))]',
+        component.assumed && 'assumed border-dashed',
+        data.connectedToSelection && 'connected-to-selection ring-2 ring-indigo-400/70',
+      )}
       data-testid="component-node"
       data-component-id={component.id}
       data-type={component.type}
@@ -43,49 +85,57 @@ export function ComponentNode({ data }: NodeProps<ComponentFlowNode>) {
         '--component-accent': accent,
       } as CSSProperties}
     >
-      <Handle type="target" position={Position.Left} id="t" className="paladin-handle" />
-      <Handle type="source" position={Position.Right} id="s" className="paladin-handle" />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="t"
+        className="paladin-handle !h-2 !w-2 !rounded-full !border !border-zinc-950 !bg-indigo-400 opacity-0 transition-opacity group-hover:opacity-100"
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="s"
+        className="paladin-handle !h-2 !w-2 !rounded-full !border !border-zinc-950 !bg-indigo-400 opacity-0 transition-opacity group-hover:opacity-100"
+      />
 
-      <span className="component-icon" style={{ color: accent }} aria-hidden="true">
-        <TypeIcon type={component.type} />
+      <span
+        className="component-icon ml-3.5 mt-auto mb-auto grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/[0.05] backdrop-blur"
+        style={{ color: accent }}
+        aria-hidden="true"
+      >
+        <Icon className="h-4 w-4" strokeWidth={1.8} />
       </span>
-      <div className="component-body">
-        <div className="component-name" title={component.name}>
+      <div className="component-body flex min-w-0 flex-1 flex-col justify-center gap-2 py-3 pl-3.5 pr-4">
+        <div className="component-name overflow-hidden text-[14px] font-semibold leading-tight tracking-tight text-zinc-50" title={component.name}>
           {component.name}
         </div>
-        <div className="component-meta">
-          <span className="component-type">{typeLabel(component.type)}</span>
-          {component.technology !== null && component.technology !== undefined ? <span className="component-tech" title={component.technology}>{component.technology}</span> : null}
+        <div className="component-meta flex min-w-0 items-center gap-2 text-[10px]">
+          <span className="component-type shrink-0 font-medium capitalize text-zinc-400">{typeLabel(component.type)}</span>
+          {component.technology !== null && component.technology !== undefined ? (
+            <span className="component-tech overflow-hidden text-ellipsis whitespace-nowrap text-zinc-500" title={component.technology}>
+              <span className="pr-1.5 text-zinc-600">•</span>
+              {component.technology}
+            </span>
+          ) : null}
         </div>
       </div>
 
-      {component.assumed ? <span className="assumed-pill">assumed</span> : null}
+      {component.assumed ? (
+        <span className="assumed-pill absolute right-2 top-2 rounded-full border border-dashed border-zinc-500/60 bg-black/30 px-1.5 py-0.5 text-[8px] uppercase tracking-wide text-zinc-400">
+          assumed
+        </span>
+      ) : null}
       {severity !== null ? (
         <span
-          className={`severity-dot severity-${severity}`}
+          className={cn(
+            'severity-dot severity-' + severity,
+            'absolute bottom-2 right-2 h-2 w-2 rounded-full ring-2 ring-zinc-900',
+            severity === 'invalid' ? 'bg-red-400' : 'bg-amber-400',
+          )}
           title={`${severity} issue on this component`}
           aria-label={`${severity} issue`}
         />
       ) : null}
     </div>
   );
-}
-
-function TypeIcon({ type }: { type: ComponentType }) {
-  if (type === 'client') {
-    return <svg viewBox="0 0 20 20"><rect x="5.5" y="2.5" width="9" height="15" rx="2" /><path d="M8 14.5h4" /></svg>;
-  }
-  if (type === 'database' || type === 'cache' || type === 'search_index') {
-    return <svg viewBox="0 0 20 20"><ellipse cx="10" cy="4.5" rx="6.5" ry="2.5" /><path d="M3.5 4.5v10c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5v-10M3.5 9.5c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5" /></svg>;
-  }
-  if (type === 'message_queue' || type === 'scheduler') {
-    return <svg viewBox="0 0 20 20"><circle cx="5" cy="5" r="2" /><circle cx="15" cy="15" r="2" /><path d="M7 5h6a2 2 0 0 1 0 4H7a2 2 0 0 0 0 4h6" /></svg>;
-  }
-  if (type === 'auth_provider') {
-    return <svg viewBox="0 0 20 20"><path d="M10 2.5 16 5v4.6c0 3.6-2.4 6.3-6 8-3.6-1.7-6-4.4-6-8V5z" /><path d="m7.5 9.8 1.7 1.7 3.5-3.6" /></svg>;
-  }
-  if (type === 'object_storage' || type === 'cdn' || type === 'external_service') {
-    return <svg viewBox="0 0 20 20"><path d="M5.1 14.8h9.3a3 3 0 0 0 .3-6 4.9 4.9 0 0 0-9.4-.8 3.4 3.4 0 0 0-.2 6.8Z" /></svg>;
-  }
-  return <svg viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="5" rx="1.3" /><rect x="3" y="12" width="14" height="5" rx="1.3" /><path d="M6 5.5h.1M6 14.5h.1" /></svg>;
 }

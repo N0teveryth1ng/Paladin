@@ -1,3 +1,5 @@
+'use client';
+
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -6,6 +8,7 @@ import {
   type EdgeProps,
 } from '@xyflow/react';
 
+import { cn } from '../../../lib/utils';
 import type { LayoutBox, LayoutEdge, LayoutPoint } from '../../layout/layoutTypes';
 import type { DisplayIssue } from '../../types/issues';
 import { worstSeverity } from '../../types/issues';
@@ -57,12 +60,8 @@ export function ArchitectureEdge(props: EdgeProps<ArchitectureFlowEdge>) {
   const targetBounds = data.targetBounds;
   const routeMatchesNodes = section !== null && section.length >= 2
     && sourceBounds !== null && targetBounds !== null
-    // ELK fans parallel links out across a node's edge. React Flow reports
-    // the center handle, so compare against the node boundary and allow any
-    // routed attachment point along that boundary.
     && isOnNodeBoundary(section[0], sourceBounds)
     && isOnNodeBoundary(section[section.length - 1], targetBounds)
-    // Reject the saved route after either endpoint has been dragged.
     && Math.abs(sourceX - (sourceBounds.x + sourceBounds.width)) <= HANDLE_ALIGNMENT_TOLERANCE
     && Math.abs(targetX - targetBounds.x) <= HANDLE_ALIGNMENT_TOLERANCE
     && sourceY >= sourceBounds.y - HANDLE_ALIGNMENT_TOLERANCE
@@ -90,7 +89,7 @@ export function ArchitectureEdge(props: EdgeProps<ArchitectureFlowEdge>) {
 
   return (
     <g
-      className={`architecture-edge edge-${edge.type}${selected ? ' selected' : ''}`}
+      className={cn('architecture-edge', `edge-${edge.type}`, selected && 'selected')}
       data-testid="architecture-edge"
       data-edge-id={edge.id}
       data-edge-type={edge.type}
@@ -99,12 +98,20 @@ export function ArchitectureEdge(props: EdgeProps<ArchitectureFlowEdge>) {
       <BaseEdge
         path={path}
         markerEnd={markerEnd}
-        className="edge-path"
         interactionWidth={24}
+        className={cn(
+          'edge-path stroke-zinc-500 [stroke-width:2.4px]',
+          edge.type === 'async' && 'edge-async [stroke-dasharray:7_5]',
+          edge.type === 'sync' && 'edge-sync',
+          selected && 'stroke-indigo-400 [stroke-width:3px]',
+        )}
       />
       <EdgeLabelRenderer>
         <div
-          className={`edge-label${selected ? ' selected' : ''}`}
+          className={cn(
+            'edge-label absolute flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-zinc-950/90 px-2.5 py-1.5 text-[11px] font-medium text-zinc-200 shadow-xl backdrop-blur-xl',
+            selected && 'border-indigo-400/50 ring-2 ring-indigo-400/20',
+          )}
           data-edge-id={edge.id}
           style={{
             width: Math.max(96, edge.labelBox.width),
@@ -113,11 +120,15 @@ export function ArchitectureEdge(props: EdgeProps<ArchitectureFlowEdge>) {
           }}
           title={`${edge.label}${edge.technology !== null ? ` · ${edge.technology}` : ''} · Double-click to focus`}
         >
-          {edge.assumed ? <span className="edge-assumed">Assumed</span> : null}
-          <span className="edge-label-text">{edge.displayLabel}</span>
+          {edge.assumed ? <span className="edge-assumed rounded bg-amber-400/15 px-1 py-0.5 text-[8px] uppercase tracking-wide text-amber-300">Assumed</span> : null}
+          <span className="edge-label-text min-w-0">{edge.displayLabel}</span>
           {severity !== null ? (
             <span
-              className={`severity-dot severity-${severity}`}
+              className={cn(
+                'severity-dot severity-' + severity,
+                'h-1.5 w-1.5 shrink-0 rounded-full',
+                severity === 'invalid' ? 'bg-red-400' : 'bg-amber-400',
+              )}
               aria-label={`${severity} issue`}
             />
           ) : null}

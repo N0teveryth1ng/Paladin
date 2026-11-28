@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type WheelEvent as ReactWheelEvent } from 'react';
 import {
   Background,
+  BackgroundVariant,
   MiniMap,
   ReactFlow,
   ReactFlowProvider,
@@ -270,7 +271,7 @@ function CanvasInner({
 
   return (
     <div
-      className="canvas-wrap"
+      className="canvas-wrap absolute inset-0 h-full w-full overflow-hidden"
       onWheel={handleWheel}
       data-testid="canvas"
       data-fixture={fixtureName}
@@ -287,15 +288,15 @@ function CanvasInner({
       data-edge-labels={simplifyEdgeLabels ? 'overview' : 'detail'}
       data-viewport-transform={`translate(${viewport.x},${viewport.y}) scale(${viewport.zoom})`}
     >
-      <div className="canvas-title" data-testid="canvas-title">
-        <span aria-hidden="true">⌑</span>
-        {result.title}
+      <div className="canvas-title pointer-events-none absolute left-5 top-5 z-20 flex max-w-[min(440px,calc(100%-40px))] items-center gap-2 overflow-hidden rounded-lg border border-white/10 bg-zinc-950/70 px-2.5 py-1.5 text-[12px] text-zinc-200 shadow-xl backdrop-blur-xl" data-testid="canvas-title">
+        <span className="text-indigo-300" aria-hidden="true">⌑</span>
+        <span className="overflow-hidden text-ellipsis whitespace-nowrap">{result.title}</span>
       </div>
       {result.nodes.length === 0 ? (
-        <div className="empty-state" aria-hidden="true">
-          <span className="empty-mark">＋</span>
-          <span>Your canvas is ready</span>
-          <small>Add a box or describe a system below</small>
+        <div className="empty-state pointer-events-none absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1.5 text-center text-[13px] text-zinc-500" aria-hidden="true">
+          <span className="empty-mark mb-1 grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-zinc-900/70 text-lg text-indigo-300 backdrop-blur">＋</span>
+          <span className="text-zinc-300">Your canvas is ready</span>
+          <small className="text-[11px] text-zinc-600">Add a box or describe a system below</small>
         </div>
       ) : null}
       <ReactFlow
@@ -350,8 +351,16 @@ function CanvasInner({
         fitView={false}
         attributionPosition="bottom-left"
       >
-        <Background gap={24} size={1} color="var(--canvas-dot)" />
-        {showMinimap ? <MiniMap pannable zoomable nodeColor={(n) => n.type === 'group' ? 'rgba(122,162,247,.35)' : 'rgba(255,255,255,.25)'} /> : null}
+        <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#333" />
+        {showMinimap ? (
+          <MiniMap
+            pannable
+            zoomable
+            className="!bottom-[7.5rem] !right-3 !h-28 !w-44 !rounded-xl !border !border-white/10 !bg-zinc-950/90 !shadow-2xl"
+            nodeColor={(n) => n.type === 'group' ? 'rgba(129,140,248,.45)' : 'rgba(161,161,170,.35)'}
+            maskColor="rgba(0,0,0,.6)"
+          />
+        ) : null}
         <ViewController
           initialised={initialised}
           focusBox={focusBox}
@@ -362,19 +371,43 @@ function CanvasInner({
           onViewport={setViewport}
         />
       </ReactFlow>
-      <div className="canvas-overlay-controls" aria-label="Canvas controls">
-        <button type="button" onClick={() => setShowMinimap((v) => !v)}>{showMinimap ? 'Hide minimap' : 'Minimap'}</button>
-        <button type="button" onClick={() => setSnapToGrid((v) => !v)}>{snapToGrid ? 'Snap: on' : 'Snap: off'}</button>
-        <button type="button" onClick={() => void zoomTo(0.5, { duration: 120 })}>50%</button>
-        <button type="button" onClick={() => void zoomTo(1, { duration: 120 })}>100%</button>
-        <button type="button" onClick={() => void zoomTo(1.5, { duration: 120 })}>150%</button>
+      <div className="canvas-overlay-controls absolute bottom-3 right-3 z-30 flex flex-col gap-1.5" aria-label="Canvas controls">
+        {[
+          { label: showMinimap ? 'Hide minimap' : 'Minimap', onClick: () => setShowMinimap((v) => !v) },
+          { label: snapToGrid ? 'Snap: on' : 'Snap: off', onClick: () => setSnapToGrid((v) => !v) },
+          { label: '50%', onClick: () => void zoomTo(0.5, { duration: 120 }) },
+          { label: '100%', onClick: () => void zoomTo(1, { duration: 120 }) },
+          { label: '150%', onClick: () => void zoomTo(1.5, { duration: 120 }) },
+        ].map((control) => (
+          <button
+            key={control.label}
+            type="button"
+            onClick={control.onClick}
+            className="rounded-lg border border-white/10 bg-zinc-950/85 px-2.5 py-1.5 text-[10px] font-medium text-zinc-300 shadow-xl backdrop-blur-xl transition-colors hover:border-indigo-400/30 hover:text-white"
+          >
+            {control.label}
+          </button>
+        ))}
       </div>
       {selectedIds.filter((id) => result.nodes.some((n) => n.id === id && n.kind === 'component')).length >= 2 ? (
-        <div className="canvas-align-bar" aria-label="Alignment tools">
+        <div className="canvas-align-bar absolute bottom-3 left-3 z-30 flex max-w-[min(520px,calc(100%-220px))] flex-wrap gap-1" aria-label="Alignment tools">
           {(['left','center','right','top','middle','bottom','distribute-h','distribute-v'] as const).map((mode) => (
-            <button key={mode} type="button" onClick={() => onAlign(mode, selectedIds.filter((id) => result.nodes.some((n) => n.id === id && n.kind === 'component')))}>{mode}</button>
+            <button
+              key={mode}
+              type="button"
+              onClick={() => onAlign(mode, selectedIds.filter((id) => result.nodes.some((n) => n.id === id && n.kind === 'component')))}
+              className="rounded-lg border border-white/10 bg-zinc-950/85 px-2.5 py-1.5 text-[10px] font-medium text-zinc-300 shadow-xl backdrop-blur-xl transition-colors hover:border-indigo-400/30 hover:text-white"
+            >
+              {mode}
+            </button>
           ))}
-          <button type="button" onClick={() => onDuplicate(selectedIds.filter((id) => result.nodes.some((n) => n.id === id && n.kind === 'component')))}>Duplicate</button>
+          <button
+            type="button"
+            onClick={() => onDuplicate(selectedIds.filter((id) => result.nodes.some((n) => n.id === id && n.kind === 'component')))}
+            className="rounded-lg border border-indigo-400/25 bg-indigo-500/15 px-2.5 py-1.5 text-[10px] font-medium text-indigo-200 shadow-xl backdrop-blur-xl transition-colors hover:bg-indigo-500/25"
+          >
+            Duplicate
+          </button>
         </div>
       ) : null}
     </div>

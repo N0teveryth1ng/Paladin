@@ -1,33 +1,59 @@
-import type { ThemeName } from '../app/modes';
-import type { Entry, FixtureName } from '../app/modes';
+'use client';
+
+import {
+  BookmarkPlus,
+  Box,
+  Clipboard,
+  Download,
+  FileCode2,
+  FolderOpen,
+  History,
+  Image as ImageIcon,
+  LayoutTemplate,
+  Maximize2,
+  Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Redo2,
+  ScanSearch,
+  SquarePlus,
+  Sun,
+  Undo2,
+  type LucideIcon,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-type ToolIconName = 'new' | 'open' | 'undo' | 'redo' | 'box' | 'fit' | 'export' | 'copy' | 'check' | 'theme' | 'moon' | 'image' | 'history' | 'template' | 'import' | 'review';
+import { Button } from '../../components/ui/button';
+import { cn } from '../../lib/utils';
+import type { ThemeName } from '../app/modes';
+import type { Entry, FixtureName } from '../app/modes';
+
+type ToolIconName =
+  | 'new' | 'open' | 'undo' | 'redo' | 'box' | 'fit' | 'export' | 'copy'
+  | 'check' | 'theme' | 'moon' | 'image' | 'history' | 'template' | 'import' | 'review';
+
+const ICONS: Record<ToolIconName, LucideIcon> = {
+  new: SquarePlus,
+  open: FolderOpen,
+  undo: Undo2,
+  redo: Redo2,
+  box: Box,
+  fit: Maximize2,
+  export: Download,
+  copy: Clipboard,
+  check: BookmarkPlus,
+  theme: Sun,
+  moon: Moon,
+  image: ImageIcon,
+  history: History,
+  template: LayoutTemplate,
+  import: FileCode2,
+  review: ScanSearch,
+};
 
 function ToolIcon({ name }: { name: ToolIconName }) {
-  const paths: Record<ToolIconName, string[]> = {
-    new: ['M6 3.75h8l4 4v12.5H6z', 'M14 3.75v4h4', 'M12 10v6', 'M9 13h6'],
-    open: ['M3 7.5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8.75a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'],
-    undo: ['M9 14 4 9l5-5', 'M4 9h10a6 6 0 1 1 0 12h-1'],
-    redo: ['m15 14 5-5-5-5', 'M20 9H10a6 6 0 1 0 0 12h1'],
-    box: ['M4 4.5h16v15H4z', 'M12 8v8', 'M8 12h8'],
-    fit: ['M8 3H3v5', 'M3 3l6 6', 'M16 21h5v-5', 'M21 21l-6-6', 'M16 3h5v5', 'M21 3l-6 6', 'M8 21H3v-5', 'M3 21l6-6'],
-    export: ['M12 3v12', 'm7 10 5 5 5-5', 'M4 20h16'],
-    copy: ['M8 8h12v13H8z', 'M16 8V4H4v13h4'],
-    check: ['m5 12 4 4L19 6'],
-    theme: ['M12 3v2', 'M12 19v2', 'm5.64 5.64 1.41 1.41', 'm16.95 16.95 1.41 1.41', 'M3 12h2', 'M19 12h2', 'm5.64 18.36 1.41-1.41', 'm16.95 7.05 1.41-1.41', 'M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z'],
-    moon: ['M20.2 15.3A8.5 8.5 0 0 1 8.7 3.8 8.5 8.5 0 1 0 20.2 15.3Z'],
-    image: ['M4 5h16v14H4z', 'm8 13 2.5-3 2 2.5L15 9l3 4', 'M9 9.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z'],
-    history: ['M3 12a9 9 0 1 0 3-6.7', 'M3 4v5h5', 'M12 7v6l4 2'],
-    template: ['M4 4h7v7H4z', 'M13 4h7v7h-7z', 'M4 13h7v7H4z', 'M13 13h7v7h-7z'],
-    import: ['M12 21V9', 'm7 14 5-5 5 5', 'M4 4h16'],
-    review: ['M9 12l2 2 4-4', 'M12 21a9 9 0 1 1 9-9', 'M21 21l-3.5-3.5'],
-  };
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      {paths[name].map((d) => <path key={d} d={d} />)}
-    </svg>
-  );
+  const Icon = ICONS[name];
+  return <Icon className="h-3.5 w-3.5" strokeWidth={1.8} aria-hidden="true" />;
 }
 
 export function Toolbar({
@@ -92,8 +118,8 @@ export function Toolbar({
 
   useEffect(() => {
     if (!exportOpen) return;
-    // Capture phase: the canvas stops mousedown propagation, so a bubble listener
-    // would never see clicks outside the sidebar.
+    // Capture phase: the canvas stops mousedown propagation, so a bubble
+    // listener would never see clicks outside the sidebar.
     const onOutsidePointerDown = (event: MouseEvent) => {
       const target = event.target as Node;
       if (exportButton.current?.contains(target) || exportMenu.current?.contains(target)) return;
@@ -109,6 +135,7 @@ export function Toolbar({
       window.removeEventListener('scroll', onLayoutChange, true);
     };
   }, [exportOpen]);
+
   const copyDiagram = async (): Promise<void> => {
     await onCopy?.();
     setCopied(true);
@@ -123,110 +150,150 @@ export function Toolbar({
   const exportMenuStyle = (() => {
     const rect = exportButton.current?.getBoundingClientRect();
     if (!rect) return undefined;
-    const top = Math.min(rect.top, window.innerHeight - 280);
-    return { top: Math.max(8, top), left: rect.right + 8 };
+    return {
+      top: Math.max(8, Math.min(rect.top, window.innerHeight - 280)),
+      left: rect.right + 8,
+    };
   })();
 
+  const toolButton = (name: ToolIconName, testId: string, label: string, onClick?: () => void, disabled = false) => (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-sm"
+      onClick={onClick}
+      disabled={locked || disabled}
+      data-testid={testId}
+      title={label}
+      aria-label={label}
+    >
+      <ToolIcon name={name} />
+    </Button>
+  );
+
   return (
-    <header className="toolbar" data-testid="toolbar">
-      <div className="brand">
-        <span className="brand-mark" aria-label="Paladin" title="Paladin">P</span>
-      </div>
+    <>
+      <header
+        className="fixed left-[calc(var(--paladin-sidebar-width)+2rem)] right-4 top-4 z-30 flex h-11 items-center gap-1.5 rounded-xl border border-white/10 bg-black/40 px-2 shadow-2xl backdrop-blur-2xl"
+        data-testid="toolbar"
+      >
+        <div className="flex shrink-0 items-center gap-2 border-r border-white/10 px-1.5 pr-3">
+          <span className="grid h-7 w-7 place-items-center rounded-lg border border-indigo-300/25 bg-gradient-to-br from-indigo-500/25 to-fuchsia-500/15 text-[11px] font-bold text-indigo-100 shadow-[0_0_18px_-6px_rgba(139,92,246,0.9)]">
+            P
+          </span>
+        </div>
 
-      <nav className="toolbar-actions" aria-label="Canvas tools">
-        <div className="toolbar-group" role="group" aria-label="File">
-          {onNew ? <button type="button" onClick={onNew} disabled={locked} data-testid="new-design" title="New design" aria-label="New design"><span className="tool-icon"><ToolIcon name="new" /></span></button> : null}
-          {onOpen ? <button type="button" onClick={onOpen} disabled={locked} data-testid="open-design" title="Open saved design" aria-label="Open saved design"><span className="tool-icon"><ToolIcon name="open" /></span></button> : null}
-        </div>
-        <div className="toolbar-group" role="group" aria-label="Edit">
-          {onUndo ? <button type="button" onClick={onUndo} disabled={locked || !canUndo} data-testid="undo-button" title="Undo (Ctrl+Z)" aria-label="Undo"><span className="tool-icon"><ToolIcon name="undo" /></span></button> : null}
-          {onRedo ? <button type="button" onClick={onRedo} disabled={locked || !canRedo} data-testid="redo-button" title="Redo (Ctrl+Y)" aria-label="Redo"><span className="tool-icon"><ToolIcon name="redo" /></span></button> : null}
-        </div>
-        <div className="toolbar-group" role="group" aria-label="Design">
-          {onAddComponent ? <button type="button" onClick={onAddComponent} disabled={locked} data-testid="add-component" title="Add box" aria-label="Add box"><span className="tool-icon"><ToolIcon name="box" /></span></button> : null}
-          {onTemplates ? <button type="button" onClick={onTemplates} disabled={locked} data-testid="templates-button" title="Templates and remix" aria-label="Templates"><span className="tool-icon"><ToolIcon name="template" /></span></button> : null}
-          {onImportSource ? <button type="button" onClick={onImportSource} disabled={locked} data-testid="import-source-button" title="Generate from source" aria-label="Import source"><span className="tool-icon"><ToolIcon name="import" /></span></button> : null}
-          {onReview ? <button type="button" onClick={onReview} disabled={locked} data-testid="review-button" title="Critique / review architecture" aria-label="Review architecture"><span className="tool-icon"><ToolIcon name="review" /></span></button> : null}
-        </div>
-        <div className="toolbar-group" role="group" aria-label="History">
-          {onCheckpoint ? <button type="button" onClick={onCheckpoint} disabled={locked} data-testid="checkpoint-button" title="Save checkpoint" aria-label="Save checkpoint"><span className="tool-icon"><ToolIcon name="check" /></span></button> : null}
-          {onHistory ? <button type="button" onClick={onHistory} data-testid="history-button" title="Version history" aria-label="Version history"><span className="tool-icon"><ToolIcon name="history" /></span></button> : null}
-        </div>
-        <div className="toolbar-group" role="group" aria-label="View and export">
-          <button type="button" onClick={onFit} disabled={locked} data-testid="fit-button" title="Fit canvas" aria-label="Fit canvas"><span className="tool-icon"><ToolIcon name="fit" /></span></button>
-          {onDownload || onSave || onDownloadBundle || onCopyImage ? (
-            <div className="toolbar-export">
-              <button
-                ref={exportButton}
-                type="button"
-                onClick={() => setExportOpen((open) => !open)}
-                disabled={locked}
-                data-testid="export-menu-button"
-                aria-expanded={exportOpen}
-                title="Export / Save"
-                aria-label="Export or save"
-              >
-                <span className="tool-icon"><ToolIcon name="export" /></span>
-              </button>
-              {exportOpen ? (
-                <div
-                  ref={exportMenu}
-                  className="toolbar-export-menu"
-                  role="group"
+        <nav className="flex min-w-0 items-center gap-1 overflow-x-auto" aria-label="Canvas tools">
+          <div className="flex shrink-0 items-center gap-0.5 first:border-l-0" role="group" aria-label="File">
+            {onNew ? toolButton('new', 'new-design', 'New design', onNew) : null}
+            {onOpen ? toolButton('open', 'open-design', 'Open saved design', onOpen) : null}
+          </div>
+          <div className="flex shrink-0 items-center gap-0.5 border-l border-white/10 pl-1.5" role="group" aria-label="Edit">
+            {onUndo ? toolButton('undo', 'undo-button', 'Undo', onUndo, !canUndo) : null}
+            {onRedo ? toolButton('redo', 'redo-button', 'Redo', onRedo, !canRedo) : null}
+          </div>
+          <div className="flex shrink-0 items-center gap-0.5 border-l border-white/10 pl-1.5" role="group" aria-label="Design">
+            {onAddComponent ? toolButton('box', 'add-component', 'Add box', onAddComponent) : null}
+            {onTemplates ? toolButton('template', 'templates-button', 'Templates', onTemplates) : null}
+            {onImportSource ? toolButton('import', 'import-source-button', 'Import source', onImportSource) : null}
+            {onReview ? toolButton('review', 'review-button', 'Review architecture', onReview) : null}
+          </div>
+          <div className="flex shrink-0 items-center gap-0.5 border-l border-white/10 pl-1.5" role="group" aria-label="History">
+            {onCheckpoint ? toolButton('check', 'checkpoint-button', 'Save checkpoint', onCheckpoint) : null}
+            {onHistory ? toolButton('history', 'history-button', 'Version history', onHistory) : null}
+          </div>
+          <div className="flex shrink-0 items-center gap-0.5 border-l border-white/10 pl-1.5" role="group" aria-label="View and export">
+            {toolButton('fit', 'fit-button', 'Fit canvas', onFit)}
+            {onDownload || onSave || onDownloadBundle || onCopyImage ? (
+              <>
+                <Button
+                  ref={exportButton}
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setExportOpen((open) => !open)}
+                  disabled={locked}
+                  data-testid="export-menu-button"
+                  aria-expanded={exportOpen}
+                  title="Export / Save"
                   aria-label="Export or save"
-                  style={exportMenuStyle}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Escape') {
-                      setExportOpen(false);
-                      exportButton.current?.focus();
-                    }
-                  }}
+                  className={cn(exportOpen && 'bg-white/10 text-white')}
                 >
-                  {onDownload ? (
-                    <button type="button" onClick={() => { onDownload(); setExportOpen(false); }} data-testid="download-diagram">
-                      SVG <small>Scalable vector</small>
-                    </button>
-                  ) : null}
-                  {onDownloadPng ? (
-                    <button type="button" onClick={() => { onDownloadPng(); setExportOpen(false); }} data-testid="download-png">
-                      PNG <small>High resolution</small>
-                    </button>
-                  ) : null}
-                  {onDownloadBundle ? (
-                    <button type="button" onClick={() => { onDownloadBundle(); setExportOpen(false); }} data-testid="download-bundle">
-                      JSON+PNG bundle <small>Design + image</small>
-                    </button>
-                  ) : null}
-                  {onSave ? (
-                    <button type="button" onClick={() => { onSave(); setExportOpen(false); }} data-testid="save-file">
-                      Save <small>Local .paladin.json</small>
-                    </button>
-                  ) : null}
-                  <div className="toolbar-export-note">Shareable read-only link: coming when hosted sharing is available.</div>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-          {onCopy ? <button type="button" onClick={() => void copyDiagram()} disabled={locked} data-testid="copy-diagram" title="Copy as Mermaid" aria-label="Copy as Mermaid"><span className="tool-icon"><ToolIcon name={copied ? 'check' : 'copy'} /></span></button> : null}
-          {onCopyImage ? <button type="button" onClick={() => void copyImage()} disabled={locked} data-testid="copy-image" title="Copy as image" aria-label="Copy as image"><span className="tool-icon"><ToolIcon name={copiedImage ? 'check' : 'image'} /></span></button> : null}
-        </div>
-        <div className="toolbar-group" role="group" aria-label="Settings">
-          <button type="button" onClick={onTheme} data-testid="theme-button" aria-label="Toggle theme" title="Toggle theme"><span className="tool-icon"><ToolIcon name={theme === 'light' ? 'moon' : 'theme'} /></span></button>
-        </div>
-        {locked ? <span className="run-indicator" data-testid="lock-indicator" title="Drawing…">…</span> : null}
-      </nav>
+                  <ToolIcon name="export" />
+                </Button>
+                {exportOpen ? (
+                  <div
+                    ref={exportMenu}
+                    className="fixed z-[120] flex w-56 flex-col gap-0.5 rounded-xl border border-white/10 bg-zinc-950/95 p-1.5 shadow-2xl backdrop-blur-2xl"
+                    role="group"
+                    aria-label="Export or save"
+                    style={exportMenuStyle}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') {
+                        setExportOpen(false);
+                        exportButton.current?.focus();
+                      }
+                    }}
+                  >
+                    {onDownload ? <ExportItem testId="download-diagram" label="SVG" hint="Scalable vector" onClick={onDownload} onSelect={() => setExportOpen(false)} /> : null}
+                    {onDownloadPng ? <ExportItem testId="download-png" label="PNG" hint="High resolution" onClick={onDownloadPng} onSelect={() => setExportOpen(false)} /> : null}
+                    {onDownloadBundle ? <ExportItem testId="download-bundle" label="JSON+PNG" hint="Design + image" onClick={onDownloadBundle} onSelect={() => setExportOpen(false)} /> : null}
+                    {onSave ? <ExportItem testId="save-file" label="Save" hint="Local .paladin.json" onClick={onSave} onSelect={() => setExportOpen(false)} /> : null}
+                    <div className="mt-1 border-t border-white/[0.08] px-2 py-2 text-[10px] leading-snug text-zinc-500">
+                      Shareable read-only link: coming when hosted sharing is available.
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+            {onCopy ? toolButton(copied ? 'check' : 'copy', 'copy-diagram', copied ? 'Copied' : 'Copy as Mermaid', () => void copyDiagram()) : null}
+            {onCopyImage ? toolButton(copiedImage ? 'check' : 'image', 'copy-image', copiedImage ? 'Copied' : 'Copy as image', () => void copyImage()) : null}
+          </div>
+          <div className="flex shrink-0 items-center gap-0.5 border-l border-white/10 pl-1.5" role="group" aria-label="Settings">
+            <Button type="button" variant="ghost" size="icon-sm" onClick={onTheme} data-testid="theme-button" aria-label="Toggle theme" title="Toggle theme">
+              <ToolIcon name={theme === 'light' ? 'moon' : 'theme'} />
+            </Button>
+          </div>
+        </nav>
 
-      <button
-        className="sidebar-toggle"
+        {locked ? (
+          <span className="ml-1 flex items-center gap-1.5 rounded-full border border-indigo-400/20 bg-indigo-400/10 px-2 py-1 text-[10px] font-medium text-indigo-200" data-testid="lock-indicator" title="Drawing…">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-300" />
+            Drawing
+          </span>
+        ) : null}
+      </header>
+
+      <Button
         type="button"
+        variant="secondary"
+        size="icon-sm"
         onClick={onToggleSidebar}
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         aria-expanded={!collapsed}
         aria-controls="architecture-chat"
         data-testid="sidebar-toggle"
+        className="fixed bottom-4 left-4 z-40 rounded-xl border-white/10 bg-black/50 shadow-xl backdrop-blur-xl"
       >
-        {collapsed ? '›' : '‹'}
-      </button>
-    </header>
+        {collapsed ? <PanelLeftOpen className="h-3.5 w-3.5" /> : <PanelLeftClose className="h-3.5 w-3.5" />}
+      </Button>
+    </>
+  );
+}
+
+function ExportItem({ testId, label, hint, onClick, onSelect }: { testId: string; label: string; hint: string; onClick: () => void; onSelect: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        onSelect();
+        onClick();
+      }}
+      data-testid={testId}
+      className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-xs text-zinc-100 transition-colors hover:bg-white/[0.06]"
+    >
+      <span className="font-medium">{label}</span>
+      <small className="text-[10px] text-zinc-500">{hint}</small>
+    </button>
   );
 }

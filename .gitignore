@@ -12,6 +12,7 @@ env/
 .ruff_cache/
 .coverage
 htmlcov/
+.next/
 
 # OS
 .DS_Store

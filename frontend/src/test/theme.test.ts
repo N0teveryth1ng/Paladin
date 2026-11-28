@@ -17,7 +17,8 @@ import {
 } from '../render/theme';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const STYLES = resolve(HERE, '../render/styles.css');
+const EDGE_COMPONENT = resolve(HERE, '../render/edges/ArchitectureEdge.tsx');
+const LEGEND_COMPONENT = resolve(HERE, '../render/Legend.tsx');
 
 afterEach(cleanup);
 
@@ -49,12 +50,15 @@ describe('type tokens and themes', () => {
     expect(dark).toBeGreaterThanOrEqual(4.5);
   });
 
-  it('draws sync and async edges with different stroke patterns and arrowheads', async () => {
-    const css = await readFile(STYLES, 'utf8');
-    expect(css).toMatch(/\.edge-sync\s+\.edge-path\s*\{[^}]*stroke-dasharray:\s*none;/s);
-    expect(css).toMatch(/\.edge-async\s+\.edge-path\s*\{[^}]*stroke-dasharray:\s*6 4;/s);
-    expect(css).toMatch(/\.edge-arrow-filled\s*\{[^}]*fill:\s*var\(--edge\);/s);
-    expect(css).toMatch(/\.edge-arrow-open\s*\{[^}]*fill:\s*none;/s);
+  it('draws sync and async edges with different Tailwind stroke patterns and arrowheads', async () => {
+    const edgeSource = await readFile(EDGE_COMPONENT, 'utf8');
+    const legendSource = await readFile(LEGEND_COMPONENT, 'utf8');
+    expect(legendSource).toContain('legend-sync [&]:stroke-zinc-300');
+    expect(legendSource).toContain('legend-async [&]:stroke-zinc-300');
+    expect(legendSource).toContain('[stroke-dasharray:6_4]');
+    expect(legendSource).toContain('legend-arrow-filled fill-zinc-300');
+    expect(legendSource).toContain('legend-arrow-open fill-none');
+    expect(edgeSource).toContain("edge.type === 'async' && 'edge-async [stroke-dasharray:7_5]'");
   });
 
   it('renders the legend with both edge kinds and all 14 type tokens', () => {
