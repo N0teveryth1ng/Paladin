@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
-import { History, MessagesSquare, Pencil, Plus, Sparkles, Star, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react';
+import { Activity, CircleDollarSign, History, MessagesSquare, Pencil, Play, Plus, RefreshCw, ShieldCheck, Sparkles, Star, Terminal, Trash2, Workflow, X, Zap } from 'lucide-react';
 
 import { Button } from '../components/ui/button';
 import { Input, Textarea } from '../components/ui/input';
+import { cn } from '../lib/utils';
 import {
   ApiRequestError,
   analyzeCost as analyzeCostApi,
@@ -13,7 +14,7 @@ import {
   sendAssistant,
 } from './api/client';
 import type { ChatTurn, PatchOperation } from './api/types';
-import type { CostResult, GetRunResponse, RunErrorCode, RunResult, SecurityResult, SimulationResult } from './api/types';
+import type { CostItem, CostResult, GetRunResponse, RunErrorCode, RunResult, SecurityFinding, SecurityResult, SimulationResult } from './api/types';
 import {
   ELAPSED_TICK_MS,
   LAYOUT_FAILURE_MESSAGE,
@@ -55,6 +56,107 @@ interface ChatMessage {
 
 type RunIntent = 'create' | 'update';
 type DashboardTab = 'canvas' | 'simulation' | 'cost' | 'security';
+type MetricTone = 'neutral' | 'good' | 'warn' | 'bad';
+
+const DASHBOARD_TABS: Array<{ id: DashboardTab; label: string; icon: typeof Workflow }> = [
+  { id: 'canvas', label: 'Canvas', icon: Workflow },
+  { id: 'simulation', label: 'Simulation', icon: Activity },
+  { id: 'cost', label: 'Cost', icon: CircleDollarSign },
+  { id: 'security', label: 'Security', icon: ShieldCheck },
+];
+
+const METRIC_TONES: Record<MetricTone, string> = {
+  neutral: 'text-zinc-100',
+  good: 'text-emerald-300',
+  warn: 'text-amber-300',
+  bad: 'text-red-300',
+};
+
+const SEVERITY_TONES: Record<SecurityFinding['severity'], string> = {
+  critical: 'border-red-500/30 bg-red-500/10 text-red-300',
+  warning: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+  info: 'border-sky-500/30 bg-sky-500/10 text-sky-300',
+};
+
+const SEVERITY_ORDER: Record<SecurityFinding['severity'], number> = {
+  critical: 0,
+  warning: 1,
+  info: 2,
+};
+
+function formatMetric(value: number, decimals = 0): string {
+  return value.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function utilizationPercent(utilization: number): number {
+  return Math.round(utilization * 100);
+}
+
+function topCostItems(items: CostItem[], limit = 5): CostItem[] {
+  return [...items].sort((a, b) => b.monthly_cost_usd - a.monthly_cost_usd).slice(0, limit);
+}
+
+function utilizationTone(utilization: number): MetricTone {
+  const percent = utilization * 100;
+  return percent >= 90 ? 'bad' : percent >= 70 ? 'warn' : 'good';
+}
+
+function PanelCard({ label, meta, children, bodyClassName = 'p-4', className }: {
+  label: string;
+  meta?: string;
+  children: ReactNode;
+  bodyClassName?: string;
+  className?: string;
+}) {
+  return (
+    <section className={cn('rounded-xl border border-white/[0.06] bg-white/[0.02] shadow-sm', className)}>
+      <div className="flex items-center justify-between gap-3 border-b border-white/[0.05] px-4 py-2.5">
+        <h3 className="m-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">{label}</h3>
+        {meta !== undefined ? <span className="font-mono text-[10px] tabular-nums text-zinc-600">{meta}</span> : null}
+      </div>
+      <div className={bodyClassName}>{children}</div>
+    </section>
+  );
+}
+
+function MetricTile({ label, value, tone = 'neutral' }: { label: string; value: string; tone?: MetricTone }) {
+  return (
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3 shadow-sm">
+      <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500">{label}</div>
+      <div className={cn('mt-1.5 font-mono text-[18px] font-semibold tabular-nums tracking-tight', METRIC_TONES[tone])}>{value}</div>
+    </div>
+  );
+}
+
+function UtilizationBar({ utilization }: { utilization: number }) {
+  const width = Math.min(100, Math.max(0, utilization * 100));
+  return (
+    <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-white/[0.07]">
+      <div
+        className={cn('h-full rounded-full', utilizationTone(utilization) === 'bad' ? 'bg-red-500' : utilizationTone(utilization) === 'warn' ? 'bg-amber-400' : 'bg-emerald-400')}
+        style={{ width: `${width}%` }}
+      />
+    </div>
+  );
+}
+
+function EmptyState({ title, detail }: { title: string; detail: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/[0.08] bg-white/[0.01] px-5 py-12 text-center">
+      <span className="h-1.5 w-1.5 rounded-full bg-zinc-600" aria-hidden="true" />
+      <p className="m-0 text-[12px] font-medium text-zinc-300">{title}</p>
+      <p className="m-0 max-w-sm text-[11px] leading-relaxed text-zinc-600">{detail}</p>
+    </div>
+  );
+}
+
+function SeverityChip({ severity }: { severity: SecurityFinding['severity'] }) {
+  return (
+    <span className={cn('rounded-md border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.1em]', SEVERITY_TONES[severity])}>
+      [{severity}]
+    </span>
+  );
+}
 
 interface ActiveChatRun {
   assistantId: string;
@@ -1237,6 +1339,7 @@ export default function App() {
       const result = await runSimulationApi(entry.draft, peakRps, durationS);
       setSimulation(result);
       setDashboardTab('simulation');
+      setSelection(null);
     } catch (cause) {
       setAnalysisError(analysisErrorMessage(cause));
     } finally {
@@ -1251,6 +1354,7 @@ export default function App() {
       const result = await analyzeCostApi(entry.draft);
       setCostAnalysis(result);
       setDashboardTab('cost');
+      setSelection(null);
     } catch (cause) {
       setAnalysisError(analysisErrorMessage(cause));
     } finally {
@@ -1265,6 +1369,7 @@ export default function App() {
       const result = await analyzeSecurityApi(entry.draft);
       setSecurityAnalysis(result);
       setDashboardTab('security');
+      setSelection(null);
     } catch (cause) {
       setAnalysisError(analysisErrorMessage(cause));
     } finally {
@@ -1272,11 +1377,18 @@ export default function App() {
     }
   }, [entry.draft]);
 
+  function selectDashboardTab(tab: DashboardTab): void {
+    setDashboardTab(tab);
+    if (tab !== 'canvas') setSelection(null);
+    if (tab === 'cost' && costAnalysis === null) void handleRunCost();
+    if (tab === 'security' && securityAnalysis === null) void handleRunSecurity();
+  }
+
   useEffect(() => () => stopTimers(), [stopTimers]);
 
   return (
     <div
-      className="relative h-screen w-screen overflow-hidden bg-[var(--paladin-canvas)] font-sans text-zinc-100 antialiased before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-[520px] before:bg-[radial-gradient(ellipse_at_50%_0%,rgba(79,70,229,0.28),rgba(124,58,237,0.10)_38%,transparent_72%)]"
+      className="relative h-screen w-screen overflow-hidden bg-[var(--paladin-canvas)] font-sans text-zinc-100 antialiased before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-[520px] before:bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0.055),transparent_72%)]"
       data-theme={theme}
       data-fixture={entry.name}
       style={{ '--paladin-sidebar-width': sidebarCollapsed ? '3.5rem' : `${sidebarWidth}px` } as CSSProperties}
@@ -1476,24 +1588,58 @@ export default function App() {
         ) : null}
 
         <main className="canvas-column relative flex h-full w-full flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/80 shadow-[0_24px_80px_-32px_rgba(0,0,0,0.9)]" data-theme={theme}>
-          <header className="canvas-header flex h-14 shrink-0 items-center justify-between gap-4 border-b border-white/[0.08] bg-white/[0.02] px-5">
-            <div className="canvas-header-copy flex min-w-0 items-baseline gap-2.5">
-              <span className="canvas-header-kicker text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Canvas</span>
-              <span className="truncate text-[13px] font-medium text-zinc-200">{committed.layout.title}</span>
+          <header className="canvas-header flex h-12 shrink-0 items-center justify-between gap-4 border-b border-white/[0.08] bg-white/[0.015] px-5">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span className="grid h-5 w-5 shrink-0 place-items-center rounded-[5px] border border-white/10 bg-white/[0.04] font-mono text-[10px] font-semibold text-zinc-400" aria-hidden="true">P</span>
+              <span className="truncate font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-400">
+                Paladin <span className="text-zinc-600">/</span> Systems Workbench
+              </span>
             </div>
-            <span className="flex items-center gap-2 text-[10px] text-zinc-600">
+            <span className="flex shrink-0 items-center gap-2 font-mono text-[10px] uppercase tracking-[0.1em] text-zinc-600">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
               Local workspace
             </span>
           </header>
-          <nav aria-label="Architecture dashboard" data-testid="dashboard-tabs">
-            <Button type="button" size="xs" variant={dashboardTab === 'canvas' ? 'default' : 'ghost'} data-testid="dashboard-tab-canvas" onClick={() => setDashboardTab('canvas')}>Canvas</Button>
-            <Button type="button" size="xs" variant={dashboardTab === 'simulation' ? 'default' : 'ghost'} data-testid="dashboard-tab-simulation" onClick={() => setDashboardTab('simulation')}>Simulation</Button>
-            <Button type="button" size="xs" variant={dashboardTab === 'cost' ? 'default' : 'ghost'} data-testid="dashboard-tab-cost" onClick={() => setDashboardTab('cost')}>Cost</Button>
-            <Button type="button" size="xs" variant={dashboardTab === 'security' ? 'default' : 'ghost'} data-testid="dashboard-tab-security" onClick={() => setDashboardTab('security')}>Security</Button>
-            <Button type="button" size="xs" variant="secondary" data-testid="run-simulation" onClick={() => void handleRunSimulation()} disabled={simulationBusy || locked}>Run Simulation</Button>
+          <nav aria-label="Architecture dashboard" data-testid="dashboard-tabs" className="flex h-11 shrink-0 items-stretch gap-1 overflow-x-auto border-b border-white/[0.08] bg-white/[0.01] px-3">
+            {DASHBOARD_TABS.map((tab) => {
+              const Icon = tab.icon;
+              const active = dashboardTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  data-testid={`dashboard-tab-${tab.id}`}
+                  aria-current={active ? 'page' : undefined}
+                  onClick={() => selectDashboardTab(tab.id)}
+                  className={cn(
+                    'flex shrink-0 items-center gap-1.5 border-b-2 px-3 text-[11px] font-medium uppercase tracking-[0.12em] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500',
+                    active ? 'border-zinc-200 text-zinc-100' : 'border-transparent text-zinc-500 hover:border-white/15 hover:text-zinc-200',
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                  {tab.label}
+                </button>
+              );
+            })}
+            <div className="ml-auto flex shrink-0 items-center pl-3">
+              <button
+                type="button"
+                data-testid="run-simulation"
+                onClick={() => void handleRunSimulation()}
+                disabled={simulationBusy || locked}
+                className="inline-flex h-7 items-center gap-1.5 rounded-lg bg-zinc-100 px-3 text-[11px] font-semibold text-zinc-950 shadow-sm transition-colors hover:bg-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 disabled:pointer-events-none disabled:opacity-40"
+              >
+                <Play className="h-3 w-3 fill-current" aria-hidden="true" />
+                Run Simulation
+              </button>
+            </div>
           </nav>
-          {analysisError !== null ? <p role="alert" data-testid="analysis-error">{analysisError}</p> : null}
+          {analysisError !== null ? (
+            <div role="alert" data-testid="analysis-error" className="flex shrink-0 items-center gap-2 border-b border-red-500/20 border-l-2 border-l-red-500/70 bg-red-500/[0.06] px-5 py-1.5 text-[11px] text-red-300">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" aria-hidden="true" />
+              <span className="truncate">{analysisError}</span>
+            </div>
+          ) : null}
           {dashboardTab === 'canvas' ? (
           <div className="canvas-stage relative min-h-0 flex-1">
             {layoutError !== null ? (
@@ -1530,137 +1676,332 @@ export default function App() {
             </ErrorBoundary>
           </div>
           ) : dashboardTab === 'simulation' ? (
-          <section data-testid="dashboard-panel-simulation" aria-label="Simulation results">
-            <h2>Simulation</h2>
-            <label htmlFor="simulation-peak-rps">Peak RPS</label>
-            <Input
-              id="simulation-peak-rps"
-              data-testid="peak-rps-input"
-              type="number"
-              min={1}
-              max={10000000}
-              value={peakRps}
-              onChange={(event) => {
-                const value = Number(event.target.value);
-                setPeakRps(Number.isFinite(value) ? Math.min(10000000, Math.max(1, value)) : 1);
-              }}
-            />
-            <label htmlFor="simulation-duration-s">Duration (s)</label>
-            <Input
-              id="simulation-duration-s"
-              data-testid="duration-s-input"
-              type="number"
-              min={1}
-              max={86400}
-              value={durationS}
-              onChange={(event) => {
-                const value = Number(event.target.value);
-                setDurationS(Number.isFinite(value) ? Math.min(86400, Math.max(1, Math.round(value))) : 1);
-              }}
-            />
-            {simulation === null ? (
-              <p>No simulation has been run for this design.</p>
-            ) : (
-              <>
-                <p data-testid="simulation-summary">
-                  Status: {simulation.ok ? 'passed' : 'bottlenecks found'} · Peak RPS: {simulation.peak_rps} ·
-                  Duration: {simulation.duration_s}s · Dropped RPS: {simulation.total_dropped_rps} ·
-                  Estimated cost: {simulation.estimated_cost_usd} USD
-                </p>
-                <Button
-                  type="button"
-                  size="xs"
-                  variant="default"
-                  data-testid="fix-bottlenecks"
-                  disabled={chatBusy || locked || simulation.bottlenecks.length === 0}
-                  onClick={() => sendChatMessage('Fix the bottlenecks.')}
-                >
-                  Fix bottlenecks
-                </Button>
-                <h3>Bottlenecks</h3>
-                <ul>
-                  {simulation.bottlenecks.length === 0 ? <li>None.</li> : simulation.bottlenecks.map((bottleneck) => (
-                    <li key={bottleneck.component_id}>
-                      {bottleneck.component_name}: {Math.round(bottleneck.utilization * 100)}% utilization,
-                      {' '}{bottleneck.dropped_rps} RPS dropped. {bottleneck.recommendation}
-                    </li>
-                  ))}
-                </ul>
-                <h3>Node loads</h3>
-                <ul>
-                  {simulation.node_loads.map((load) => (
-                    <li key={load.component_id}>
-                      {load.name}: {load.load_rps}/{load.capacity_rps} RPS ({Math.round(load.utilization * 100)}%),
-                      {' '}{load.replicas} replica(s), {load.latency_ms} ms, {load.hourly_cost_usd} USD/h
-                    </li>
-                  ))}
-                </ul>
-                <h3>Events</h3>
-                <ol>
-                  {simulation.events.map((event, index) => (
-                    <li key={`${event.t_s}-${index}`}>
-                      {event.t_s}s [{event.severity}] {event.message}
-                    </li>
-                  ))}
-                </ol>
-              </>
-            )}
+          <section data-testid="dashboard-panel-simulation" aria-label="Simulation results" className="chat-scrollbar min-h-0 flex-1 overflow-auto p-5">
+            <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 gap-4 md:grid-cols-[240px_minmax(0,1fr)]">
+              <div className="flex min-w-0 flex-col gap-4">
+                <PanelCard label="Stress test parameters" meta="LOAD PROFILE" bodyClassName="flex flex-col gap-4 p-4">
+                  <label htmlFor="simulation-peak-rps" className="block">
+                    <span className="mb-1.5 flex items-baseline justify-between gap-2">
+                      <span className="text-[11px] font-medium text-zinc-300">Peak RPS</span>
+                      <span className="font-mono text-[10px] uppercase tracking-wide text-zinc-600">req/s</span>
+                    </span>
+                    <Input
+                      id="simulation-peak-rps"
+                      data-testid="peak-rps-input"
+                      type="number"
+                      min={1}
+                      max={10000000}
+                      value={peakRps}
+                      onChange={(event) => {
+                        const value = Number(event.target.value);
+                        setPeakRps(Number.isFinite(value) ? Math.min(10000000, Math.max(1, value)) : 1);
+                      }}
+                      className="h-8 w-full border-white/10 bg-zinc-950/40 font-mono tabular-nums text-[12px]"
+                    />
+                    <span className="mt-1.5 block text-[10px] leading-relaxed text-zinc-600">Target sustained request rate for the test.</span>
+                  </label>
+                  <label htmlFor="simulation-duration-s" className="block">
+                    <span className="mb-1.5 flex items-baseline justify-between gap-2">
+                      <span className="text-[11px] font-medium text-zinc-300">Duration</span>
+                      <span className="font-mono text-[10px] uppercase tracking-wide text-zinc-600">seconds</span>
+                    </span>
+                    <Input
+                      id="simulation-duration-s"
+                      data-testid="duration-s-input"
+                      type="number"
+                      min={1}
+                      max={86400}
+                      value={durationS}
+                      onChange={(event) => {
+                        const value = Number(event.target.value);
+                        setDurationS(Number.isFinite(value) ? Math.min(86400, Math.max(1, Math.round(value))) : 1);
+                      }}
+                      className="h-8 w-full border-white/10 bg-zinc-950/40 font-mono tabular-nums text-[12px]"
+                    />
+                    <span className="mt-1.5 block text-[10px] leading-relaxed text-zinc-600">How long the peak load is applied.</span>
+                  </label>
+                </PanelCard>
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <span className={cn('h-2 w-2 rounded-full', simulation === null ? 'bg-zinc-500' : simulation.ok ? 'bg-emerald-400' : 'bg-red-400')} aria-hidden="true" />
+                    <span className={cn('font-mono text-[12px] font-semibold tracking-[0.16em]', METRIC_TONES[simulation === null ? 'neutral' : simulation.ok ? 'good' : 'bad'])}>
+                      {simulation === null ? 'IDLE' : simulation.ok ? 'PASSED' : 'FAILED'}
+                    </span>
+                  </div>
+                  {simulation === null ? (
+                    <p className="m-0 mt-3 text-[11px] leading-relaxed text-zinc-400">No simulation has been run for this design.</p>
+                  ) : (
+                    <p data-testid="simulation-summary" className="m-0 mt-3 text-[11px] leading-relaxed text-zinc-400">
+                      {simulation.ok
+                        ? `${formatMetric(simulation.peak_rps)} RPS sustained for ${formatMetric(simulation.duration_s)}s · no bottlenecks found.`
+                        : `${formatMetric(simulation.bottlenecks.length)} bottlenecks found at ${formatMetric(simulation.peak_rps)} RPS · ${formatMetric(simulation.total_dropped_rps)} RPS dropped.`}
+                    </p>
+                  )}
+                  {simulation !== null && !simulation.ok ? (
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant="secondary"
+                      data-testid="fix-bottlenecks"
+                      disabled={chatBusy || locked || simulation.bottlenecks.length === 0}
+                      onClick={() => sendChatMessage('Fix the bottlenecks.')}
+                      className="mt-4 w-full border-white/10 bg-white/[0.04] font-medium text-zinc-200 hover:bg-white/[0.08]"
+                    >
+                      <Zap className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
+                      Fix bottlenecks
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="flex min-w-0 flex-col gap-4">
+                <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                  <MetricTile label="Peak RPS" value={simulation === null ? '—' : formatMetric(simulation.peak_rps)} />
+                  <MetricTile label="Dropped RPS" value={simulation === null ? '—' : formatMetric(simulation.total_dropped_rps)} tone={simulation !== null && simulation.total_dropped_rps > 0 ? 'bad' : 'neutral'} />
+                  <MetricTile label="Bottlenecks" value={simulation === null ? '—' : String(simulation.bottlenecks.length)} tone={simulation !== null && simulation.bottlenecks.length > 0 ? 'bad' : simulation !== null ? 'good' : 'neutral'} />
+                  <MetricTile label="Estimated cost" value={simulation === null ? '—' : `$${simulation.estimated_cost_usd.toFixed(2)}`} />
+                </div>
+
+                <PanelCard label="Bottlenecks" meta={simulation === null ? undefined : `${simulation.bottlenecks.length} FOUND`} bodyClassName="p-3">
+                  {simulation === null ? (
+                    <EmptyState title="Awaiting simulation" detail="Run a stress test to surface capacity limits." />
+                  ) : simulation.bottlenecks.length === 0 ? (
+                    <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.05] px-3 py-2.5 text-[11px] text-emerald-300">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+                      No bottlenecks detected
+                    </div>
+                  ) : (
+                    <ul className="flex flex-col gap-2">
+                      {simulation.bottlenecks.map((bottleneck) => (
+                        <li key={bottleneck.component_id} className="rounded-lg border border-white/[0.06] border-l-2 border-l-red-500/70 bg-red-500/[0.04] px-3 py-2.5">
+                          <div className="flex flex-wrap items-baseline justify-between gap-2">
+                            <span className="text-[12px] font-medium text-zinc-100">{bottleneck.component_name}</span>
+                            <span className="font-mono text-[10px] tabular-nums text-red-300">
+                              {utilizationPercent(bottleneck.utilization)}% util · {formatMetric(bottleneck.dropped_rps)} RPS dropped
+                            </span>
+                          </div>
+                          <p className="m-0 mt-1 text-[11px] leading-relaxed text-zinc-400">{bottleneck.recommendation}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </PanelCard>
+
+                <PanelCard label="Node loads" meta={simulation === null ? undefined : `${simulation.node_loads.length} NODES`} bodyClassName="p-0">
+                  <div className="chat-scrollbar overflow-x-auto">
+                    <table className="w-full min-w-[620px] border-collapse text-left">
+                      <thead className="bg-white/[0.015]">
+                        <tr>
+                          {['Component', 'Load (RPS)', 'Utilization', 'Replicas', 'Cost/hr'].map((column) => (
+                            <th key={column} className="border-b border-white/[0.06] px-4 py-2 text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500">{column}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/[0.045]">
+                        {simulation?.node_loads.map((load) => (
+                          <tr key={load.component_id} className="transition-colors hover:bg-white/[0.02]">
+                            <td className="px-4 py-2.5">
+                              <span className="block text-[11px] text-zinc-200">{load.name}</span>
+                              <span className="mt-0.5 block font-mono text-[10px] text-zinc-600">{load.component_id}</span>
+                            </td>
+                            <td className="px-4 py-2.5 font-mono text-[11px] tabular-nums text-zinc-300">
+                              {formatMetric(load.load_rps)} <span className="text-zinc-600">/ {formatMetric(load.capacity_rps)}</span>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <span className={cn('font-mono text-[11px] tabular-nums', METRIC_TONES[utilizationTone(load.utilization)])}>{utilizationPercent(load.utilization)}%</span>
+                              <UtilizationBar utilization={load.utilization} />
+                            </td>
+                            <td className="px-4 py-2.5 font-mono text-[11px] tabular-nums text-zinc-400">{formatMetric(load.replicas)}</td>
+                            <td className="px-4 py-2.5 font-mono text-[11px] tabular-nums text-zinc-400">${load.hourly_cost_usd.toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {simulation !== null && simulation.node_loads.length === 0 ? (
+                      <div className="px-4 py-8 text-center text-[11px] text-zinc-600">No node load data.</div>
+                    ) : null}
+                  </div>
+                </PanelCard>
+
+                <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-zinc-950 shadow-sm">
+                  <div className="flex items-center gap-2 border-b border-white/[0.06] px-3 py-2">
+                    <Terminal className="h-3.5 w-3.5 text-zinc-500" aria-hidden="true" />
+                    <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500">Event stream</span>
+                    <span className="ml-auto font-mono text-[10px] tabular-nums text-zinc-600">{simulation?.events.length ?? 0} events</span>
+                  </div>
+                  <ol className="chat-scrollbar max-h-56 overflow-auto px-3 py-2 font-mono text-[11px] leading-relaxed">
+                    {simulation === null || simulation.events.length === 0 ? (
+                      <li className="text-zinc-600">No events recorded.</li>
+                    ) : simulation.events.map((event, index) => {
+                      const label = event.severity === 'warning' ? 'warn' : event.severity;
+                      const tone = event.severity === 'info' ? 'text-sky-300' : event.severity === 'warning' ? 'text-amber-300' : 'text-red-300';
+                      return (
+                        <li key={`${event.t_s}-${index}`} className="flex gap-2 whitespace-pre-wrap">
+                          <span className="shrink-0 text-zinc-600">{event.t_s}s</span>
+                          <span className={cn('shrink-0', tone)}>[{label}]</span>
+                          <span className="min-w-0 text-zinc-400">{event.message}</span>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              </div>
+            </div>
           </section>
           ) : dashboardTab === 'cost' ? (
-          <section data-testid="dashboard-panel-cost" aria-label="Cost analysis">
-            <h2>Cost</h2>
-            <Button type="button" size="xs" variant="secondary" data-testid="run-cost" onClick={() => void handleRunCost()} disabled={simulationBusy || locked}>
-              Run cost analysis
-            </Button>
-            {costAnalysis === null ? (
-              <p>No cost analysis has been run for this design.</p>
-            ) : (
-              <>
-                <p data-testid="cost-summary">
-                  Currency: {costAnalysis.currency} · Monthly hours: {costAnalysis.monthly_hours} ·
-                  Hourly: {costAnalysis.hourly_total_usd} · Monthly: {costAnalysis.monthly_total_usd}
-                </p>
-                <table>
-                  <thead>
-                    <tr><th>Component</th><th>Type</th><th>Replicas</th><th>Unit</th><th>Hourly</th><th>Monthly</th><th>Basis</th></tr>
-                  </thead>
-                  <tbody>
-                    {costAnalysis.items.map((item) => (
-                      <tr key={item.component_id}>
-                        <td>{item.name}</td>
-                        <td>{item.type}</td>
-                        <td>{item.replicas}</td>
-                        <td>{item.unit_cost_usd}</td>
-                        <td>{item.hourly_cost_usd}</td>
-                        <td>{item.monthly_cost_usd}</td>
-                        <td>{item.basis}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </>
-            )}
+          <section data-testid="dashboard-panel-cost" aria-label="Cost analysis" className="chat-scrollbar min-h-0 flex-1 overflow-auto p-5">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="m-0 text-[15px] font-semibold tracking-tight text-zinc-100">Cost analysis</h2>
+                  <p className="mt-1 m-0 font-mono text-[10px] uppercase tracking-[0.14em] text-zinc-600">Monthly model · {costAnalysis?.currency ?? '—'}</p>
+                </div>
+                <Button type="button" size="xs" variant="secondary" data-testid="run-cost" onClick={() => void handleRunCost()} disabled={simulationBusy || locked} className="border-white/10 bg-white/[0.04] font-medium text-zinc-200 hover:bg-white/[0.08]">
+                  <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                  Run cost analysis
+                </Button>
+              </div>
+              {costAnalysis === null ? (
+                <EmptyState title="Awaiting cost analysis" detail="No cost analysis has been run for this design." />
+              ) : (
+                <>
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-5 shadow-sm">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Estimated monthly spend</div>
+                    <div className="mt-2 font-mono text-[34px] font-semibold leading-none tabular-nums tracking-tight text-zinc-100">
+                      {costAnalysis.currency} {formatMetric(costAnalysis.monthly_total_usd, 2)}
+                    </div>
+                    <p className="m-0 mt-2.5 font-mono text-[11px] tabular-nums text-zinc-500">
+                      {formatMetric(costAnalysis.monthly_hours)} hours/month · {costAnalysis.currency} {formatMetric(costAnalysis.hourly_total_usd, 2)} per hour
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
+                    <MetricTile label="Hourly rate" value={`${costAnalysis.currency} ${formatMetric(costAnalysis.hourly_total_usd, 2)}`} />
+                    <MetricTile label="Monthly hours" value={formatMetric(costAnalysis.monthly_hours)} />
+                    <MetricTile label="Components" value={formatMetric(costAnalysis.items.length)} />
+                  </div>
+                  <p data-testid="cost-summary" className="m-0 font-mono text-[11px] tabular-nums text-zinc-500">
+                    Currency: {costAnalysis.currency} · Monthly hours: {costAnalysis.monthly_hours} ·
+                    Hourly: {costAnalysis.hourly_total_usd} · Monthly: {costAnalysis.monthly_total_usd}
+                  </p>
+                  {costAnalysis.items.length > 0 ? (
+                    <PanelCard label="Monthly distribution" meta={`${costAnalysis.items.length} COMPONENTS`} bodyClassName="p-4">
+                      <div className="flex h-2 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                        {topCostItems(costAnalysis.items).map((item, index) => {
+                          const share = costAnalysis.monthly_total_usd > 0 ? (item.monthly_cost_usd / costAnalysis.monthly_total_usd) * 100 : 0;
+                          return (
+                            <div
+                              key={item.component_id}
+                              className={cn('h-full', index % 2 === 0 ? 'bg-zinc-400' : 'bg-zinc-600')}
+                              style={{ width: `${Math.max(0, Math.min(100, share))}%` }}
+                              title={`${item.name}: ${formatMetric(share, 1)}%`}
+                            />
+                          );
+                        })}
+                      </div>
+                      <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-3">
+                        {topCostItems(costAnalysis.items).map((item) => (
+                          <div key={item.component_id} className="flex items-baseline justify-between gap-3 text-[11px]">
+                            <span className="truncate text-zinc-400">{item.name}</span>
+                            <span className="shrink-0 font-mono tabular-nums text-zinc-300">
+                              {costAnalysis.monthly_total_usd > 0 ? formatMetric((item.monthly_cost_usd / costAnalysis.monthly_total_usd) * 100, 1) : '0.0'}%
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </PanelCard>
+                  ) : null}
+                  <PanelCard label="Cost breakdown" meta={`${costAnalysis.items.length} LINE ITEMS`} bodyClassName="p-0">
+                    <div className="chat-scrollbar overflow-x-auto">
+                      <table className="w-full min-w-[720px] border-collapse text-left">
+                        <thead className="bg-white/[0.015]">
+                          <tr>
+                            {['Component', 'Type', 'Replicas', 'Unit', 'Hourly', 'Monthly', 'Basis'].map((column) => (
+                              <th key={column} className="border-b border-white/[0.06] px-4 py-2 text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500">{column}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.045]">
+                          {costAnalysis.items.map((item) => (
+                            <tr key={item.component_id} className="transition-colors hover:bg-white/[0.02]">
+                              <td className="px-4 py-2.5">
+                                <span className="block text-[11px] text-zinc-200">{item.name}</span>
+                                <span className="mt-0.5 block font-mono text-[10px] text-zinc-600">{item.component_id}</span>
+                              </td>
+                              <td className="px-4 py-2.5 text-[11px] text-zinc-400">{item.type}</td>
+                              <td className="px-4 py-2.5 font-mono text-[11px] tabular-nums text-zinc-400">{item.replicas}</td>
+                              <td className="px-4 py-2.5 font-mono text-[11px] tabular-nums text-zinc-400">{item.unit_cost_usd}</td>
+                              <td className="px-4 py-2.5 font-mono text-[11px] tabular-nums text-zinc-400">{item.hourly_cost_usd}</td>
+                              <td className="px-4 py-2.5 font-mono text-[11px] tabular-nums text-zinc-200">{item.monthly_cost_usd}</td>
+                              <td className="px-4 py-2.5 text-[11px] text-zinc-500">{item.basis}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {costAnalysis.items.length === 0 ? (
+                        <div className="px-4 py-8 text-center text-[11px] text-zinc-600">No cost items.</div>
+                      ) : null}
+                    </div>
+                  </PanelCard>
+                </>
+              )}
+            </div>
           </section>
           ) : (
-          <section data-testid="dashboard-panel-security" aria-label="Security analysis">
-            <h2>Security</h2>
-            <Button type="button" size="xs" variant="secondary" data-testid="run-security" onClick={() => void handleRunSecurity()} disabled={simulationBusy || locked}>
-              Run security analysis
-            </Button>
-            {securityAnalysis === null ? (
-              <p>No security analysis has been run for this design.</p>
-            ) : (
-              <>
-                <p data-testid="security-summary">Result: {securityAnalysis.passed ? 'passed' : 'findings to review'}</p>
-                <ul>
-                  {securityAnalysis.findings.length === 0 ? <li>No findings.</li> : securityAnalysis.findings.map((finding, index) => (
-                    <li key={`${finding.rule}-${finding.component_id ?? finding.connection_id ?? index}`}>
-                      [{finding.severity}] {finding.title} ({finding.rule}): {finding.message} {finding.recommendation}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
+          <section data-testid="dashboard-panel-security" aria-label="Security analysis" className="chat-scrollbar min-h-0 flex-1 overflow-auto p-5">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="m-0 text-[15px] font-semibold tracking-tight text-zinc-100">Security analysis</h2>
+                  <p className="mt-1 m-0 font-mono text-[10px] uppercase tracking-[0.14em] text-zinc-600">Static review · design draft</p>
+                </div>
+                <Button type="button" size="xs" variant="secondary" data-testid="run-security" onClick={() => void handleRunSecurity()} disabled={simulationBusy || locked} className="border-white/10 bg-white/[0.04] font-medium text-zinc-200 hover:bg-white/[0.08]">
+                  <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                  Run security analysis
+                </Button>
+              </div>
+              {securityAnalysis === null ? (
+                <EmptyState title="Awaiting security analysis" detail="No security analysis has been run for this design." />
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                    <MetricTile label="Result" value={securityAnalysis.passed ? 'PASSED' : 'REVIEW'} tone={securityAnalysis.passed ? 'good' : 'bad'} />
+                    <MetricTile label="Findings" value={formatMetric(securityAnalysis.findings.length)} tone={securityAnalysis.findings.length === 0 ? 'good' : 'neutral'} />
+                    <MetricTile label="Critical" value={formatMetric(securityAnalysis.findings.filter((finding) => finding.severity === 'critical').length)} tone={securityAnalysis.findings.some((finding) => finding.severity === 'critical') ? 'bad' : 'neutral'} />
+                    <MetricTile label="Warnings" value={formatMetric(securityAnalysis.findings.filter((finding) => finding.severity === 'warning').length)} tone={securityAnalysis.findings.some((finding) => finding.severity === 'warning') ? 'warn' : 'neutral'} />
+                  </div>
+                  <p data-testid="security-summary" className="m-0 font-mono text-[11px] text-zinc-500">
+                    Result: {securityAnalysis.passed ? 'passed' : 'findings to review'}
+                  </p>
+                  {securityAnalysis.findings.length === 0 ? (
+                    <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] px-3 py-2.5 text-[11px] text-emerald-300">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+                      No findings.
+                    </div>
+                  ) : (
+                    <ul className="flex flex-col gap-3">
+                      {[...securityAnalysis.findings]
+                        .sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity])
+                        .map((finding, index) => (
+                          <li key={`${finding.rule}-${finding.component_id ?? finding.connection_id ?? index}`} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 shadow-sm">
+                            <p className="m-0 text-[11px] leading-relaxed text-zinc-400">
+                              <SeverityChip severity={finding.severity} />{' '}
+                              <span className="font-medium text-zinc-100">{finding.title}</span>{' '}
+                              <span className="font-mono text-zinc-600">({finding.rule}):</span>{' '}
+                              {finding.message} {finding.recommendation}
+                            </p>
+                            {finding.component_id !== null || finding.connection_id !== null ? (
+                              <div className="mt-2.5 flex flex-wrap gap-1.5 font-mono text-[10px] text-zinc-600">
+                                {finding.component_id !== null ? <span className="rounded border border-white/[0.06] bg-white/[0.03] px-1.5 py-0.5">{finding.component_id}</span> : null}
+                                {finding.connection_id !== null ? <span className="rounded border border-white/[0.06] bg-white/[0.03] px-1.5 py-0.5">{finding.connection_id}</span> : null}
+                              </div>
+                            ) : null}
+                          </li>
+                        ))}
+                    </ul>
+                  )}
+                </>
+              )}
+            </div>
           </section>
           )}
           <SidePanel

@@ -2,6 +2,7 @@
 
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --color-on-accent: #ffffff;
   --paladin-canvas: #0a0a0a;
   --paladin-frost: rgb(0 0 0 / 0.4);
