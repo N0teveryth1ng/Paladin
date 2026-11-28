@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`h-full ${inter.variable}`}>
-      <body className="h-full bg-[#0A0A0A] font-sans text-zinc-100 antialiased">{children}</body>
+      <body className="h-full bg-[var(--paladin-canvas)] font-sans text-zinc-100 antialiased">{children}</body>
     </html>
   );
 }

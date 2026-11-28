@@ -62,7 +62,7 @@ export function PromptBox({
       />
       <div className="flex justify-end pt-1">
         <Button
-          className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-600 text-white shadow-[0_0_22px_-4px_rgba(139,92,246,0.9)] hover:brightness-110"
+          className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-600 text-[var(--color-on-accent)] shadow-[0_0_22px_-4px_rgba(139,92,246,0.9)] hover:brightness-110"
           type="submit"
           size="icon"
           variant="default"

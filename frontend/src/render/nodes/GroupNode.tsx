@@ -27,7 +27,7 @@ export function GroupNode({ data }: NodeProps<GroupFlowNode>) {
     <div
       className={cn(
         'group-node relative h-full w-full rounded-lg border backdrop-blur-sm',
-        'border-[color-mix(in_srgb,var(--group-accent)_55%,#3f3f46)] bg-[color-mix(in_srgb,var(--group-accent)_10%,rgba(18,18,20,0.72))]',
+        'border-[color-mix(in_srgb,var(--group-accent)_55%,var(--color-zinc-700))] bg-[color-mix(in_srgb,var(--group-accent)_10%,var(--color-zinc-900))]',
         group.assumed && 'assumed border-dashed',
       )}
       data-testid="group-node"

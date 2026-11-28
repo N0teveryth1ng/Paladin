@@ -338,7 +338,7 @@ function buildUpdatePrompt(draft: ArchitectureDraft, request: string): string {
 }
 
 export default function App() {
-  const initial = useMemo(() => parseMode(window.location.search, false), []);
+  const initial = useMemo(() => parseMode(window.location.search, true), []);
   const [restored] = useState(loadWorkspaceSnapshot);
   const [theme, setTheme] = useState<ThemeName>(restored?.theme ?? initial.theme);
   const [selection, setSelection] = useState<Selection>(null);
@@ -691,23 +691,6 @@ export default function App() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [redo, undo]);
-
-  const addComponent = useCallback((): void => {
-    const { draft, id: requirementId } = canvasRequirement(entry.draft);
-    const id = nextId('cmp', draft.components.map((item) => item.id));
-    const component: Component = {
-      id,
-      type: 'service',
-      name: 'New box',
-      technology: null,
-      description: '',
-      attributes: {},
-      requirement_refs: [requirementId],
-      assumed: false,
-      rationale: null,
-    };
-    commitStructure({ ...draft, components: [...draft.components, component] }, { kind: 'component', id });
-  }, [commitStructure, entry.draft]);
 
   const connectComponents = useCallback((source: string, target: string): void => {
     const { draft, id: requirementId } = canvasRequirement(entry.draft);
@@ -1196,7 +1179,7 @@ export default function App() {
 
   return (
     <div
-      className="relative h-screen w-screen overflow-hidden bg-[#0A0A0A] font-sans text-zinc-100 antialiased before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-[520px] before:bg-[radial-gradient(ellipse_at_50%_0%,rgba(79,70,229,0.28),rgba(124,58,237,0.10)_38%,transparent_72%)]"
+      className="relative h-screen w-screen overflow-hidden bg-[var(--paladin-canvas)] font-sans text-zinc-100 antialiased before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-[520px] before:bg-[radial-gradient(ellipse_at_50%_0%,rgba(79,70,229,0.28),rgba(124,58,237,0.10)_38%,transparent_72%)]"
       data-theme={theme}
       data-fixture={entry.name}
       style={{ '--paladin-sidebar-width': sidebarCollapsed ? '3.5rem' : `${sidebarWidth}px` } as CSSProperties}
@@ -1207,7 +1190,6 @@ export default function App() {
           locked={locked}
           collapsed={sidebarCollapsed}
           onToggleSidebar={() => setSidebarCollapsed((value) => !value)}
-          onAddComponent={addComponent}
           onNew={resetDocument}
           onOpen={() => void openDocument()}
           onUndo={undo}
@@ -1235,7 +1217,7 @@ export default function App() {
           onReview={runReview}
         />
         <aside
-          className="fixed bottom-4 left-4 top-4 z-40 flex w-[var(--paladin-sidebar-width)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-2xl backdrop-blur-2xl"
+          className="fixed bottom-4 left-4 top-4 z-40 flex w-[var(--paladin-sidebar-width)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[var(--paladin-frost)] shadow-2xl backdrop-blur-2xl"
           data-testid="app-sidebar"
         >
           {!sidebarCollapsed ? (
@@ -1396,7 +1378,7 @@ export default function App() {
           />
         ) : null}
 
-        <main className="canvas-column relative flex h-full w-full flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0C0C0E]/80 shadow-[0_24px_80px_-32px_rgba(0,0,0,0.9)]" data-theme={theme}>
+        <main className="canvas-column relative flex h-full w-full flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/80 shadow-[0_24px_80px_-32px_rgba(0,0,0,0.9)]" data-theme={theme}>
           <header className="canvas-header flex h-14 shrink-0 items-center justify-between gap-4 border-b border-white/[0.08] bg-white/[0.02] px-5">
             <div className="canvas-header-copy flex min-w-0 items-baseline gap-2.5">
               <span className="canvas-header-kicker text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Canvas</span>

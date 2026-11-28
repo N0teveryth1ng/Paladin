@@ -67,7 +67,7 @@ export function ComponentNode({ data }: NodeProps<ComponentFlowNode>) {
     <div
       className={cn(
         'component-node group relative flex h-full w-full items-stretch overflow-hidden rounded-lg border text-white shadow-[0_12px_36px_-18px_rgba(0,0,0,0.95)] backdrop-blur-xl transition-all',
-        'border-[color-mix(in_srgb,var(--component-accent)_58%,#3f3f46)] bg-[color-mix(in_srgb,var(--component-accent)_8%,rgba(24,24,27,0.94))]',
+        'border-[color-mix(in_srgb,var(--component-accent)_58%,var(--color-zinc-700))] bg-[color-mix(in_srgb,var(--component-accent)_8%,var(--color-zinc-900))]',
         component.assumed && 'assumed border-dashed',
         data.connectedToSelection && 'connected-to-selection ring-2 ring-indigo-400/70',
       )}
@@ -121,7 +121,7 @@ export function ComponentNode({ data }: NodeProps<ComponentFlowNode>) {
       </div>
 
       {component.assumed ? (
-        <span className="assumed-pill absolute right-2 top-2 rounded-full border border-dashed border-zinc-500/60 bg-black/30 px-1.5 py-0.5 text-[8px] uppercase tracking-wide text-zinc-400">
+        <span className="assumed-pill absolute right-2 top-2 rounded-full border border-dashed border-zinc-500/60 bg-[var(--paladin-frost-strong)] px-1.5 py-0.5 text-[8px] uppercase tracking-wide text-zinc-400">
           assumed
         </span>
       ) : null}

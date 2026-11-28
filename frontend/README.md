@@ -31,8 +31,8 @@ Open <http://127.0.0.1:5173>.
 - Drag boxes to arrange them. Drag a small handle from one box to another to
   connect them.
 - Select a box or connection to edit its details in the small inspector.
-- Use **Add box**, **Fit canvas**, or **New** from the top bar. **New** clears
-  the current design.
+- Use **Fit canvas** or **New** from the top bar. **New** clears the current
+  design.
 
 Designs are held in memory and reset when the page reloads. The canvas and API
 run locally; generation sends the prompt to the configured model provider.

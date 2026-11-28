@@ -2,7 +2,6 @@
 
 import {
   BookmarkPlus,
-  Box,
   Clipboard,
   Download,
   FileCode2,
@@ -29,7 +28,7 @@ import type { ThemeName } from '../app/modes';
 import type { Entry, FixtureName } from '../app/modes';
 
 type ToolIconName =
-  | 'new' | 'open' | 'undo' | 'redo' | 'box' | 'fit' | 'export' | 'copy'
+  | 'new' | 'open' | 'undo' | 'redo' | 'fit' | 'export' | 'copy'
   | 'check' | 'theme' | 'moon' | 'image' | 'history' | 'template' | 'import' | 'review';
 
 const ICONS: Record<ToolIconName, LucideIcon> = {
@@ -37,7 +36,6 @@ const ICONS: Record<ToolIconName, LucideIcon> = {
   open: FolderOpen,
   undo: Undo2,
   redo: Redo2,
-  box: Box,
   fit: Maximize2,
   export: Download,
   copy: Clipboard,
@@ -59,7 +57,6 @@ function ToolIcon({ name }: { name: ToolIconName }) {
 export function Toolbar({
   theme,
   locked,
-  onAddComponent,
   onNew,
   onOpen,
   onUndo,
@@ -86,7 +83,6 @@ export function Toolbar({
   entry?: Entry;
   theme: ThemeName;
   locked: boolean;
-  onAddComponent?: () => void;
   onNew?: () => void;
   onOpen?: () => void;
   onUndo?: () => void;
@@ -174,7 +170,7 @@ export function Toolbar({
   return (
     <>
       <header
-        className="fixed left-[calc(var(--paladin-sidebar-width)+2rem)] right-4 top-4 z-30 flex h-11 items-center gap-1.5 rounded-xl border border-white/10 bg-black/40 px-2 shadow-2xl backdrop-blur-2xl"
+        className="fixed left-[calc(var(--paladin-sidebar-width)+2rem)] right-4 top-4 z-30 flex h-11 items-center gap-1.5 rounded-xl border border-white/10 bg-[var(--paladin-frost)] px-2 shadow-2xl backdrop-blur-2xl"
         data-testid="toolbar"
       >
         <div className="flex shrink-0 items-center gap-2 border-r border-white/10 px-1.5 pr-3">
@@ -193,7 +189,6 @@ export function Toolbar({
             {onRedo ? toolButton('redo', 'redo-button', 'Redo', onRedo, !canRedo) : null}
           </div>
           <div className="flex shrink-0 items-center gap-0.5 border-l border-white/10 pl-1.5" role="group" aria-label="Design">
-            {onAddComponent ? toolButton('box', 'add-component', 'Add box', onAddComponent) : null}
             {onTemplates ? toolButton('template', 'templates-button', 'Templates', onTemplates) : null}
             {onImportSource ? toolButton('import', 'import-source-button', 'Import source', onImportSource) : null}
             {onReview ? toolButton('review', 'review-button', 'Review architecture', onReview) : null}
@@ -273,7 +268,7 @@ export function Toolbar({
         aria-expanded={!collapsed}
         aria-controls="architecture-chat"
         data-testid="sidebar-toggle"
-        className="fixed bottom-4 left-4 z-40 rounded-xl border-white/10 bg-black/50 shadow-xl backdrop-blur-xl"
+        className="fixed bottom-4 left-4 z-40 rounded-xl border-white/10 bg-[var(--paladin-frost)] shadow-xl backdrop-blur-xl"
       >
         {collapsed ? <PanelLeftOpen className="h-3.5 w-3.5" /> : <PanelLeftClose className="h-3.5 w-3.5" />}
       </Button>

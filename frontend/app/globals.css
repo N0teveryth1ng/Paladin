@@ -2,4 +2,35 @@
 
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --color-on-accent: #ffffff;
+  --paladin-canvas: #0a0a0a;
+  --paladin-frost: rgb(0 0 0 / 0.4);
+  --paladin-frost-strong: rgb(0 0 0 / 0.3);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Neutral tokens carry both surfaces and ink, so every zinc utility
+     follows the active theme without duplicating component styles. */
+  --color-zinc-50: #09090b;
+  --color-zinc-100: #18181b;
+  --color-zinc-200: #27272a;
+  --color-zinc-300: #3f3f46;
+  --color-zinc-400: #52525b;
+  --color-zinc-500: #71717a;
+  --color-zinc-600: #a1a1aa;
+  --color-zinc-700: #d4d4d8;
+  --color-zinc-800: #e4e4e7;
+  --color-zinc-900: #fafafa;
+  --color-zinc-950: #ffffff;
+  --color-white: #000000;
+
+  --paladin-canvas: #ffffff;
+  --paladin-frost: rgb(255 255 255 / 0.65);
+  --paladin-frost-strong: rgb(0 0 0 / 0.05);
 }

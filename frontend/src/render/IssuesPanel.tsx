@@ -25,7 +25,7 @@ export function IssuesPanel({ artifact }: { artifact: IssuesArtifact }) {
           {artifact.issues.map((issue: DisplayIssue, index: number) => (
             <li
               key={`${issue.kind}-${issue.element_id ?? 'none'}-${index}`}
-              className="issue-row rounded-lg border border-white/[0.06] bg-black/20 p-2.5"
+              className="issue-row rounded-lg border border-white/[0.06] bg-[var(--paladin-frost-strong)] p-2.5"
               data-testid="issue-row"
               data-severity={issue.severity}
               data-kind={issue.kind}
